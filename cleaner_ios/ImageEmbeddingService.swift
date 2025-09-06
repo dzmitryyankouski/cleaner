@@ -15,13 +15,43 @@ class ImageEmbeddingService: ObservableObject {
     @Published var embedding: [Float]?
     @Published var errorMessage: String?
     
+    private var mobileClipModel: MLModel?
+    private var compiledModelURL: URL?
+    
     init() {
-        // Инициализация без внешних моделей
+        // Сначала попробуем скопировать модель в Bundle если её там нет
+        loadMobileClipModel()
+    }
+
+    
+    private func loadMobileClipModel() {
+        print("🔍 Загружаем предварительно скомпилированную модель MobileCLIP...")
+
+        // Сначала пробуем загрузить из Bundle (если добавлена)
+        if let modelURL = Bundle.main.url(forResource: "mobileclip_s0_image", withExtension: "mlmodelc") {
+            do {
+                mobileClipModel = try MLModel(contentsOf: modelURL)
+                print("✅ Модель MobileCLIP загружена из Bundle!")
+                return
+            } catch {
+                print("❌ Ошибка загрузки модели из Bundle: \(error)")
+            }
+        }
+        
+        // Если ничего не сработало
+        errorMessage = "Не удалось найти предварительно скомпилированную модель MobileCLIP"
+        print("❌ Все способы загрузки модели не удались")
     }
     
     func generateEmbedding(from image: UIImage) {
         isProcessing = true
         errorMessage = nil
+        
+        guard let mobileClipModel = mobileClipModel else {
+            errorMessage = "Модель MobileCLIP не загружена"
+            isProcessing = false
+            return
+        }
         
         guard let cgImage = image.cgImage else {
             errorMessage = "Не удалось получить изображение"
@@ -29,8 +59,8 @@ class ImageEmbeddingService: ObservableObject {
             return
         }
         
-        // Используем Vision framework для извлечения признаков изображения
-        let request = VNGenerateImageFeaturePrintRequest { [weak self] request, error in
+        // Используем Vision framework с моделью MobileCLIP
+        let request = VNCoreMLRequest(model: try! VNCoreMLModel(for: mobileClipModel)) { [weak self] request, error in
             DispatchQueue.main.async {
                 self?.isProcessing = false
                 
@@ -39,17 +69,21 @@ class ImageEmbeddingService: ObservableObject {
                     return
                 }
                 
-                guard let results = request.results as? [VNFeaturePrintObservation],
-                      let firstResult = results.first else {
+                guard let results = request.results as? [VNCoreMLFeatureValueObservation],
+                      let firstResult = results.first,
+                      let multiArray = firstResult.featureValue.multiArrayValue else {
                     self?.errorMessage = "Не удалось получить эмбединг"
                     return
                 }
                 
-                // Конвертируем VNFeaturePrintObservation в массив Float
-                let embedding = self?.convertFeaturePrintToFloatArray(firstResult) ?? []
+                // Конвертируем MLMultiArray в массив Float
+                let embedding = self?.convertMultiArrayToFloatArray(multiArray) ?? []
                 self?.embedding = embedding
             }
         }
+        
+        // Настройки для обработки изображения
+        request.imageCropAndScaleOption = .centerCrop
         
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
         
@@ -65,18 +99,13 @@ class ImageEmbeddingService: ObservableObject {
         }
     }
     
-    private func convertFeaturePrintToFloatArray(_ featurePrint: VNFeaturePrintObservation) -> [Float] {
-        // VNFeaturePrintObservation содержит данные в формате Data
-        // Конвертируем их в массив Float для демонстрации
-        let data = featurePrint.data
-        let count = data.count / MemoryLayout<Float>.size
+    private func convertMultiArrayToFloatArray(_ multiArray: MLMultiArray) -> [Float] {
+        // Конвертируем MLMultiArray в массив Float
+        let count = multiArray.count
         var result = [Float](repeating: 0, count: count)
         
-        data.withUnsafeBytes { bytes in
-            let floatPointer = bytes.bindMemory(to: Float.self)
-            for i in 0..<count {
-                result[i] = floatPointer[i]
-            }
+        for i in 0..<count {
+            result[i] = Float(truncating: multiArray[i])
         }
         
         return result
@@ -105,8 +134,6 @@ class ImageEmbeddingService: ObservableObject {
     }
 }
 
-// Примечание: Для использования настоящей MobileCLIP модели:
-// 1. Скачайте Core ML версию MobileCLIP модели
-// 2. Добавьте её в проект Xcode
-// 3. Замените VNGenerateImageFeaturePrintRequest на VNCoreMLRequest с вашей моделью
-// 4. Обновите метод convertFeaturePrintToFloatArray для работы с MLMultiArray
+// MobileCLIP S0 модель интегрирована и готова к использованию
+// Модель автоматически загружается при инициализации сервиса
+// Эмбединги генерируются с использованием Vision framework и Core ML
