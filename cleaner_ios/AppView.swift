@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AppView: View {
     var body: some View {
-        PhotosView()
+//        PhotosView()
+        SearchView()
     }
 }
