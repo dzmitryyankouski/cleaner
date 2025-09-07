@@ -13,6 +13,7 @@ class PhotosViewModel: ObservableObject {
 
     func onSelectImages(items: [PhotosPickerItem]) async {
         print("start loading selected images")
+
         selectedImages = await loadSelectedImages(items: items)
         print("Selected images loaded")
 
@@ -24,15 +25,26 @@ class PhotosViewModel: ObservableObject {
     }
 
     private func loadSelectedImages(items: [PhotosPickerItem]) async -> [UIImage] {
-        var images: [UIImage] = []
-
-        for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                images.append(image)
+        await withTaskGroup(of: UIImage?.self) { group in
+            var images: [UIImage] = []
+            
+            for item in items {
+                group.addTask {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        return image
+                    }
+                    return nil
+                }
             }
+            
+            for await result in group {
+                if let image = result {
+                    images.append(image)
+                }
+            }
+            
+            return images
         }
-
-        return images
     }
 }

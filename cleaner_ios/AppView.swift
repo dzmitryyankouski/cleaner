@@ -5,7 +5,3 @@ struct AppView: View {
         PhotosView()
     }
 }
-
-#Preview {
-    AppView()
-}
