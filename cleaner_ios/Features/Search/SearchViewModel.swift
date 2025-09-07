@@ -2,6 +2,8 @@ import Foundation
 import Photos
 
 class SearchViewModel: ObservableObject {
+    @Published var photos: [PHAsset] = []
+
     var clusterService = ClusterService()
 
     init() {
@@ -28,9 +30,14 @@ class SearchViewModel: ObservableObject {
     }
     
     private func loadPhotos() {
-        let photos = PHAsset.fetchAssets(with: .image, options: nil)
-        print("photos: \(photos)")
-        print("Количество фотографий: \(photos.count)")
+        let fetchResult = PHAsset.fetchAssets(with: .image, options: nil)
+        var assets: [PHAsset] = []
+        
+        fetchResult.enumerateObjects { asset, _, _ in
+            assets.append(asset)
+        }
+        
+        self.photos = assets
     }
 
     func searchImages() {
