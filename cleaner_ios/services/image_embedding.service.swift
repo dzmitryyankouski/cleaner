@@ -93,11 +93,11 @@ class ImageEmbeddingService: ObservableObject {
             results.append(embedding)
         }
         
-        // Если включена кластеризация, добавляем эмбеддинги в кластерный индекс
-        if useClustering && !results.isEmpty {
-            let imageIndices = Array(0..<results.count)
-            await clusterIndexService.addEmbeddings(results, imageIndices: imageIndices)
-        }
+        // // Если включена кластеризация, добавляем эмбеддинги в кластерный индекс
+        // if useClustering && !results.isEmpty {
+        //     let imageIndices = Array(0..<results.count)
+        //     await clusterIndexService.addEmbeddings(results, imageIndices: imageIndices)
+        // }
         
         return results
     }

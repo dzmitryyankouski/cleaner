@@ -9,14 +9,13 @@ class PhotosViewModel: ObservableObject {
     var imageEmbeddingService = ImageEmbeddingService()
     var clusterService = ClusterService()
     var embeddings: [[Float]] = []
-    var groups: [ClusterImageGroup] = []
+    var groups: [[Int]] = []
 
     func onSelectImages(items: [PhotosPickerItem]) async {
         selectedImages = await loadSelectedImages(items: items)
         embeddings = await imageEmbeddingService.generateEmbeddings(from: selectedImages)
 
         groups = await clusterService.getImageGroups(for: embeddings)
-
         print("🔍 Groups: \(groups)")
     }
 
