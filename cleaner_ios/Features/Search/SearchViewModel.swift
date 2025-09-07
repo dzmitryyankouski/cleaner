@@ -4,34 +4,48 @@ import UIKit
 
 class SearchViewModel: ObservableObject {
     @Published var photos: [PHAsset] = []
+    @Published var processedPhotosCount = 0
+    @Published var isIndexing = false
 
     var clusterService = ClusterService()
     var imageEmbeddingService = ImageEmbeddingService()
 
     init() {
         print("SearchViewModel init")
-        requestPhotoLibraryAccess()
-    }
-    
-    private func requestPhotoLibraryAccess() {
-        let currentStatus = PHPhotoLibrary.authorizationStatus()
 
-        if currentStatus == .authorized || currentStatus == .limited {
-            loadPhotos()
+        Task {
+            let status = await requestPhotoLibraryAccess()
+
+            if status == .authorized || status == .limited {
+                await loadPhotos()
+                await indexPhotos()
+            }
         }
 
-        if currentStatus == .notDetermined {
-            PHPhotoLibrary.requestAuthorization { status in
-                DispatchQueue.main.async {
-                    if status == .authorized || status == .limited {
-                        self.loadPhotos()
-                    }
-                }
+        imageEmbeddingService.onPhotoProcessed = { [weak self] photo in
+            DispatchQueue.main.async {
+                self?.processedPhotosCount = self?.imageEmbeddingService.processedPhotos.count ?? 0
             }
         }
     }
     
-    private func loadPhotos() {
+    private func requestPhotoLibraryAccess() async -> PHAuthorizationStatus {
+        let currentStatus = PHPhotoLibrary.authorizationStatus()
+
+        if currentStatus == .notDetermined {
+            await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+
+            let newStatus = PHPhotoLibrary.authorizationStatus()
+
+            if newStatus == .authorized || newStatus == .limited {
+                return newStatus
+            }
+        }
+
+        return currentStatus
+    }
+    
+    private func loadPhotos() async {
         let fetchResult = PHAsset.fetchAssets(with: .image, options: nil)
         var assets: [PHAsset] = []
         
@@ -40,79 +54,15 @@ class SearchViewModel: ObservableObject {
         }
         
         self.photos = assets
+    }
 
-        indexPhotos()
+    private func indexPhotos() async {
+        isIndexing = true
+        await imageEmbeddingService.indexPhotos(photos: photos)
+        isIndexing = false
     }
 
     func searchImages() {
         // TODO: Реализовать поиск изображений
-    }
-
-    private func indexPhotos() {
-        print("🔄 Начинаем индексацию \(photos.count) фотографий...")
-        
-        Task {
-            do {
-                // Конвертируем PHAsset в UIImage миниатюры
-                let thumbnails = await convertAssetsToThumbnails(photos)
-                print("✅ Создано \(thumbnails.count) миниатюр")
-                
-                // Генерируем эмбединги для миниатюр
-                let embeddings = await imageEmbeddingService.generateEmbeddings(from: thumbnails)
-                print("✅ Сгенерировано \(embeddings.count) эмбедингов")
-                
-                // Здесь можно сохранить эмбединги или передать их в ClusterService
-                await MainActor.run {
-                    print("🎉 Индексация завершена!")
-                }
-                
-            } catch {
-                print("❌ Ошибка при индексации: \(error)")
-            }
-        }
-    }
-    
-    private func convertAssetsToThumbnails(_ assets: [PHAsset]) async -> [UIImage] {
-        return await withTaskGroup(of: UIImage?.self) { group in
-            var thumbnails: [UIImage] = []
-            
-            for asset in assets {
-                group.addTask {
-                    await self.convertAssetToThumbnail(asset)
-                }
-            }
-            
-            for await thumbnail in group {
-                if let thumbnail = thumbnail {
-                    thumbnails.append(thumbnail)
-                }
-            }
-            
-            return thumbnails
-        }
-    }
-    
-    private func convertAssetToThumbnail(_ asset: PHAsset) async -> UIImage? {
-        return await withCheckedContinuation { continuation in
-            let imageManager = PHImageManager.default()
-            let requestOptions = PHImageRequestOptions()
-            
-            requestOptions.isSynchronous = false
-            requestOptions.deliveryMode = .highQualityFormat
-            requestOptions.resizeMode = .exact
-            requestOptions.isNetworkAccessAllowed = false
-            
-            // Размер миниатюры для эмбедингов (можно настроить)
-            let targetSize = CGSize(width: 224, height: 224)
-            
-            imageManager.requestImage(
-                for: asset,
-                targetSize: targetSize,
-                contentMode: .aspectFill,
-                options: requestOptions
-            ) { image, info in
-                continuation.resume(returning: image)
-            }
-        }
     }
 }

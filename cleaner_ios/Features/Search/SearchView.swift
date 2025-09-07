@@ -37,11 +37,34 @@ struct SearchView: View {
 
             Spacer()
 
+        // Индикатор прогресса индексации
+        if viewModel.isIndexing {
+            VStack(spacing: 12) {
+                ProgressView()
+                    .scaleEffect(1.2)
+                Text("Индексация фотографий...")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Text("Обработано: \(viewModel.processedPhotosCount) из \(viewModel.photos.count)")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+        }
+        
         // Выводим список всех фотографий из viewModel.photos
         if !viewModel.photos.isEmpty {
-            Text("Все фотографии (\(viewModel.photos.count)):")
-                .font(.headline)
-                .padding(.horizontal)
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Все фотографии (\(viewModel.photos.count)):")
+                    .font(.headline)
+                
+                if viewModel.processedPhotosCount > 0 {
+                    Text("С эмбедингами: \(viewModel.processedPhotosCount)")
+                        .font(.subheadline)
+                        .foregroundColor(.green)
+                }
+            }
+            .padding(.horizontal)
             ScrollView {
                 LazyVGrid(columns: [
                     GridItem(.adaptive(minimum: 100), spacing: 10)
