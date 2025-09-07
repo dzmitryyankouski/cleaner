@@ -37,51 +37,47 @@ class ImageEmbeddingService {
     func indexPhotos(photos: [PHAsset]) async {
         print("🔄 Начинаем индексацию \(photos.count) фотографий...")
         
-        Task {      
-            // Обрабатываем каждый ассет в отдельной таске с ограничением
-            await withTaskGroup(of: Photo?.self) { group in
-                var activeTasks = 0
-                
-                for asset in photos {
-                    // Ждем, пока освободится место для новой таски
-                    while activeTasks >= concurrentTasks {
-                        if let result = await group.next() {
-                            if let photo = result {
-                                self.processedPhotos.append(photo)
-                                // Уведомляем о новой обработанной фотографии
-                                await MainActor.run {
-                                    self.onPhotoProcessed?(photo)
-                                }
-                            }
-                            activeTasks -= 1
-                        }
-                    }
-                    
-                    group.addTask {
-                        await self.processSingleAsset(asset)
-                    }
-                    activeTasks += 1
-                }
-                
-                // Обрабатываем оставшиеся результаты
-                for await result in group {
-                    if let photo = result {
-                        // Обновляем UI в реальном времени
-                        await MainActor.run {
+        // Обрабатываем каждый ассет в отдельной таске с ограничением
+        await withTaskGroup(of: Photo?.self) { group in
+            var activeTasks = 0
+            
+            for asset in photos {
+                // Ждем, пока освободится место для новой таски
+                while activeTasks >= concurrentTasks {
+                    if let result = await group.next() {
+                        if let photo = result {
                             self.processedPhotos.append(photo)
                             // Уведомляем о новой обработанной фотографии
-                            self.onPhotoProcessed?(photo)
+                            await MainActor.run {
+                                self.onPhotoProcessed?(photo)
+                            }
                         }
+                        activeTasks -= 1
+                    }
+                }
+                
+                group.addTask {
+                    await self.processSingleAsset(asset)
+                }
+                activeTasks += 1
+            }
+            
+            // Обрабатываем оставшиеся результаты
+            for await result in group {
+                if let photo = result {
+                    // Обновляем UI в реальном времени
+                    await MainActor.run {
+                        self.processedPhotos.append(photo)
+                        // Уведомляем о новой обработанной фотографии
+                        self.onPhotoProcessed?(photo)
                     }
                 }
             }
-
-            print("🎉 Индексация завершена! Обработано \(processedPhotos.count) фотографий")
-            
-            // Уведомляем о завершении индексации
-            await MainActor.run {
-                self.onIndexingComplete?()
-            }
+        }
+        
+        // Уведомляем о завершении индексации
+        await MainActor.run {
+            self.onIndexingComplete?()
         }
     }
 
@@ -149,20 +145,14 @@ class ImageEmbeddingService {
                 print("❌ Не удалось создать миниатюру для ассета: \(asset.localIdentifier)")
                 return nil
             }
-
-            print("🔄 Обрабатываем ассет: \(asset.localIdentifier)")
             
-            // Генерируем эмбединг для миниатюры
             let embedding = await generateEmbedding(from: thumbnail)
-
-            print("🔄 Эмбединг сгенерирован: \(asset.localIdentifier)")
             
             if embedding.isEmpty {
                 print("❌ Не удалось сгенерировать эмбединг для ассета: \(asset.localIdentifier)")
                 return nil
             }
             
-            print("✅ Обработан ассет: \(asset.localIdentifier)")
             return Photo(asset: asset, embedding: embedding)
             
         } catch {
