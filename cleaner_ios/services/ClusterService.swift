@@ -136,7 +136,7 @@ class ClusterService {
     var planesPerTable: Int = 10
     var seed: UInt64 = 42
 
-    func getImageGroups(for embeddings: [[Float]], threshold: Float = 0.5) async -> [[Int]] {
+    func getImageGroups(for embeddings: [[Float]], threshold: Float = 0.85) async -> [[Int]] {
         guard !embeddings.isEmpty else { return [] }
 
         let n = embeddings.count

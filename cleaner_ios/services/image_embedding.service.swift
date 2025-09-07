@@ -58,7 +58,6 @@ class ImageEmbeddingService: ObservableObject {
                 
                 result = self.convertMultiArrayToFloatArray(multiArray)
                 self.embeddings.append(result)
-                print("✅ Embedding generated: \(result)")
                 semaphore.signal()
             }
         }
