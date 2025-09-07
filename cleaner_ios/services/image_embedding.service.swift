@@ -7,6 +7,8 @@ class ImageEmbeddingService: ObservableObject {
     private var mobileClipModel: MLModel?
     
     @Published var embeddings: [[Float]] = []
+    @Published var clusterIndexService = ClusterIndexService()
+    @Published var useClustering = true
 
     init() {
         guard Bundle.main.url(forResource: "mobileclip_s0_image", withExtension: "mlmodelc") != nil else {
@@ -91,6 +93,12 @@ class ImageEmbeddingService: ObservableObject {
             results.append(embedding)
         }
         
+        // Если включена кластеризация, добавляем эмбеддинги в кластерный индекс
+        if useClustering && !results.isEmpty {
+            let imageIndices = Array(0..<results.count)
+            await clusterIndexService.addEmbeddings(results, imageIndices: imageIndices)
+        }
+        
         return results
     }
 
@@ -145,6 +153,123 @@ class ImageEmbeddingService: ObservableObject {
         }
         
         return dotProduct / (magnitude1 * magnitude2)
+    }
+    
+    // MARK: - Clustering Methods
+    
+    /// Находит похожие изображения используя кластеризованный индекс
+    func findSimilarImages(to imageIndex: Int, maxResults: Int = 5, similarityThreshold: Float = 0.7) -> [SimilarityResult] {
+        guard imageIndex < embeddings.count else {
+            print("❌ Неверный индекс изображения: \(imageIndex)")
+            return []
+        }
+        
+        let queryEmbedding = embeddings[imageIndex]
+        
+        if useClustering {
+            return clusterIndexService.findSimilarEmbeddings(
+                to: queryEmbedding,
+                maxResults: maxResults,
+                similarityThreshold: similarityThreshold
+            )
+        } else {
+            // Fallback к обычному поиску
+            return findSimilarImagesBruteForce(queryEmbedding: queryEmbedding, maxResults: maxResults, similarityThreshold: similarityThreshold)
+        }
+    }
+    
+    /// Находит похожие изображения полным перебором (fallback)
+    private func findSimilarImagesBruteForce(queryEmbedding: [Float], maxResults: Int, similarityThreshold: Float) -> [SimilarityResult] {
+        var results: [SimilarityResult] = []
+        
+        for (index, embedding) in embeddings.enumerated() {
+            let similarity = calculateCosineSimilarity(queryEmbedding, embedding)
+            if similarity >= similarityThreshold {
+                let indexedEmbedding = IndexedEmbedding(embedding: embedding, imageIndex: index)
+                results.append(SimilarityResult(embedding: indexedEmbedding, similarity: similarity, clusterId: nil))
+            }
+        }
+        
+        return results
+            .sorted { $0.similarity > $1.similarity }
+            .prefix(maxResults)
+            .map { $0 }
+    }
+    
+    /// Переключает использование кластеризации
+    func toggleClustering() {
+        useClustering.toggle()
+        print("🔄 Кластеризация \(useClustering ? "включена" : "отключена")")
+    }
+    
+    /// Принудительно пересчитывает кластеры
+    func recalculateClusters() async {
+        guard useClustering else {
+            print("⚠️ Кластеризация отключена")
+            return
+        }
+        
+        print("🔄 Принудительный пересчет кластеров...")
+        await clusterIndexService.performClustering()
+    }
+    
+    /// Получает статистику кластеризации
+    func getClusteringStats() -> ClusteringStats? {
+        return clusterIndexService.getClusteringStats()
+    }
+    
+    /// Получает количество кластеров
+    func getClusterCount() -> Int {
+        return clusterIndexService.getClusterCount()
+    }
+    
+    /// Очищает все данные кластеризации
+    func clearClusteringData() {
+        clusterIndexService.clearAll()
+        print("🗑️ Данные кластеризации очищены")
+    }
+    
+    /// Получает группы похожих изображений, сгруппированные по кластерам
+    func getSimilarImageGroups(for imageIndex: Int, similarityThreshold: Float = 0.5) -> [ImageGroup] {
+        guard imageIndex < embeddings.count else {
+            print("❌ Неверный индекс изображения: \(imageIndex)")
+            return []
+        }
+        
+        let queryEmbedding = embeddings[imageIndex]
+        
+        if useClustering {
+            return clusterIndexService.getImageGroups(for: queryEmbedding, similarityThreshold: similarityThreshold)
+        } else {
+            // Fallback к обычному поиску
+            return getImageGroupsBruteForce(queryEmbedding: queryEmbedding, similarityThreshold: similarityThreshold)
+        }
+    }
+    
+    /// Получает группы изображений полным перебором (fallback)
+    private func getImageGroupsBruteForce(queryEmbedding: [Float], similarityThreshold: Float) -> [ImageGroup] {
+        var results: [SimilarityResult] = []
+        
+        for (index, embedding) in embeddings.enumerated() {
+            let similarity = calculateCosineSimilarity(queryEmbedding, embedding)
+            if similarity >= similarityThreshold {
+                let indexedEmbedding = IndexedEmbedding(embedding: embedding, imageIndex: index)
+                results.append(SimilarityResult(embedding: indexedEmbedding, similarity: similarity, clusterId: nil))
+            }
+        }
+        
+        // Группируем по уровню сходства
+        let sortedResults = results.sorted { $0.similarity > $1.similarity }
+        
+        // Создаем одну группу для всех результатов
+        let group = ImageGroup(
+            id: UUID(),
+            title: "Похожие изображения",
+            images: sortedResults,
+            averageSimilarity: sortedResults.isEmpty ? 0 : sortedResults.map { $0.similarity }.reduce(0, +) / Float(sortedResults.count)
+        )
+        
+        return [group]
     }
     
 }

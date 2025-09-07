@@ -12,208 +12,128 @@ struct ContentView: View {
     @State private var selectedImages: [UIImage] = []
     @State private var selectedItems: [PhotosPickerItem] = []
     @StateObject private var embeddingService = ImageEmbeddingService()
-    @State private var similarities: [[Float]] = []
     @State private var isGeneratingEmbeddings = false
-    @State private var isComparing = false
-    @State private var selectedImage1Index: Int = 0
-    @State private var selectedImage2Index: Int = 1
+    @State private var isSearchingSimilar = false
+    @State private var similarGroups: [[Int]] = [] // Группы похожих изображений
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
+            VStack(spacing: 30) {
                 Text("Сравнение изображений")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .padding(.top)
                 
-                // Выбор множественных изображений
-                VStack(spacing: 15) {
-                    Text("Выберите изображения для сравнения")
+                // Кнопка выбора изображений
+                PhotosPicker(selection: $selectedItems, maxSelectionCount: 20, matching: .images) {
+                    Label("Выбрать изображения", systemImage: "photo.on.rectangle.angled")
                         .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    PhotosPicker(selection: $selectedItems, maxSelectionCount: 2, matching: .images) {
-                        Label("Выбрать изображения (до 10)", systemImage: "photo.on.rectangle.angled")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(Color.blue)
-                            .cornerRadius(10)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
+                
+                if !selectedImages.isEmpty {
+                    Text("Выбрано изображений: \(selectedImages.count)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Кнопка генерации эмбеддингов
+                if !selectedImages.isEmpty {
+                    Button(action: {
+                        generateEmbeddings()
+                    }) {
+                        HStack {
+                            if isGeneratingEmbeddings {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                            }
+                            Text(isGeneratingEmbeddings ? "Генерируем эмбеддинги..." : "Сгенерировать эмбеддинги")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(embeddingService.embeddings.count == selectedImages.count ? Color.gray : Color.green)
+                        .cornerRadius(10)
                     }
-                    
-                    if !selectedImages.isEmpty {
-                        Text("Выбрано изображений: \(selectedImages.count)")
+                    .disabled(isGeneratingEmbeddings || embeddingService.embeddings.count == selectedImages.count)
+                }
+                
+                // Переключатель кластеризации
+                if !selectedImages.isEmpty {
+                    HStack {
+                        Toggle("Использовать кластеризацию", isOn: $embeddingService.useClustering)
                             .font(.subheadline)
+                        
+                        Spacer()
+                        
+                        Text("Кластеров: \(embeddingService.getClusterCount())")
+                            .font(.caption)
                             .foregroundColor(.secondary)
                     }
+                    .padding()
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(10)
                 }
                 
-                // Отображение выбранных изображений
-                if !selectedImages.isEmpty {
-                    VStack(spacing: 15) {
-                        Text("Выбранные изображения")
+                // Кнопка поиска похожих изображений
+                if embeddingService.embeddings.count == selectedImages.count && !selectedImages.isEmpty {
+                    Button(action: {
+                        findSimilarImages()
+                    }) {
+                        HStack {
+                            if isSearchingSimilar {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                            }
+                            Text(isSearchingSimilar ? "Ищем похожие..." : "Найти похожие изображения")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .padding()
+                        .background(Color.orange)
+                        .cornerRadius(10)
+                    }
+                    .disabled(isSearchingSimilar)
+                }
+                
+                // Отображение групп похожих изображений
+                if !similarGroups.isEmpty {
+                    VStack(spacing: 20) {
+                        Text("Похожие изображения")
                             .font(.headline)
                             .padding(.top)
                         
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 2), spacing: 10) {
-                            ForEach(0..<selectedImages.count, id: \.self) { index in
-                                VStack(spacing: 5) {
-                                    Image(uiImage: selectedImages[index])
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(height: 120)
-                                        .cornerRadius(8)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(selectedImage1Index == index ? Color.blue : 
-                                                       selectedImage2Index == index ? Color.green : Color.gray, lineWidth: 2)
-                                        )
-                                        .onTapGesture {
-                                            selectImageForComparison(index: index)
-                                        }
-                                    
-                                    Text("Изображение \(index + 1)")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                    
-                                    if embeddingService.embeddings.indices.contains(index) && !embeddingService.embeddings[index].isEmpty {
-                                        Image(systemName: "checkmark.circle.fill")
-                                            .foregroundColor(.green)
-                                            .font(.caption)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // Кнопки управления
-                if !selectedImages.isEmpty {
-                    VStack(spacing: 15) {
-                        // Генерация эмбеддингов для всех изображений
-                        Button(action: {
-                            generateAllEmbeddings()
-                        }) {
-                            HStack {
-                                if isGeneratingEmbeddings {
-                                    ProgressView()
-                                        .scaleEffect(0.8)
-                                        .foregroundColor(.white)
-                                }
-                                Text(isGeneratingEmbeddings ? "Генерируем эмбеддинги..." : "Сгенерировать эмбеддинги для всех")
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding()
-                            .background(embeddingService.embeddings.count == selectedImages.count ? Color.gray : Color.green)
-                            .cornerRadius(10)
-                        }
-                        .disabled(isGeneratingEmbeddings || embeddingService.embeddings.count == selectedImages.count)
-                        
-                        // Сравнение выбранных изображений
-                        if embeddingService.embeddings.count >= 2 {
-                            Button(action: {
-                                compareSelectedImages()
-                            }) {
-                                HStack {
-                                    if isComparing {
-                                        ProgressView()
-                                            .scaleEffect(0.8)
-                                            .foregroundColor(.white)
-                                    }
-                                    Text(isComparing ? "Сравниваем..." : "Сравнить выбранные изображения")
-                                }
-                                .font(.headline)
-                                .foregroundColor(.white)
-                                .padding()
-                                .background(Color.purple)
-                                .cornerRadius(10)
-                            }
-                            .disabled(isComparing)
-                        }
-                    }
-                }
-                
-                // Результаты сравнения
-                if !similarities.isEmpty {
-                    VStack(spacing: 15) {
-                        Text("Результаты сравнения")
-                            .font(.headline)
-                            .padding(.top)
-                        
-                        if similarities.count == 1 && similarities[0].count == 1 {
-                            // Результат сравнения двух изображений
-                            let similarity = similarities[0][0]
-                            VStack(spacing: 10) {
-                                Text("Сравнение изображений \(selectedImage1Index + 1) и \(selectedImage2Index + 1)")
+                        ForEach(Array(similarGroups.enumerated()), id: \.offset) { groupIndex, group in
+                            VStack(alignment: .leading, spacing: 10) {
+                                Text("Группа \(groupIndex + 1)")
                                     .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                                    .fontWeight(.semibold)
                                 
-                                Text("Коэффициент сходства: \(String(format: "%.2f", similarity * 100))%")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
-                                    .foregroundColor(similarityColor(for: similarity))
-                                
-                                Text(similarityDescription(for: similarity))
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .padding()
-                            .background(Color.gray.opacity(0.1))
-                            .cornerRadius(10)
-                        } else {
-                            // Матрица сравнений всех изображений
-                            Text("Матрица сходства всех изображений")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                VStack(spacing: 5) {
-                                    // Заголовки
-                                    HStack(spacing: 5) {
-                                        Text("")
-                                            .frame(width: 60)
-                                        ForEach(0..<selectedImages.count, id: \.self) { i in
-                                            Text("\(i + 1)")
-                                                .font(.caption)
-                                                .frame(width: 40)
-                                        }
-                                    }
-                                    
-                                    // Строки матрицы
-                                    ForEach(0..<selectedImages.count, id: \.self) { i in
-                                        HStack(spacing: 5) {
-                                            Text("\(i + 1)")
-                                                .font(.caption)
-                                                .frame(width: 60)
-                                            
-                                            ForEach(0..<selectedImages.count, id: \.self) { j in
-                                                if i == j {
-                                                    Text("—")
-                                                        .font(.caption)
-                                                        .frame(width: 40)
-                                                        .foregroundColor(.gray)
-                                                } else if similarities.indices.contains(i) && similarities[i].indices.contains(j) {
-                                                    let similarity = similarities[i][j]
-                                                    Text("\(Int(similarity * 100))%")
-                                                        .font(.caption)
-                                                        .frame(width: 40)
-                                                        .foregroundColor(similarityColor(for: similarity))
-                                                        .background(similarityColor(for: similarity).opacity(0.2))
-                                                        .cornerRadius(4)
-                                                } else {
-                                                    Text("—")
-                                                        .font(.caption)
-                                                        .frame(width: 40)
-                                                        .foregroundColor(.gray)
-                                                }
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 10) {
+                                        ForEach(group, id: \.self) { imageIndex in
+                                            VStack(spacing: 5) {
+                                                Image(uiImage: selectedImages[imageIndex])
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: 80, height: 80)
+                                                    .cornerRadius(8)
+                                                
+                                                Text("\(imageIndex + 1)")
+                                                    .font(.caption2)
+                                                    .foregroundColor(.secondary)
                                             }
                                         }
                                     }
+                                    .padding(.horizontal)
                                 }
-                                .padding()
                             }
+                            .padding()
                             .background(Color.gray.opacity(0.1))
                             .cornerRadius(10)
                         }
@@ -233,35 +153,14 @@ struct ContentView: View {
                 }
                 selectedImages = newImages
                 embeddingService.embeddings = []
-                similarities = []
-                selectedImage1Index = 0
-                selectedImage2Index = min(1, selectedImages.count - 1)
+                similarGroups = []
             }
         }
     }
     
     // MARK: - Helper Functions
     
-    private func selectImageForComparison(index: Int) {
-        if selectedImage1Index == index {
-            // Если нажали на первое изображение, переключаем на второе
-            if selectedImage2Index != index {
-                selectedImage1Index = selectedImage2Index
-                selectedImage2Index = index
-            }
-        } else if selectedImage2Index == index {
-            // Если нажали на второе изображение, переключаем на первое
-            if selectedImage1Index != index {
-                selectedImage2Index = selectedImage1Index
-                selectedImage1Index = index
-            }
-        } else {
-            // Если нажали на новое изображение, делаем его первым
-            selectedImage1Index = index
-        }
-    }
-    
-    private func generateAllEmbeddings() {
+    private func generateEmbeddings() {
         isGeneratingEmbeddings = true
         
         Task {
@@ -273,54 +172,128 @@ struct ContentView: View {
         }
     }
     
-    private func compareSelectedImages() {
-        guard selectedImage1Index < embeddingService.embeddings.count && selectedImage2Index < embeddingService.embeddings.count else { return }
+    private func findSimilarImages() {
+        guard !selectedImages.isEmpty else { return }
         
-        isComparing = true
-        similarities = []
+        isSearchingSimilar = true
+        similarGroups = []
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            let result = embeddingService.compareEmbeddings(embeddingService.embeddings[selectedImage1Index], embeddingService.embeddings[selectedImage2Index])
-            similarities = [[result]]
-            isComparing = false
+            print("🔍 Ищем похожие изображения с помощью кластеризации...")
+            
+            // Используем кластеризацию для группировки
+            if self.embeddingService.useClustering {
+                // Получаем группы через кластеризацию
+                var allGroups: [[Int]] = []
+                
+                for i in 0..<self.selectedImages.count {
+                    let groups = self.embeddingService.getSimilarImageGroups(
+                        for: i,
+                        similarityThreshold: 0.7
+                    )
+                    
+                    // Преобразуем ImageGroup в простые массивы индексов
+                    for group in groups {
+                        let indices = group.images.map { $0.embedding.imageIndex }
+                        if indices.count > 1 {
+                            allGroups.append(indices)
+                        }
+                    }
+                }
+                
+                // Объединяем дублирующиеся группы
+                self.similarGroups = self.mergeDuplicateGroups(allGroups)
+            } else {
+                // Fallback к простому алгоритму
+                var groups: [[Int]] = []
+                var used: Set<Int> = []
+                let similarityThreshold: Float = 0.7
+                
+                for i in 0..<self.selectedImages.count {
+                    if used.contains(i) { continue }
+                    
+                    var currentGroup: [Int] = [i]
+                    used.insert(i)
+                    
+                    for j in (i+1)..<self.selectedImages.count {
+                        if used.contains(j) { continue }
+                        
+                        let similarity = self.embeddingService.compareEmbeddings(
+                            self.embeddingService.embeddings[i],
+                            self.embeddingService.embeddings[j]
+                        )
+                        
+                        if similarity >= similarityThreshold {
+                            currentGroup.append(j)
+                            used.insert(j)
+                        }
+                    }
+                    
+                    if currentGroup.count > 1 {
+                        groups.append(currentGroup)
+                    }
+                }
+                
+                self.similarGroups = groups
+            }
+            
+            self.isSearchingSimilar = false
+            print("✅ Найдено \(self.similarGroups.count) групп похожих изображений")
         }
     }
     
-    // MARK: - Computed Properties
-    
-    private func similarityColor(for similarity: Float) -> Color {
-        switch similarity {
-        case 0.8...1.0:
-            return .green
-        case 0.5..<0.8:
-            return .orange
-        case 0.0..<0.5:
-            return .red
-        default:
-            return .gray
+    private func mergeDuplicateGroups(_ groups: [[Int]]) -> [[Int]] {
+        var mergedGroups: [Set<Int>] = []
+        
+        for group in groups {
+            let groupSet = Set(group)
+            var merged = false
+            
+            for i in 0..<mergedGroups.count {
+                if !mergedGroups[i].isDisjoint(with: groupSet) {
+                    mergedGroups[i] = mergedGroups[i].union(groupSet)
+                    merged = true
+                    break
+                }
+            }
+            
+            if !merged {
+                mergedGroups.append(groupSet)
+            }
         }
-    }
-    
-    private func similarityDescription(for similarity: Float) -> String {
-        switch similarity {
-        case 0.9...1.0:
-            return "Очень похожие изображения! Почти идентичны."
-        case 0.8..<0.9:
-            return "Очень похожие изображения."
-        case 0.6..<0.8:
-            return "Похожие изображения."
-        case 0.4..<0.6:
-            return "Умеренно похожие изображения."
-        case 0.2..<0.4:
-            return "Слабо похожие изображения."
-        case 0.0..<0.2:
-            return "Разные изображения."
-        default:
-            return "Не удалось сравнить."
-        }
+        
+        return mergedGroups.map { Array($0).sorted() }.filter { $0.count > 1 }
     }
 }
 
 #Preview {
-    ContentView()
+    VStack(spacing: 20) {
+        Text("Сравнение изображений")
+            .font(.largeTitle)
+            .fontWeight(.bold)
+        
+        Text("Выберите изображения для сравнения")
+            .font(.headline)
+            .foregroundColor(.primary)
+        
+        Button("Выбрать изображения (до 20)") {
+            // Действие
+        }
+        .font(.headline)
+        .foregroundColor(.white)
+        .padding()
+        .background(Color.blue)
+        .cornerRadius(10)
+        
+        Text("Приложение готово к работе")
+            .font(.subheadline)
+            .foregroundColor(.secondary)
+            .padding()
+        
+        Text("Поддерживает множественный выбор и кластеризацию")
+            .font(.caption)
+            .foregroundColor(.secondary)
+            .multilineTextAlignment(.center)
+    }
+    .padding()
 }
