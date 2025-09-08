@@ -4,6 +4,7 @@ import CoreML
 import UIKit
 import Photos
 import NaturalLanguage
+import CoreVideo
 
 struct Photo {
     let asset: PHAsset
@@ -11,9 +12,9 @@ struct Photo {
 }
 
 class ImageEmbeddingService {
-    private var mobileClipImageModel: MLModel?
+    private var mobileClipImageModel: mobileclip_s0_image?
     private var mobileClipTextModel: mobileclip_s0_text?
-    private var concurrentTasks = 5
+    private var concurrentTasks = 10
 
     var processedPhotos: [Photo] = []
     var tokenizer: CLIPTokenizer?
@@ -39,21 +40,18 @@ class ImageEmbeddingService {
     }
     
     private func loadImageModel() {
-        if let modelURL = Bundle.main.url(forResource: "mobileclip_s0_image", withExtension: "mlmodelc") {
-            do {
-                mobileClipImageModel = try MLModel(contentsOf: modelURL)
-                print("✅ Модель изображений MobileCLIP загружена из Bundle!")
-                return
-            } catch {
-                print("❌ Ошибка загрузки модели изображений из Bundle: \(error)")
-            }
+        do {
+            mobileClipImageModel = try mobileclip_s0_image()
+            print("Image Model loaded")
+        } catch {
+            print("❌ Ошибка загрузки модели изображений из Bundle: \(error)")
         }
     }
     
     private func loadTextModel() {
         do {
             mobileClipTextModel = try mobileclip_s0_text()
-            print("Model loaded")
+            print("Text Model loaded")
         } catch {
             print("❌ Ошибка загрузки модели текста из Bundle: \(error)")
         }
@@ -106,57 +104,35 @@ class ImageEmbeddingService {
         }
     }
 
-    func generateEmbedding(from image: UIImage) async -> [Float] {
-        guard let mobileClipImageModel = mobileClipImageModel else {
-            print("❌ Image model not loaded")
-            return []
-        }
-
-        guard let cgImage = image.cgImage else {
-            print("❌ Error getting cgImage")
-            return []
-        }
-
-        return await withCheckedContinuation { continuation in
-            let request = VNCoreMLRequest(model: try! VNCoreMLModel(for: mobileClipImageModel)) { request, error in
-                if let error = error {
-                    print("❌ Error: \(error)")
-                    continuation.resume(returning: [])
-                    return
-                }
-                
-                guard let results = request.results as? [VNCoreMLFeatureValueObservation],
-                      let firstResult = results.first,
-                      let multiArray = firstResult.featureValue.multiArrayValue else {
-                    print("❌ Error getting embedding")
-                    continuation.resume(returning: [])
-                    return
-                }
-                
-                let result = self.convertMultiArrayToFloatArray(multiArray)
-                continuation.resume(returning: result)
+    func generateEmbedding(from pixelBuffer: CVPixelBuffer) async -> [Float] {
+        do {
+            guard let mobileClipImageModel = mobileClipImageModel else {
+                print("❌ Image model not loaded")
+                return []
             }
             
-            request.imageCropAndScaleOption = VNImageCropAndScaleOption.centerCrop
-
-            let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
-
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    try handler.perform([request])
-                } catch {
-                    print("❌ Error: \(error)")
-                    continuation.resume(returning: [])
-                }
+            let output = try await mobileClipImageModel.prediction(image: pixelBuffer)
+            
+            // Конвертируем MLMultiArray в [Float]
+            let count = output.final_emb_1.count
+            var result = [Float](repeating: 0, count: count)
+            
+            for i in 0..<count {
+                result[i] = Float(truncating: output.final_emb_1[i])
             }
+            
+            return result
+        } catch {
+            print("❌ Error: \(error)")
+            return []
         }
     }
 
-    func generateEmbeddings(from images: [UIImage]) async -> [[Float]] {
+    func generateEmbeddings(from pixelBuffers: [CVPixelBuffer]) async -> [[Float]] {
         var results: [[Float]] = []
         
-        for image in images {
-            let embedding = await generateEmbedding(from: image)
+        for pixelBuffer in pixelBuffers {
+            let embedding = await generateEmbedding(from: pixelBuffer)
             results.append(embedding)
         }
         
@@ -246,13 +222,13 @@ class ImageEmbeddingService {
     }
 
     private func processSingleAsset(_ asset: PHAsset) async -> Photo? {
-        // Конвертируем ассет в миниатюру
-        guard let thumbnail = await convertAssetToThumbnail(asset) else {
-            print("❌ Не удалось создать миниатюру для ассета: \(asset.localIdentifier)")
+        // Конвертируем ассет в CVPixelBuffer
+        guard let pixelBuffer = await convertAssetToThumbnail(asset) else {
+            print("❌ Не удалось создать CVPixelBuffer для ассета: \(asset.localIdentifier)")
             return nil
         }
         
-        let embedding = await generateEmbedding(from: thumbnail)
+        let embedding = await generateEmbedding(from: pixelBuffer)
         
         if embedding.isEmpty {
             print("❌ Не удалось сгенерировать эмбединг для ассета: \(asset.localIdentifier)")
@@ -273,7 +249,7 @@ class ImageEmbeddingService {
         return result
     }
 
-    private func convertAssetToThumbnail(_ asset: PHAsset) async -> UIImage? {
+    private func convertAssetToThumbnail(_ asset: PHAsset) async -> CVPixelBuffer? {
         return await withCheckedContinuation { continuation in
             let imageManager = PHImageManager.default()
             let requestOptions = PHImageRequestOptions()
@@ -283,8 +259,8 @@ class ImageEmbeddingService {
             requestOptions.resizeMode = .exact
             requestOptions.isNetworkAccessAllowed = false
             
-            // Размер миниатюры для эмбедингов (можно настроить)
-            let targetSize = CGSize(width: 224, height: 224)
+            // Размер миниатюры для эмбедингов (MobileCLIP требует 256x256)
+            let targetSize = CGSize(width: 256, height: 256)
             
             imageManager.requestImage(
                 for: asset,
@@ -292,8 +268,63 @@ class ImageEmbeddingService {
                 contentMode: .aspectFill,
                 options: requestOptions
             ) { image, info in
-                continuation.resume(returning: image)
+                guard let image = image,
+                      let cgImage = image.cgImage else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                // Проверяем размер изображения и создаем CVPixelBuffer точно 256x256
+                print("🖼️ Исходное изображение: \(cgImage.width)x\(cgImage.height)")
+                let pixelBuffer = self.cgImageToPixelBuffer(cgImage)
+                if let buffer = pixelBuffer {
+                    print("✅ CVPixelBuffer создан: \(CVPixelBufferGetWidth(buffer))x\(CVPixelBufferGetHeight(buffer))")
+                }
+                continuation.resume(returning: pixelBuffer)
             }
         }
+    }
+    
+    private func cgImageToPixelBuffer(_ cgImage: CGImage) -> CVPixelBuffer? {
+        // MobileCLIP требует точно 256x256
+        let targetWidth = 256
+        let targetHeight = 256
+        
+        var pixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            targetWidth,
+            targetHeight,
+            kCVPixelFormatType_32ARGB,
+            nil,
+            &pixelBuffer
+        )
+        
+        guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+            return nil
+        }
+        
+        CVPixelBufferLockBaseAddress(buffer, CVPixelBufferLockFlags(rawValue: 0))
+        defer { CVPixelBufferUnlockBaseAddress(buffer, CVPixelBufferLockFlags(rawValue: 0)) }
+        
+        let pixelData = CVPixelBufferGetBaseAddress(buffer)
+        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+        
+        guard let context = CGContext(
+            data: pixelData,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
+            space: rgbColorSpace,
+            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
+        ) else {
+            return nil
+        }
+        
+        // Рисуем изображение с масштабированием до точного размера 256x256
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight))
+        
+        return buffer
     }
 }

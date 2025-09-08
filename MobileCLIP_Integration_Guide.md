@@ -20,13 +20,13 @@ model, _, preprocess = create_model_and_transforms('mobileclip_s0', pretrained='
 
 # Конвертация в Core ML
 model.eval()
-example_input = torch.randn(1, 3, 224, 224)
+example_input = torch.randn(1, 3, 256, 256)
 traced_model = torch.jit.trace(model, example_input)
 
 # Сохранение в Core ML формате
 mlmodel = ct.convert(
     traced_model,
-    inputs=[ct.TensorType(shape=(1, 3, 224, 224))],
+    inputs=[ct.TensorType(shape=(1, 3, 256, 256))],
     outputs=[ct.TensorType()]
 )
 mlmodel.save("MobileCLIP.mlmodel")
@@ -61,8 +61,8 @@ MobileCLIP требует специфической предобработки 
 
 ```swift
 private func preprocessImage(_ image: UIImage) -> UIImage? {
-    // Изменение размера до 224x224
-    let targetSize = CGSize(width: 224, height: 224)
+    // Изменение размера до 256x256 (MobileCLIP требует именно этот размер)
+    let targetSize = CGSize(width: 256, height: 256)
     
     UIGraphicsBeginImageContextWithOptions(targetSize, false, 1.0)
     image.draw(in: CGRect(origin: .zero, size: targetSize))

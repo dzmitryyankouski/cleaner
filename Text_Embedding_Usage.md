@@ -75,7 +75,7 @@ class SearchViewModel: ObservableObject {
 
 ```swift
 let textEmbedding = await service.textToEmbedding(text: "sunset")
-let imageEmbedding = await service.generateEmbedding(from: someImage)
+let imageEmbedding = await service.generateEmbedding(from: somePixelBuffer)
 
 let similarity = service.cosineSimilarity(textEmbedding, imageEmbedding)
 if similarity > 0.7 {
