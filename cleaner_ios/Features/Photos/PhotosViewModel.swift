@@ -50,7 +50,7 @@ class PhotosViewModel: ObservableObject {
     }
 
     private func group() async {
-        groups = await clusterService.getImageGroups(for: embeddings, threshold: 0.88)
+        groups = await clusterService.getImageGroups(for: embeddings, threshold: 0.85)
         print("🔄 Группировка завершена! Найдено \(groups.count) групп", groups)
         isIndexing = false
     }

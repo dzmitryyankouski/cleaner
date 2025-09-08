@@ -6,6 +6,7 @@ class SearchViewModel: ObservableObject {
     @Published var photos: [PHAsset] = []
     @Published var processedPhotosCount = 0
     @Published var isIndexing = false
+    @Published var searchText: String = ""
 
     var clusterService = ClusterService()
     var imageEmbeddingService = ImageEmbeddingService()
@@ -62,7 +63,9 @@ class SearchViewModel: ObservableObject {
         isIndexing = false
     }
 
-    func searchImages() {
-        // TODO: Реализовать поиск изображений
+    func searchImages() async {
+        print("🔍 Поиск изображений: \(searchText)")
+        let results = await imageEmbeddingService.textToEmbedding(text: searchText)
+        print("🔍 Результаты поиска: \(results)")
     }
 }

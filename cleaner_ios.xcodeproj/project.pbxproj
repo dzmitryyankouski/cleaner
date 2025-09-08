@@ -195,6 +195,9 @@
 			);
 			mainGroup = CDFE91442E6C8A440017D2B6;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				CDFE920A2E6E2F860017D2B6 /* XCRemoteSwiftPackageReference "ml-mobileclip" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CDFE914E2E6C8A440017D2B6 /* Products */;
 			projectDirPath = "";
@@ -554,6 +557,17 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		CDFE920A2E6E2F860017D2B6 /* XCRemoteSwiftPackageReference "ml-mobileclip" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/apple/ml-mobileclip";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = CDFE91452E6C8A440017D2B6 /* Project object */;
 }

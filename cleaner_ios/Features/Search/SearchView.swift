@@ -3,20 +3,18 @@ import Photos
 import PhotosUI
 
 struct SearchView: View {
-    @State private var searchText: String = ""
-    @State private var resultText: String = ""
-
     @StateObject private var viewModel = SearchViewModel()
 
     var body: some View {
         VStack(spacing: 20) {
-            TextField("Введите текст для поиска", text: $searchText)
+            TextField("Введите текст для поиска", text: $viewModel.searchText)
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding(.horizontal)
 
             Button(action: {
-                // Здесь может быть логика поиска
-                resultText = "Вы ввели: \(searchText)"
+                Task {
+                    await viewModel.searchImages()
+                }
             }) {
                 Text("Поиск")
                     .font(.headline)
@@ -27,13 +25,7 @@ struct SearchView: View {
                     .cornerRadius(10)
             }
             .padding(.horizontal)
-
-            if !resultText.isEmpty {
-                Text(resultText)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .padding()
-            }
+            .disabled(viewModel.isIndexing)
 
             Spacer()
 
