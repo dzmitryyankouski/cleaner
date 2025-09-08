@@ -12,10 +12,11 @@ struct Photo {
 
 class ImageEmbeddingService {
     private var mobileClipImageModel: MLModel?
-    private var mobileClipTextModel: MLModel?
+    private var mobileClipTextModel: mobileclip_s0_text?
     private var concurrentTasks = 5
 
     var processedPhotos: [Photo] = []
+    var tokenizer: CLIPTokenizer?
     
     // Callback для уведомления об обновлениях
     var onPhotoProcessed: ((Photo) -> Void)?
@@ -24,6 +25,17 @@ class ImageEmbeddingService {
     init() {
         loadImageModel()
         loadTextModel()
+        loadTokenizer()
+    }
+    
+    private func loadTokenizer() {
+        do {
+            tokenizer = try CLIPTokenizer()
+            print("✅ CLIP токенизатор загружен!")
+        } catch {
+            print("❌ Ошибка загрузки токенизатора: \(error)")
+            tokenizer = nil
+        }
     }
     
     private func loadImageModel() {
@@ -39,22 +51,12 @@ class ImageEmbeddingService {
     }
     
     private func loadTextModel() {
-
         do {
-            var model = try mobileclip_s0_text()
-            print("Model loaded: \(model)")
+            mobileClipTextModel = try mobileclip_s0_text()
+            print("Model loaded")
         } catch {
             print("❌ Ошибка загрузки модели текста из Bundle: \(error)")
         }
-        // if let modelURL = Bundle.main.url(forResource: "mobileclip_s0_text", withExtension: "mlmodelc") {
-        //     do {
-        //         mobileClipTextModel = try MLModel(contentsOf: modelURL)
-        //         print("✅ Модель текста MobileCLIP загружена из Bundle!")
-        //         return
-        //     } catch {
-        //         print("❌ Ошибка загрузки модели текста из Bundle: \(error)")
-        //     }
-        // }
     }
 
     func indexPhotos(photos: [PHAsset]) async {
@@ -162,9 +164,39 @@ class ImageEmbeddingService {
     }
 
     func textToEmbedding(text: String) async -> [Float] {
-        
+        do {
+            guard let tokenizer = tokenizer else {
+                print("❌ Токенизатор не загружен")
+                return []
+            }
 
-        return []
+            guard let model = mobileClipTextModel else {
+                print("❌ Text model not loaded")
+                return []
+            }
+
+            let inputIds = tokenizer.encode_full(text: text)
+                
+            let inputArray = try MLMultiArray(shape: [1, 77], dataType: .int32)
+
+            for (index, element) in inputIds.enumerated() {
+                inputArray[index] = NSNumber(value: element)
+            }
+
+            let output = try model.prediction(text: inputArray).final_emb_1
+            
+            let count = output.count
+            var result = [Float](repeating: 0, count: count)
+
+            for i in 0..<count {
+                result[i] = Float(truncating: output[i])
+            }
+
+            return result
+        } catch {
+            print(error.localizedDescription)
+            return []
+        }
     }
     
     /// Вычисляет косинусное сходство между двумя эмбедингами
