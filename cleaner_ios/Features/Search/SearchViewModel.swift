@@ -2,11 +2,15 @@ import Foundation
 import Photos
 import UIKit
 
+@MainActor
 class SearchViewModel: ObservableObject {
     @Published var photos: [PHAsset] = []
     @Published var processedPhotosCount = 0
     @Published var isIndexing = false
     @Published var searchText: String = ""
+    @Published var searchResults: [PHAsset] = []
+    @Published var searchResultsWithScores: [(PHAsset, Float)] = []
+    @Published var isSearching = false
 
     var clusterService = ClusterService()
     var imageEmbeddingService = ImageEmbeddingService()
@@ -24,7 +28,7 @@ class SearchViewModel: ObservableObject {
         }
 
         imageEmbeddingService.onPhotoProcessed = { [weak self] photo in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 self?.processedPhotosCount = self?.imageEmbeddingService.processedPhotos.count ?? 0
             }
         }
@@ -64,8 +68,21 @@ class SearchViewModel: ObservableObject {
     }
 
     func searchImages() async {
+        guard !searchText.isEmpty else { return }
+        
         print("🔍 Поиск изображений: \(searchText)")
-        let results = await imageEmbeddingService.textToEmbedding(text: searchText)
-        print("🔍 Результаты поиска: \(results)")
+        
+        isSearching = true
+        
+        let results = await imageEmbeddingService.findSimilarPhotos(query: searchText)
+        
+        // Сохраняем результаты с оценками сходства (уже отсортированы по убыванию)
+        searchResultsWithScores = results.map { ($0.0.asset, $0.1) }
+        searchResults = results.map { $0.0.asset }
+        isSearching = false
+        
+        for (index, result) in results.enumerated() {
+            print("  \(index + 1). Сходство: \(String(format: "%.3f", result.1))")
+        }
     }
 }

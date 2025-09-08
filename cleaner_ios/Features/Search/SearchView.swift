@@ -16,16 +16,23 @@ struct SearchView: View {
                     await viewModel.searchImages()
                 }
             }) {
-                Text("Поиск")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(10)
+                HStack {
+                    if viewModel.isSearching {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .foregroundColor(.white)
+                    }
+                    Text(viewModel.isSearching ? "Поиск..." : "Поиск")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.blue)
+                .cornerRadius(10)
             }
             .padding(.horizontal)
-            .disabled(viewModel.isIndexing)
+            .disabled(viewModel.isIndexing || viewModel.isSearching)
 
             Spacer()
 
@@ -44,8 +51,65 @@ struct SearchView: View {
             .padding()
         }
         
-        // Выводим список всех фотографий из viewModel.photos
-        if !viewModel.photos.isEmpty {
+        // Отображаем результаты поиска или все фотографии
+        if !viewModel.searchResults.isEmpty {
+            // Показываем результаты поиска
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Результаты поиска (\(viewModel.searchResults.count)):")
+                            .font(.headline)
+                            .foregroundColor(.blue)
+                        
+                        Text("По запросу: \"\(viewModel.searchText)\"")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button("Очистить") {
+                        viewModel.searchResults = []
+                        viewModel.searchResultsWithScores = []
+                        viewModel.searchText = ""
+                    }
+                    .font(.caption)
+                    .foregroundColor(.red)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color.red.opacity(0.1))
+                    .cornerRadius(8)
+                }
+            }
+            .padding(.horizontal)
+            
+            ScrollView {
+                LazyVGrid(columns: [
+                    GridItem(.adaptive(minimum: 100), spacing: 10)
+                ], spacing: 10) {
+                    ForEach(Array(viewModel.searchResultsWithScores.enumerated()), id: \.element.0.localIdentifier) { index, result in
+                        VStack(spacing: 4) {
+                            PhotoThumbnailView(asset: result.0)
+                                .frame(width: 100, height: 100)
+                                .cornerRadius(8)
+                                .shadow(radius: 2)
+                            
+                            // Показываем оценку сходства
+                            Text("\(String(format: "%.1f", result.1 * 100))%")
+                                .font(.caption2)
+                                .foregroundColor(.secondary)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                                .background(Color.gray.opacity(0.1))
+                                .cornerRadius(4)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+                .padding(.vertical)
+            }
+        } else if !viewModel.photos.isEmpty {
+            // Показываем все фотографии, если нет результатов поиска
             VStack(alignment: .leading, spacing: 8) {
                 Text("Все фотографии (\(viewModel.photos.count)):")
                     .font(.headline)
