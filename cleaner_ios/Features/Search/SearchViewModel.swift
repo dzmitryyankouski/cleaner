@@ -79,7 +79,7 @@ class SearchViewModel: ObservableObject {
 
         print("🔍 Переведенный текст: \(translatedText)")
         
-        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText)
+        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText, minSimilarity: 0.14)
         
         // Сохраняем результаты с оценками сходства (уже отсортированы по убыванию)
         searchResultsWithScores = results.map { ($0.0.asset, $0.1) }

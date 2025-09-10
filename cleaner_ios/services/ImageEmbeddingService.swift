@@ -202,7 +202,7 @@ class ImageEmbeddingService {
     }
     
     /// Находит наиболее похожие фотографии по текстовому запросу
-    func findSimilarPhotos(query: String, limit: Int = 10) async -> [(Photo, Float)] {
+    func findSimilarPhotos(query: String, minSimilarity: Float = 0.14) async -> [(Photo, Float)] {
         let queryEmbedding = await textToEmbedding(text: query)
         
         guard !queryEmbedding.isEmpty else {
@@ -217,8 +217,13 @@ class ImageEmbeddingService {
             similarities.append((photo, similarity))
         }
         
-        // Сортируем по убыванию сходства и возвращаем топ результатов
-        return similarities.sorted { $0.1 > $1.1 }.prefix(limit).map { $0 }
+        // Фильтруем по минимальному порогу сходства (14%) и сортируем по убыванию
+        let filteredResults = similarities
+            .filter { $0.1 >= minSimilarity }
+            .sorted { $0.1 > $1.1 }
+        
+        // Возвращаем топ результатов (но не больше чем есть после фильтрации)
+        return Array(filteredResults)
     }
 
     private func processSingleAsset(_ asset: PHAsset) async -> Photo? {
