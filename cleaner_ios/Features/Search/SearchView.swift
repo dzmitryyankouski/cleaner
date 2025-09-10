@@ -6,140 +6,148 @@ struct SearchView: View {
     @StateObject private var viewModel = SearchViewModel()
 
     var body: some View {
-        VStack(spacing: 20) {
-            TextField("Введите текст для поиска", text: $viewModel.searchText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding(.horizontal)
-
-            Button(action: {
-                Task {
-                    await viewModel.searchImages()
+        ZStack {
+            Color.clear
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
                 }
-            }) {
-                HStack {
-                    if viewModel.isSearching {
-                        ProgressView()
-                            .scaleEffect(0.8)
+            
+            VStack(spacing: 20) {
+                TextField("Введите текст для поиска", text: $viewModel.searchText)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(.horizontal)
+
+                Button(action: {
+                    Task {
+                        await viewModel.searchImages()
+                    }
+                }) {
+                    HStack {
+                        if viewModel.isSearching {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .foregroundColor(.white)
+                        }
+                        Text(viewModel.isSearching ? "Поиск..." : "Поиск")
+                            .font(.headline)
                             .foregroundColor(.white)
                     }
-                    Text(viewModel.isSearching ? "Поиск..." : "Поиск")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .cornerRadius(10)
                 }
-                .padding()
-                .frame(maxWidth: .infinity)
-                .background(Color.blue)
-                .cornerRadius(10)
-            }
-            .padding(.horizontal)
-            .disabled(viewModel.isIndexing || viewModel.isSearching)
+                .padding(.horizontal)
+                .disabled(viewModel.isIndexing || viewModel.isSearching)
 
-            Spacer()
+                Spacer()
 
-        // Индикатор прогресса индексации
-        if viewModel.isIndexing {
-            VStack(spacing: 12) {
-                ProgressView()
-                    .scaleEffect(1.2)
-                Text("Индексация фотографий...")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                Text("Обработано: \(viewModel.processedPhotosCount) из \(viewModel.photos.count)")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding()
-        }
-        
-        // Отображаем результаты поиска или все фотографии
-        if !viewModel.searchResults.isEmpty {
-            // Показываем результаты поиска
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Результаты поиска (\(viewModel.searchResults.count)):")
-                            .font(.headline)
-                            .foregroundColor(.blue)
-                        
-                        Text("По запросу: \"\(viewModel.searchText)\"")
+                // Индикатор прогресса индексации
+                if viewModel.isIndexing {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Индексация фотографий...")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
+                        Text("Обработано: \(viewModel.processedPhotosCount) из \(viewModel.photos.count)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
-                    
-                    Spacer()
-                    
-                    Button("Очистить") {
-                        viewModel.searchResults = []
-                        viewModel.searchResultsWithScores = []
-                        viewModel.searchText = ""
-                    }
-                    .font(.caption)
-                    .foregroundColor(.red)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.red.opacity(0.1))
-                    .cornerRadius(8)
+                    .padding()
                 }
-            }
-            .padding(.horizontal)
-            
-            ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.adaptive(minimum: 100), spacing: 10)
-                ], spacing: 10) {
-                    ForEach(Array(viewModel.searchResultsWithScores.enumerated()), id: \.element.0.localIdentifier) { index, result in
-                        VStack(spacing: 4) {
-                            PhotoThumbnailView(asset: result.0)
-                                .frame(width: 100, height: 100)
-                                .cornerRadius(8)
-                                .shadow(radius: 2)
+                
+                // Отображаем результаты поиска или все фотографии
+                if !viewModel.searchResults.isEmpty {
+                    // Показываем результаты поиска
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Результаты поиска (\(viewModel.searchResults.count)):")
+                                    .font(.headline)
+                                    .foregroundColor(.blue)
+                                
+                                Text("По запросу: \"\(viewModel.searchText)\"")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
                             
-                            // Показываем оценку сходства
-                            Text("\(String(format: "%.1f", result.1 * 100))%")
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
-                                .padding(.horizontal, 4)
-                                .padding(.vertical, 2)
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(4)
+                            Spacer()
+                            
+                            Button("Очистить") {
+                                viewModel.searchResults = []
+                                viewModel.searchResultsWithScores = []
+                                viewModel.searchText = ""
+                            }
+                            .font(.caption)
+                            .foregroundColor(.red)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(8)
                         }
                     }
-                }
-                .padding(.horizontal)
-                .padding(.vertical)
-            }
-        } else if !viewModel.photos.isEmpty {
-            // Показываем все фотографии, если нет результатов поиска
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Все фотографии (\(viewModel.photos.count)):")
-                    .font(.headline)
-                
-                if viewModel.processedPhotosCount > 0 {
-                    Text("С эмбедингами: \(viewModel.processedPhotosCount)")
-                        .font(.subheadline)
-                        .foregroundColor(.green)
-                }
-            }
-            .padding(.horizontal)
-            ScrollView {
-                LazyVGrid(columns: [
-                    GridItem(.adaptive(minimum: 100), spacing: 10)
-                ], spacing: 10) {
-                    ForEach(viewModel.photos, id: \.localIdentifier) { asset in
-                        PhotoThumbnailView(asset: asset)
-                            .frame(width: 100, height: 100)
-                            .cornerRadius(8)
-                            .shadow(radius: 2)
+                    .padding(.horizontal)
+                    
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.adaptive(minimum: 100), spacing: 10)
+                        ], spacing: 10) {
+                            ForEach(Array(viewModel.searchResultsWithScores.enumerated()), id: \.element.0.localIdentifier) { index, result in
+                                VStack(spacing: 4) {
+                                    PhotoThumbnailView(asset: result.0)
+                                        .frame(width: 100, height: 100)
+                                        .cornerRadius(8)
+                                        .shadow(radius: 2)
+                                    
+                                    // Показываем оценку сходства
+                                    Text("\(String(format: "%.1f", result.1 * 100))%")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                        .padding(.horizontal, 4)
+                                        .padding(.vertical, 2)
+                                        .background(Color.gray.opacity(0.1))
+                                        .cornerRadius(4)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical)
                     }
+                } else if !viewModel.photos.isEmpty {
+                    // Показываем все фотографии, если нет результатов поиска
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Все фотографии (\(viewModel.photos.count)):")
+                            .font(.headline)
+                        
+                        if viewModel.processedPhotosCount > 0 {
+                            Text("С эмбедингами: \(viewModel.processedPhotosCount)")
+                                .font(.subheadline)
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .padding(.horizontal)
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.adaptive(minimum: 100), spacing: 10)
+                        ], spacing: 10) {
+                            ForEach(viewModel.photos, id: \.localIdentifier) { asset in
+                                PhotoThumbnailView(asset: asset)
+                                    .frame(width: 100, height: 100)
+                                    .cornerRadius(8)
+                                    .shadow(radius: 2)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical)
+                    }
+                } else {
+                    Text("Нет фотографий")
+                        .foregroundColor(.secondary)
+                        .padding()
                 }
-                .padding(.horizontal)
-                .padding(.vertical)
             }
-        } else {
-            Text("Нет фотографий")
-                .foregroundColor(.secondary)
-                .padding()
-        }
         }
         .padding(.top, 40)
     }
