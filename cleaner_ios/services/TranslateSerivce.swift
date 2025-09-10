@@ -1,8 +1,13 @@
 import Foundation
 
 class TranslateService {
-    private let apiKey = "AIzaSyDaPquEabNujZ8pBKYd5gHypbBcCYRtsiw"
+    private let apiKey: String
     private let session = URLSession.shared
+    
+    init() {
+        // Читаем API ключ через ConfigService
+        self.apiKey = ConfigService.shared.getValue(for: "GOOGLE_TRANSLATE_API_KEY")!
+    }
 
     /// Переводит текст с помощью Google Translate API
     /// - Parameters:

@@ -91,3 +91,7 @@ iOSInjectionProject/
 
 # Models (your custom ignore)
 models/
+
+# Environment variables
+config.env
+.env

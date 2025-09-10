@@ -85,9 +85,5 @@ class SearchViewModel: ObservableObject {
         searchResultsWithScores = results.map { ($0.0.asset, $0.1) }
         searchResults = results.map { $0.0.asset }
         isSearching = false
-        
-        for (index, result) in results.enumerated() {
-            print("  \(index + 1). Сходство: \(String(format: "%.3f", result.1))")
-        }
     }
 }

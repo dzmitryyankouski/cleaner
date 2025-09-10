@@ -47,22 +47,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CDFE914F2E6C8A440017D2B6 /* cleaner_ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = cleaner_ios;
 			sourceTree = "<group>";
 		};
 		CDFE915D2E6C8A460017D2B6 /* cleaner_iosTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = cleaner_iosTests;
 			sourceTree = "<group>";
 		};
 		CDFE91672E6C8A460017D2B6 /* cleaner_iosUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = cleaner_iosUITests;
 			sourceTree = "<group>";
 		};
@@ -138,7 +132,6 @@
 				D494269299F7405EDDA033B5 /* Pods-cleaner_iosTests.debug.xcconfig */,
 				AEB6BA16BACCEDCB3416C18A /* Pods-cleaner_iosTests.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -313,9 +306,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -352,9 +349,13 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
+			inputPaths = (
+			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -720,9 +721,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-/* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = CDFE91452E6C8A440017D2B6 /* Project object */;
 }
