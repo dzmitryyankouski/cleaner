@@ -6,6 +6,12 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		24027A46F9BB16B238198439 /* Pods_cleaner_iosTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F4DBE0FE2BE0C2DA75282265 /* Pods_cleaner_iosTests.framework */; };
+		63A591066DC0B9D79CE2F543 /* Pods_cleaner_ios.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3A6F4B98B4A45C5F55BFC599 /* Pods_cleaner_ios.framework */; };
+		AD453840C568EE642E2CE548 /* Pods_cleaner_ios_cleaner_iosUITests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 10141948AED95817BEF958F8 /* Pods_cleaner_ios_cleaner_iosUITests.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		CDFE915B2E6C8A460017D2B6 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,24 +30,39 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		07054A017BA06A50959C9EC3 /* Pods-cleaner_ios.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cleaner_ios.debug.xcconfig"; path = "Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios.debug.xcconfig"; sourceTree = "<group>"; };
+		10141948AED95817BEF958F8 /* Pods_cleaner_ios_cleaner_iosUITests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_cleaner_ios_cleaner_iosUITests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		355EE9F0E657F647190C9278 /* Pods-cleaner_ios-cleaner_iosUITests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cleaner_ios-cleaner_iosUITests.release.xcconfig"; path = "Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests.release.xcconfig"; sourceTree = "<group>"; };
+		3A6F4B98B4A45C5F55BFC599 /* Pods_cleaner_ios.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_cleaner_ios.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		6202197D954C2FC00FBB96D2 /* Pods-cleaner_ios-cleaner_iosUITests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cleaner_ios-cleaner_iosUITests.debug.xcconfig"; path = "Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests.debug.xcconfig"; sourceTree = "<group>"; };
+		7FB7A735BEF4AEB778C346B4 /* Pods-cleaner_ios.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cleaner_ios.release.xcconfig"; path = "Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios.release.xcconfig"; sourceTree = "<group>"; };
+		AEB6BA16BACCEDCB3416C18A /* Pods-cleaner_iosTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cleaner_iosTests.release.xcconfig"; path = "Target Support Files/Pods-cleaner_iosTests/Pods-cleaner_iosTests.release.xcconfig"; sourceTree = "<group>"; };
 		CDFE914D2E6C8A440017D2B6 /* cleaner_ios.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = cleaner_ios.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CDFE915A2E6C8A460017D2B6 /* cleaner_iosTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cleaner_iosTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CDFE91642E6C8A460017D2B6 /* cleaner_iosUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = cleaner_iosUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D494269299F7405EDDA033B5 /* Pods-cleaner_iosTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-cleaner_iosTests.debug.xcconfig"; path = "Target Support Files/Pods-cleaner_iosTests/Pods-cleaner_iosTests.debug.xcconfig"; sourceTree = "<group>"; };
+		F4DBE0FE2BE0C2DA75282265 /* Pods_cleaner_iosTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_cleaner_iosTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CDFE914F2E6C8A440017D2B6 /* cleaner_ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = cleaner_ios;
 			sourceTree = "<group>";
 		};
 		CDFE915D2E6C8A460017D2B6 /* cleaner_iosTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = cleaner_iosTests;
 			sourceTree = "<group>";
 		};
 		CDFE91672E6C8A460017D2B6 /* cleaner_iosUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = cleaner_iosUITests;
 			sourceTree = "<group>";
 		};
@@ -52,6 +73,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				63A591066DC0B9D79CE2F543 /* Pods_cleaner_ios.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -59,6 +81,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				24027A46F9BB16B238198439 /* Pods_cleaner_iosTests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -66,12 +89,23 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AD453840C568EE642E2CE548 /* Pods_cleaner_ios_cleaner_iosUITests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0724C65D4D38E443C6B507A3 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3A6F4B98B4A45C5F55BFC599 /* Pods_cleaner_ios.framework */,
+				10141948AED95817BEF958F8 /* Pods_cleaner_ios_cleaner_iosUITests.framework */,
+				F4DBE0FE2BE0C2DA75282265 /* Pods_cleaner_iosTests.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		CDFE91442E6C8A440017D2B6 = {
 			isa = PBXGroup;
 			children = (
@@ -79,6 +113,8 @@
 				CDFE915D2E6C8A460017D2B6 /* cleaner_iosTests */,
 				CDFE91672E6C8A460017D2B6 /* cleaner_iosUITests */,
 				CDFE914E2E6C8A440017D2B6 /* Products */,
+				E6EE9F744C685AAD00022D93 /* Pods */,
+				0724C65D4D38E443C6B507A3 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -92,6 +128,20 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		E6EE9F744C685AAD00022D93 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				07054A017BA06A50959C9EC3 /* Pods-cleaner_ios.debug.xcconfig */,
+				7FB7A735BEF4AEB778C346B4 /* Pods-cleaner_ios.release.xcconfig */,
+				6202197D954C2FC00FBB96D2 /* Pods-cleaner_ios-cleaner_iosUITests.debug.xcconfig */,
+				355EE9F0E657F647190C9278 /* Pods-cleaner_ios-cleaner_iosUITests.release.xcconfig */,
+				D494269299F7405EDDA033B5 /* Pods-cleaner_iosTests.debug.xcconfig */,
+				AEB6BA16BACCEDCB3416C18A /* Pods-cleaner_iosTests.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -99,9 +149,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CDFE916E2E6C8A460017D2B6 /* Build configuration list for PBXNativeTarget "cleaner_ios" */;
 			buildPhases = (
+				6CBBAF0CD38BCF23388C8F4A /* [CP] Check Pods Manifest.lock */,
 				CDFE91492E6C8A440017D2B6 /* Sources */,
 				CDFE914A2E6C8A440017D2B6 /* Frameworks */,
 				CDFE914B2E6C8A440017D2B6 /* Resources */,
+				1AE30A7B0817113646F23929 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -111,8 +163,6 @@
 				CDFE914F2E6C8A440017D2B6 /* cleaner_ios */,
 			);
 			name = cleaner_ios;
-			packageProductDependencies = (
-			);
 			productName = cleaner_ios;
 			productReference = CDFE914D2E6C8A440017D2B6 /* cleaner_ios.app */;
 			productType = "com.apple.product-type.application";
@@ -121,6 +171,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CDFE91712E6C8A460017D2B6 /* Build configuration list for PBXNativeTarget "cleaner_iosTests" */;
 			buildPhases = (
+				13D096132794E53B5B32DCDC /* [CP] Check Pods Manifest.lock */,
 				CDFE91562E6C8A460017D2B6 /* Sources */,
 				CDFE91572E6C8A460017D2B6 /* Frameworks */,
 				CDFE91582E6C8A460017D2B6 /* Resources */,
@@ -134,8 +185,6 @@
 				CDFE915D2E6C8A460017D2B6 /* cleaner_iosTests */,
 			);
 			name = cleaner_iosTests;
-			packageProductDependencies = (
-			);
 			productName = cleaner_iosTests;
 			productReference = CDFE915A2E6C8A460017D2B6 /* cleaner_iosTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -144,9 +193,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CDFE91742E6C8A460017D2B6 /* Build configuration list for PBXNativeTarget "cleaner_iosUITests" */;
 			buildPhases = (
+				56B21AA4BC840B6C176D4E4A /* [CP] Check Pods Manifest.lock */,
 				CDFE91602E6C8A460017D2B6 /* Sources */,
 				CDFE91612E6C8A460017D2B6 /* Frameworks */,
 				CDFE91622E6C8A460017D2B6 /* Resources */,
+				594C2BA1B580B14CB4631AAB /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -157,8 +208,6 @@
 				CDFE91672E6C8A460017D2B6 /* cleaner_iosUITests */,
 			);
 			name = cleaner_iosUITests;
-			packageProductDependencies = (
-			);
 			productName = cleaner_iosUITests;
 			productReference = CDFE91642E6C8A460017D2B6 /* cleaner_iosUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -196,7 +245,6 @@
 			mainGroup = CDFE91442E6C8A440017D2B6;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				CDFE920A2E6E2F860017D2B6 /* XCRemoteSwiftPackageReference "ml-mobileclip" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CDFE914E2E6C8A440017D2B6 /* Products */;
@@ -233,6 +281,109 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		13D096132794E53B5B32DCDC /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-cleaner_iosTests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		1AE30A7B0817113646F23929 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		56B21AA4BC840B6C176D4E4A /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-cleaner_ios-cleaner_iosUITests-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		594C2BA1B580B14CB4631AAB /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+		6CBBAF0CD38BCF23388C8F4A /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-cleaner_ios-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		CDFE91492E6C8A440017D2B6 /* Sources */ = {
@@ -309,7 +460,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -372,7 +523,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -393,6 +544,7 @@
 		};
 		CDFE916F2E6C8A460017D2B6 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 07054A017BA06A50959C9EC3 /* Pods-cleaner_ios.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -423,6 +575,7 @@
 		};
 		CDFE91702E6C8A460017D2B6 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7FB7A735BEF4AEB778C346B4 /* Pods-cleaner_ios.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -453,6 +606,7 @@
 		};
 		CDFE91722E6C8A460017D2B6 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = D494269299F7405EDDA033B5 /* Pods-cleaner_iosTests.debug.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
@@ -472,6 +626,7 @@
 		};
 		CDFE91732E6C8A460017D2B6 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = AEB6BA16BACCEDCB3416C18A /* Pods-cleaner_iosTests.release.xcconfig */;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
@@ -491,6 +646,7 @@
 		};
 		CDFE91752E6C8A460017D2B6 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6202197D954C2FC00FBB96D2 /* Pods-cleaner_ios-cleaner_iosUITests.debug.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -508,6 +664,7 @@
 		};
 		CDFE91762E6C8A460017D2B6 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 355EE9F0E657F647190C9278 /* Pods-cleaner_ios-cleaner_iosUITests.release.xcconfig */;
 			buildSettings = {
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -565,14 +722,6 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		CDFE920A2E6E2F860017D2B6 /* XCRemoteSwiftPackageReference "ml-mobileclip" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/apple/ml-mobileclip";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 	};
 	rootObject = CDFE91452E6C8A440017D2B6 /* Project object */;
