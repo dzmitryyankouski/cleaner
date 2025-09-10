@@ -14,6 +14,7 @@ class SearchViewModel: ObservableObject {
 
     var clusterService = ClusterService()
     var imageEmbeddingService = ImageEmbeddingService()
+    var translateService = TranslateService()
 
     init() {
         print("SearchViewModel init")
@@ -73,8 +74,12 @@ class SearchViewModel: ObservableObject {
         print("🔍 Поиск изображений: \(searchText)")
         
         isSearching = true
+
+        let translatedText = await translateService.translate(text: searchText)
+
+        print("🔍 Переведенный текст: \(translatedText)")
         
-        let results = await imageEmbeddingService.findSimilarPhotos(query: searchText)
+        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText)
         
         // Сохраняем результаты с оценками сходства (уже отсортированы по убыванию)
         searchResultsWithScores = results.map { ($0.0.asset, $0.1) }
