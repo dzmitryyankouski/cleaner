@@ -8,7 +8,7 @@ import CoreVideo
 
 struct Photo {
     let asset: PHAsset
-    let embedding: [Float]
+    var embedding: [Float]
 }
 
 class ImageEmbeddingService {
@@ -16,11 +16,10 @@ class ImageEmbeddingService {
     private var mobileClipTextModel: mobileclip_s0_text?
     private var concurrentTasks = 10
 
-    var processedPhotos: [Photo] = []
     var tokenizer: CLIPTokenizer?
     
     // Callback для уведомления об обновлениях
-    var onPhotoProcessed: ((Photo) -> Void)?
+    var onPhotoProcessed: (() -> Void)?
     var onIndexingComplete: (() -> Void)?
     
     init() {
@@ -57,22 +56,24 @@ class ImageEmbeddingService {
         }
     }
 
-    func indexPhotos(photos: [PHAsset]) async {
-        print("🔄 Начинаем индексацию \(photos.count) фотографий...")
+    func indexPhotos(assets: [PHAsset]) async -> [[Float]] {
+        print("🔄 Начинаем индексацию \(assets.count) фотографий...")
+
+        var embeddings: [[Float]] = []
         
         // Обрабатываем каждый ассет в отдельной таске с ограничением
-        await withTaskGroup(of: Photo?.self) { group in
+        await withTaskGroup(of: [Float]?.self) { group in
             var activeTasks = 0
             
-            for asset in photos {
+            for asset in assets {
                 // Ждем, пока освободится место для новой таски
                 while activeTasks >= concurrentTasks {
                     if let result = await group.next() {
-                        if let photo = result {
-                            self.processedPhotos.append(photo)
-                            // Уведомляем о новой обработанной фотографии
+                        if let embedding = result {
+                            embeddings.append(embedding)
+
                             await MainActor.run {
-                                self.onPhotoProcessed?(photo)
+                                self.onPhotoProcessed?()
                             }
                         }
                         activeTasks -= 1
@@ -87,12 +88,12 @@ class ImageEmbeddingService {
             
             // Обрабатываем оставшиеся результаты
             for await result in group {
-                if let photo = result {
+                if let embedding = result {
                     // Обновляем UI в реальном времени
                     await MainActor.run {
-                        self.processedPhotos.append(photo)
-                        // Уведомляем о новой обработанной фотографии
-                        self.onPhotoProcessed?(photo)
+                        embeddings.append(embedding)
+                        
+                        self.onPhotoProcessed?()
                     }
                 }
             }
@@ -102,6 +103,8 @@ class ImageEmbeddingService {
         await MainActor.run {
             self.onIndexingComplete?()
         }
+
+        return embeddings
     }
 
     func generateEmbedding(from pixelBuffer: CVPixelBuffer) async -> [Float] {
@@ -202,7 +205,7 @@ class ImageEmbeddingService {
     }
     
     /// Находит наиболее похожие фотографии по текстовому запросу
-    func findSimilarPhotos(query: String, minSimilarity: Float = 0.14) async -> [(Photo, Float)] {
+    func findSimilarPhotos(query: String, minSimilarity: Float = 0.14, photos: [Photo]) async -> [(Photo, Float)] {
         let queryEmbedding = await textToEmbedding(text: query)
         
         guard !queryEmbedding.isEmpty else {
@@ -212,7 +215,7 @@ class ImageEmbeddingService {
         
         var similarities: [(Photo, Float)] = []
         
-        for photo in processedPhotos {
+        for photo in photos {
             let similarity = cosineSimilarity(queryEmbedding, photo.embedding)
             similarities.append((photo, similarity))
         }
@@ -226,7 +229,7 @@ class ImageEmbeddingService {
         return Array(filteredResults)
     }
 
-    private func processSingleAsset(_ asset: PHAsset) async -> Photo? {
+    private func processSingleAsset(_ asset: PHAsset) async -> [Float]? {
         // Конвертируем ассет в CVPixelBuffer
         guard let pixelBuffer = await convertAssetToThumbnail(asset) else {
             print("❌ Не удалось создать CVPixelBuffer для ассета: \(asset.localIdentifier)")
@@ -239,8 +242,8 @@ class ImageEmbeddingService {
             print("❌ Не удалось сгенерировать эмбединг для ассета: \(asset.localIdentifier)")
             return nil
         }
-        
-        return Photo(asset: asset, embedding: embedding)
+
+        return embedding
     }
 
     private func convertMultiArrayToFloatArray(_ multiArray: MLMultiArray) -> [Float] {

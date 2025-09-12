@@ -3,7 +3,11 @@ import Photos
 import PhotosUI
 
 struct SearchView: View {
-    @StateObject private var viewModel = SearchViewModel()
+    @ObservedObject var photoService = PhotoService.shared
+    
+    @State private var searchText: String = ""
+    @State private var searchResults: [Photo] = []
+    @State private var isSearching = false
 
     var body: some View {
         ZStack {
@@ -14,61 +18,60 @@ struct SearchView: View {
                 }
             
             VStack(spacing: 20) {
-                TextField("Введите текст для поиска", text: $viewModel.searchText)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(.horizontal)
-
-                Button(action: {
-                    Task {
-                        await viewModel.searchImages()
-                    }
-                }) {
-                    HStack {
-                        if viewModel.isSearching {
-                            ProgressView()
-                                .scaleEffect(0.8)
-                                .foregroundColor(.white)
-                        }
-                        Text(viewModel.isSearching ? "Поиск..." : "Поиск")
-                            .font(.headline)
-                            .foregroundColor(.white)
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .cornerRadius(10)
-                }
-                .padding(.horizontal)
-                .disabled(viewModel.isIndexing || viewModel.isSearching)
-
-                Spacer()
-
-                // Индикатор прогресса индексации
-                if viewModel.isIndexing {
+                if photoService.indexing {
                     VStack(spacing: 12) {
                         ProgressView()
                             .scaleEffect(1.2)
                         Text("Индексация фотографий...")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
-                        Text("Обработано: \(viewModel.processedPhotosCount) из \(viewModel.photos.count)")
+                        Text("Обработано: \(photoService.indexed) из \(photoService.total)")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
                     .padding()
-                }
+                } else {
+                    TextField("Введите текст для поиска", text: $searchText)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                        .padding(.horizontal)
+
+                    Button(action: {
+                        Task {
+                            await searchImages()
+                        }
+                    }) {
+                        HStack {
+                            if isSearching {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                            }
+                            Text(isSearching ? "Поиск..." : "Поиск")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                    }
+                    .padding(.horizontal)
+                    .disabled(photoService.indexed < photoService.total || isSearching)
+                    }
+
+                Spacer()
                 
                 // Отображаем результаты поиска или все фотографии
-                if !viewModel.searchResults.isEmpty {
+                if !searchResults.isEmpty {
                     // Показываем результаты поиска
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text("Результаты поиска (\(viewModel.searchResults.count)):")
+                                Text("Результаты поиска (\(searchResults.count)):")
                                     .font(.headline)
                                     .foregroundColor(.blue)
                                 
-                                Text("По запросу: \"\(viewModel.searchText)\"")
+                                Text("По запросу: \"\(searchText)\"")
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
@@ -76,9 +79,8 @@ struct SearchView: View {
                             Spacer()
                             
                             Button("Очистить") {
-                                viewModel.searchResults = []
-                                viewModel.searchResultsWithScores = []
-                                viewModel.searchText = ""
+                                searchResults = []
+                                searchText = ""
                             }
                             .font(.caption)
                             .foregroundColor(.red)
@@ -94,35 +96,24 @@ struct SearchView: View {
                         LazyVGrid(columns: [
                             GridItem(.adaptive(minimum: 100), spacing: 10)
                         ], spacing: 10) {
-                            ForEach(Array(viewModel.searchResultsWithScores.enumerated()), id: \.element.0.localIdentifier) { index, result in
-                                VStack(spacing: 4) {
-                                    PhotoThumbnailView(asset: result.0)
-                                        .frame(width: 100, height: 100)
-                                        .cornerRadius(8)
-                                        .shadow(radius: 2)
-                                    
-                                    // Показываем оценку сходства
-                                    Text("\(String(format: "%.1f", result.1 * 100))%")
-                                        .font(.caption2)
-                                        .foregroundColor(.secondary)
-                                        .padding(.horizontal, 4)
-                                        .padding(.vertical, 2)
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(4)
-                                }
+                            ForEach(searchResults, id: \.asset.localIdentifier) { photo in
+                                PhotoThumbnailView(asset: photo.asset)
+                                    .frame(width: 100, height: 100)
+                                    .cornerRadius(8)
+                                    .shadow(radius: 2)
                             }
                         }
                         .padding(.horizontal)
                         .padding(.vertical)
                     }
-                } else if !viewModel.photos.isEmpty {
+                } else if !photoService.photos.isEmpty {
                     // Показываем все фотографии, если нет результатов поиска
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Все фотографии (\(viewModel.photos.count)):")
+                        Text("Все фотографии (\(photoService.photos.count)):")
                             .font(.headline)
                         
-                        if viewModel.processedPhotosCount > 0 {
-                            Text("С эмбедингами: \(viewModel.processedPhotosCount)")
+                        if photoService.indexed > 0 {
+                            Text("С эмбедингами: \(photoService.indexed)")
                                 .font(.subheadline)
                                 .foregroundColor(.green)
                         }
@@ -132,8 +123,8 @@ struct SearchView: View {
                         LazyVGrid(columns: [
                             GridItem(.adaptive(minimum: 100), spacing: 10)
                         ], spacing: 10) {
-                            ForEach(viewModel.photos, id: \.localIdentifier) { asset in
-                                PhotoThumbnailView(asset: asset)
+                            ForEach(photoService.photos, id: \.asset.localIdentifier) { photo in
+                                PhotoThumbnailView(asset: photo.asset)
                                     .frame(width: 100, height: 100)
                                     .cornerRadius(8)
                                     .shadow(radius: 2)
@@ -150,6 +141,16 @@ struct SearchView: View {
             }
         }
         .padding(.top, 40)
+    }
+    
+    private func searchImages() async {
+        guard !searchText.isEmpty else { return }
+        
+        print("🔍 Поиск изображений: \(searchText)")
+        
+        isSearching = true
+        searchResults = await photoService.search(text: searchText)
+        isSearching = false
     }
 }
 

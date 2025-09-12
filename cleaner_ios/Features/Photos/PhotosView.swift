@@ -2,21 +2,21 @@ import SwiftUI
 import Photos
 
 struct PhotosView: View {
-    @StateObject private var viewModel = PhotosViewModel()
+    @ObservedObject var photoService = PhotoService.shared
 
     var body: some View {
         VStack {
-            if viewModel.isIndexing {
+            if photoService.indexing {
                 VStack(spacing: 20) {
                     Text("Индексация фотографий")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    Text("Обработано: \(viewModel.processedPhotosCount) из \(viewModel.photos.count)")
+                    Text("Обработано: \(photoService.indexed) из \(photoService.total)")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                     
-                    ProgressView(value: Double(viewModel.processedPhotosCount), total: Double(viewModel.photos.count))
+                    ProgressView(value: Double(photoService.indexed), total: Double(photoService.total))
                         .progressViewStyle(LinearProgressViewStyle())
                         .frame(width: 200)
                     
@@ -30,8 +30,8 @@ struct PhotosView: View {
                 .padding(.horizontal)
             }
             // Отображение групп картинок после завершения индексации
-            else if !viewModel.groups.isEmpty {
-                let filteredGroups = viewModel.groups.filter { $0.count > 1 }
+            else if !photoService.groups.isEmpty {
+                let filteredGroups = photoService.groups.filter { $0.count > 1 }
                 
                 if !filteredGroups.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {      
@@ -45,22 +45,20 @@ struct PhotosView: View {
                                         
                                         ScrollView(.horizontal, showsIndicators: false) {
                                             HStack(spacing: 12) {
-                                                ForEach(group, id: \.self) { imageIndex in
-                                                    if imageIndex < viewModel.photos.count {
-                                                        AsyncImage(asset: viewModel.photos[imageIndex], size: CGSize(width: 120, height: 120)) { image in
-                                                            image
-                                                                .resizable()
-                                                                .aspectRatio(contentMode: .fill)
-                                                                .frame(width: 120, height: 120)
-                                                                .clipped()
-                                                                .cornerRadius(8)
-                                                                .shadow(radius: 4)
-                                                        } placeholder: {
-                                                            Rectangle()
-                                                                .fill(Color.gray.opacity(0.3))
-                                                                .frame(width: 120, height: 120)
-                                                                .cornerRadius(8)
-                                                        }
+                                                ForEach(group, id: \.asset.localIdentifier) { photo in
+                                                    AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 120)) { image in
+                                                        image
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fill)
+                                                            .frame(width: 120, height: 120)
+                                                            .clipped()
+                                                            .cornerRadius(8)
+                                                            .shadow(radius: 4)
+                                                    } placeholder: {
+                                                        Rectangle()
+                                                            .fill(Color.gray.opacity(0.3))
+                                                            .frame(width: 120, height: 120)
+                                                            .cornerRadius(8)
                                                     }
                                                 }
                                             }
@@ -90,7 +88,7 @@ struct PhotosView: View {
                 }
             }
             // Состояние загрузки фотографий
-            else if viewModel.photos.isEmpty && !viewModel.isIndexing {
+            else if photoService.photos.isEmpty {
                 VStack(spacing: 16) {
                     ProgressView()
                         .scaleEffect(1.5)
