@@ -11,6 +11,12 @@ struct AppView: View {
                     Text("Фотографии")
                 }
             
+            VideosView()
+                .tabItem {
+                    Image(systemName: "video")
+                    Text("Видео")
+                }
+            
             SearchView(photoService: photoService)
                 .tabItem {
                     Image(systemName: "magnifyingglass")
