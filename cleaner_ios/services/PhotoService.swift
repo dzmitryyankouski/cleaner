@@ -2,6 +2,12 @@ import Foundation
 import Photos
 import UIKit
 
+struct Photo {
+    let asset: PHAsset
+    var embedding: [Float]
+    var fileSize: Int64
+}
+
 class PhotoService: ObservableObject {
     static let shared = PhotoService()
     
@@ -21,23 +27,10 @@ class PhotoService: ObservableObject {
         self.imageEmbeddingService = ImageEmbeddingService()
         self.clusterService = ClusterService()
         self.translateService = TranslateService()
-
-        // Настраиваем коллбеки для отслеживания прогресса
-        setupCallbacks()
         
         // Загружаем и индексируем фото
         Task {
             await loadAndIndexPhotos()
-        }
-    }
-    
-    // MARK: - Private Methods
-    private func setupCallbacks() {
-        imageEmbeddingService.onPhotoProcessed = { [weak self] () -> Void in
-            DispatchQueue.main.async {
-                print("🔄 Обработано фото", self?.indexed)
-                self?.indexed += 1
-            }
         }
     }
     
@@ -55,22 +48,16 @@ class PhotoService: ObservableObject {
 
         self.indexing = true
 
-        let embeddings = await imageEmbeddingService.indexPhotos(assets: allPhotos)
+        await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) -> Void in
+            Task { @MainActor in
+                guard let self = self else { return }
+                let fileSize = await self.getFileSize(for: allPhotos[index])
+                self.photos.append(Photo(asset: allPhotos[index], embedding: embedding, fileSize: fileSize))
+                self.indexed += 1
+            }
+        })
 
-        print("embedding1", embeddings[0])
-        print("embedding2", embeddings[1])
-
-        self.photos = zip(allPhotos, embeddings).map { asset, embedding in
-            Photo(asset: asset, embedding: embedding)
-        }
-
-        print("photo1", photos[0])
-        print("photo2", photos[1])
-
-        await createGroups(for: embeddings)
-
-        print("group1", groups[0])
-        print("group2", groups[1])
+        await createGroups(for: self.photos.map { $0.embedding })
 
         self.indexing = false
 
@@ -106,7 +93,7 @@ class PhotoService: ObservableObject {
             }
         }.filter { !$0.isEmpty }
         
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.groups = photoGroups
             print("📁 Создано \(photoGroups.count) групп фотографий")
         }
@@ -138,5 +125,25 @@ class PhotoService: ObservableObject {
     
     func getTotalPhotosCount() -> Int {
         return photos.count
+    }
+
+    private func getFileSize(for asset: PHAsset) async -> Int64 {
+        let options = PHImageRequestOptions()
+
+        options.isSynchronous = true
+        options.deliveryMode = .fastFormat
+        options.resizeMode = .none
+        
+        var fileSize: Int64 = 0
+        
+        PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
+            if let data = data {
+                fileSize = Int64(data.count)
+            }
+        }
+        
+        print("💾 Размер файла: \(fileSize)")
+
+        return fileSize
     }
 }

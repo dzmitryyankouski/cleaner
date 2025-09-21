@@ -6,21 +6,12 @@ import Photos
 import NaturalLanguage
 import CoreVideo
 
-struct Photo {
-    let asset: PHAsset
-    var embedding: [Float]
-}
-
 class ImageEmbeddingService {
     private var mobileClipImageModel: mobileclip_s0_image?
     private var mobileClipTextModel: mobileclip_s0_text?
     private var concurrentTasks = 10
 
     var tokenizer: CLIPTokenizer?
-    
-    // Callback для уведомления об обновлениях
-    var onPhotoProcessed: (() -> Void)?
-    var onIndexingComplete: (() -> Void)?
     
     init() {
         loadImageModel()
@@ -56,24 +47,24 @@ class ImageEmbeddingService {
         }
     }
 
-    func indexPhotos(assets: [PHAsset]) async -> [[Float]] {
+    func indexPhotos(assets: [PHAsset], onItemCompleted: ((Int, [Float]) -> Void)? = nil) async {
         print("🔄 Начинаем индексацию \(assets.count) фотографий...")
 
         var embeddings: [[Float]] = []
         
         // Обрабатываем каждый ассет в отдельной таске с ограничением
-        await withTaskGroup(of: [Float]?.self) { group in
+        await withTaskGroup(of: (Int, [Float]?)?.self) { group in
             var activeTasks = 0
             
-            for asset in assets {
+            for (index, asset) in assets.enumerated() {
                 // Ждем, пока освободится место для новой таски
                 while activeTasks >= concurrentTasks {
                     if let result = await group.next() {
-                        if let embedding = result {
+                        if let (assetIndex, embedding) = result, let embedding = embedding {
                             embeddings.append(embedding)
 
                             await MainActor.run {
-                                self.onPhotoProcessed?()
+                                onItemCompleted?(assetIndex, embedding)
                             }
                         }
                         activeTasks -= 1
@@ -81,30 +72,23 @@ class ImageEmbeddingService {
                 }
                 
                 group.addTask {
-                    await self.processSingleAsset(asset)
+                    let embedding = await self.processSingleAsset(asset)
+                    return (index, embedding)
                 }
                 activeTasks += 1
             }
             
             // Обрабатываем оставшиеся результаты
             for await result in group {
-                if let embedding = result {
+                if let (assetIndex, embedding) = result, let embedding = embedding {
                     // Обновляем UI в реальном времени
                     await MainActor.run {
                         embeddings.append(embedding)
-                        
-                        self.onPhotoProcessed?()
+                        onItemCompleted?(assetIndex, embedding)
                     }
                 }
             }
         }
-        
-        // Уведомляем о завершении индексации
-        await MainActor.run {
-            self.onIndexingComplete?()
-        }
-
-        return embeddings
     }
 
     func generateEmbedding(from pixelBuffer: CVPixelBuffer) async -> [Float] {
