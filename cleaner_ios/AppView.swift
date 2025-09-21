@@ -2,6 +2,7 @@ import SwiftUI
 
 struct AppView: View {
     @StateObject private var photoService = PhotoService.shared
+    @StateObject private var videoService = VideoService.shared
     
     var body: some View {
         TabView {
@@ -11,7 +12,7 @@ struct AppView: View {
                     Text("Фотографии")
                 }
             
-            VideosView()
+            VideosView(videoService: videoService)
                 .tabItem {
                     Image(systemName: "video")
                     Text("Видео")

@@ -2,7 +2,7 @@ import SwiftUI
 import Photos
 
 struct PhotosView: View {
-    @ObservedObject var photoService = PhotoService.shared
+    @ObservedObject var photoService: PhotoService
     @State private var selectedTab = 0
     
     private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Серии"]
@@ -82,30 +82,23 @@ struct PhotosView: View {
                 Group {
                     switch selectedTab {
                     case 0:
-                        SimilarPhotosTab()
+                        SimilarPhotosTab(photoService: photoService)
                     case 1:
-                        DuplicatesTab()
+                        DuplicatesTab(photoService: photoService)
                     case 2:
                         ScreenshotsTab()
                     case 3:
                         SeriesTab()
                     default:
-                        SimilarPhotosTab()
+                        SimilarPhotosTab(photoService: photoService)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationTitle("Фотографии")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Обновить") {
-                        Task {
-                            await photoService.refreshPhotos()
-                        }
-                    }
-                    .disabled(photoService.indexing)
-                }
+            .refreshable {
+                await photoService.refreshPhotos()
             }
         }
     }
@@ -113,7 +106,7 @@ struct PhotosView: View {
 
 // Таб с похожими фотографиями
 struct SimilarPhotosTab: View {
-    @ObservedObject var photoService = PhotoService.shared
+    @ObservedObject var photoService: PhotoService
     
     var body: some View {
         VStack {
@@ -214,7 +207,7 @@ struct SimilarPhotosTab: View {
 
 // Таб с дубликатами
 struct DuplicatesTab: View {
-    @ObservedObject var photoService = PhotoService.shared
+    @ObservedObject var photoService: PhotoService
     
     var body: some View {
         VStack {
@@ -366,5 +359,5 @@ struct AsyncImage<Content: View, Placeholder: View>: View {
 }
 
 #Preview {
-    PhotosView()
+    PhotosView(photoService: PhotoService.shared)
 }

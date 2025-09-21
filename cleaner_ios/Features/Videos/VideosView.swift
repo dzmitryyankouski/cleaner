@@ -2,7 +2,7 @@ import SwiftUI
 import Photos
 
 struct VideosView: View {
-    @ObservedObject var videoService = VideoService.shared
+    @ObservedObject var videoService: VideoService
     
     var body: some View {
         NavigationView {
@@ -79,15 +79,8 @@ struct VideosView: View {
             }
             .navigationTitle("Видеофайлы")
             .navigationBarTitleDisplayMode(.large)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Обновить") {
-                        Task {
-                            await videoService.refreshVideos()
-                        }
-                    }
-                    .disabled(videoService.isLoading)
-                }
+            .refreshable {
+                await videoService.refreshVideos()
             }
         }
     }
@@ -190,5 +183,5 @@ struct AsyncVideoThumbnail: View {
 }
 
 #Preview {
-    VideosView()
+    VideosView(videoService: VideoService.shared)
 }
