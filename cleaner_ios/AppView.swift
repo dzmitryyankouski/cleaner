@@ -17,11 +17,23 @@ struct AppView: View {
                     Image(systemName: "video")
                     Text("Видео")
                 }
+
+            FilesView()
+                .tabItem {
+                    Image(systemName: "folder")
+                    Text("Файлы")
+                }
             
             SearchView(photoService: photoService)
                 .tabItem {
                     Image(systemName: "magnifyingglass")
                     Text("Поиск")
+                }
+
+            SettingsView()
+                .tabItem {
+                    Image(systemName: "gearshape")
+                    Text("Настройки")
                 }
         }
         .accentColor(.blue)
