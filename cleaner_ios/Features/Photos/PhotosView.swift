@@ -5,7 +5,7 @@ struct PhotosView: View {
     @ObservedObject var photoService = PhotoService.shared
     @State private var selectedTab = 0
     
-    private let tabs = ["Похожие", "Скриншоты", "Серии"]
+    private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Серии"]
 
     var body: some View {
         NavigationView {
@@ -84,8 +84,10 @@ struct PhotosView: View {
                     case 0:
                         SimilarPhotosTab()
                     case 1:
-                        ScreenshotsTab()
+                        DuplicatesTab()
                     case 2:
+                        ScreenshotsTab()
+                    case 3:
                         SeriesTab()
                     default:
                         SimilarPhotosTab()
@@ -187,6 +189,66 @@ struct SimilarPhotosTab: View {
                     }
                     .padding()
                 }
+            }
+            // Состояние загрузки фотографий
+            else if photoService.photos.isEmpty {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    
+                    Text("Загрузка фотографий из галереи...")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Пожалуйста, подождите")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
+            
+            Spacer()
+        }
+    }
+}
+
+// Таб с дубликатами
+struct DuplicatesTab: View {
+    @ObservedObject var photoService = PhotoService.shared
+    
+    var body: some View {
+        VStack {
+            if photoService.indexing {
+                VStack(spacing: 20) {
+                    Text("Поиск дубликатов...")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Анализ фотографий на наличие точных копий")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .padding(.horizontal)
+            }
+            // Отображение дубликатов после завершения индексации
+            else if !photoService.photos.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "doc.on.doc")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    
+                    Text("Дубликаты")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Функция в разработке")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
             }
             // Состояние загрузки фотографий
             else if photoService.photos.isEmpty {
