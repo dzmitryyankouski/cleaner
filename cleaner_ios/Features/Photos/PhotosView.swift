@@ -86,7 +86,7 @@ struct PhotosView: View {
                     case 1:
                         DuplicatesTab(photoService: photoService)
                     case 2:
-                        ScreenshotsTab()
+                        ScreenshotsTab(photoService: photoService)
                     case 3:
                         SeriesTab()
                     default:
@@ -267,23 +267,116 @@ struct DuplicatesTab: View {
 
 // Таб со скриншотами
 struct ScreenshotsTab: View {
+    @ObservedObject var photoService: PhotoService
+    
+    private var screenshots: [Photo] {
+        photoService.photos.filter { $0.isScreenshot }
+    }
+    
     var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "camera.viewfinder")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary)
+        VStack {
+            if photoService.indexing {
+                VStack(spacing: 20) {
+                    Text("Поиск скриншотов...")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Анализ фотографий на наличие скриншотов")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .padding(.horizontal)
+            }
+            // Отображение скриншотов после завершения индексации
+            else if !screenshots.isEmpty {
+                VStack(alignment: .leading, spacing: 16) {
+                    // Сетка скриншотов
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: 12) {
+                            ForEach(screenshots, id: \.asset.localIdentifier) { photo in
+                                AsyncImage(asset: photo.asset, size: CGSize(width: 200, height: 200)) { image in
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(height: 120)
+                                        .clipped()
+                                        .cornerRadius(8)
+                                        .shadow(radius: 4)
+                                        .overlay(
+                                            // Индикатор скриншота
+                                            VStack {
+                                                HStack {
+                                                    Spacer()
+                                                    Image(systemName: "camera.viewfinder")
+                                                        .font(.caption)
+                                                        .foregroundColor(.white)
+                                                        .padding(4)
+                                                        .background(Color.black.opacity(0.6))
+                                                        .cornerRadius(4)
+                                                }
+                                                Spacer()
+                                            }
+                                            .padding(8)
+                                        )
+                                } placeholder: {
+                                    Rectangle()
+                                        .fill(Color.gray.opacity(0.3))
+                                        .frame(height: 120)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            ProgressView()
+                                                .scaleEffect(0.8)
+                                        )
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+            }
+            // Состояние когда скриншоты не найдены
+            else if !photoService.photos.isEmpty {
+                VStack(spacing: 16) {
+                    Image(systemName: "camera.viewfinder")
+                        .font(.system(size: 50))
+                        .foregroundColor(.secondary)
+                    
+                    Text("Скриншоты не найдены")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("В вашей галерее нет скриншотов")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
+            // Состояние загрузки фотографий
+            else if photoService.photos.isEmpty {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    
+                    Text("Загрузка фотографий из галереи...")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Пожалуйста, подождите")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
             
-            Text("Скриншоты")
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            Text("Функция в разработке")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+            Spacer()
         }
-        .padding()
-        
-        Spacer()
     }
 }
 

@@ -6,6 +6,7 @@ struct Photo {
     let asset: PHAsset
     var embedding: [Float]
     var fileSize: Int64
+    var isScreenshot: Bool
 }
 
 class PhotoService: ObservableObject {
@@ -51,8 +52,11 @@ class PhotoService: ObservableObject {
         await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) -> Void in
             Task { @MainActor in
                 guard let self = self else { return }
+
                 let fileSize = await self.getFileSize(for: allPhotos[index])
-                self.photos.append(Photo(asset: allPhotos[index], embedding: embedding, fileSize: fileSize))
+                let isScreenshot = await self.isScreenshot(for: allPhotos[index])
+
+                self.photos.append(Photo(asset: allPhotos[index], embedding: embedding, fileSize: fileSize, isScreenshot: isScreenshot))
                 self.indexed += 1
             }
         })
@@ -97,6 +101,16 @@ class PhotoService: ObservableObject {
             self.groups = photoGroups
             print("📁 Создано \(photoGroups.count) групп фотографий")
         }
+    }
+
+    private func isScreenshot(for asset: PHAsset) async -> Bool {
+        let mediaSubtypes = asset.mediaSubtypes
+        
+        if mediaSubtypes.contains(.photoScreenshot) {
+            return true
+        }
+        
+        return false
     }
     
     // MARK: - Public Methods
