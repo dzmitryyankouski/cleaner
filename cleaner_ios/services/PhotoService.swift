@@ -16,7 +16,8 @@ class PhotoService: ObservableObject {
     @Published var photos: [Photo] = []
     @Published var indexed: Int = 0
     @Published var total: Int = 0
-    @Published var groups: [[Photo]] = []
+    @Published var groupsSimilar: [[Photo]] = []
+    @Published var groupsDuplicates: [[Photo]] = []
     @Published var indexing: Bool = false
     
     private let imageEmbeddingService: ImageEmbeddingService
@@ -61,7 +62,8 @@ class PhotoService: ObservableObject {
             }
         })
 
-        await createGroups(for: self.photos.map { $0.embedding })
+        await createGroupsSimilar(for: self.photos.map { $0.embedding })
+        await createGroupsDuplicates(for: self.photos)
 
         self.indexing = false
 
@@ -82,7 +84,7 @@ class PhotoService: ObservableObject {
         return assets
     }
     
-    private func createGroups(for embeddings: [[Float]]) async {
+    private func createGroupsSimilar(for embeddings: [[Float]]) async {
         print("🔄 Создание групп фотографий", photos.count)
         guard !embeddings.isEmpty else { return }
         
@@ -98,14 +100,36 @@ class PhotoService: ObservableObject {
         }.filter { !$0.isEmpty }
         
         await MainActor.run {
-            self.groups = photoGroups
+            self.groupsSimilar = photoGroups
             print("📁 Создано \(photoGroups.count) групп фотографий")
+        }
+    }
+
+    private func createGroupsDuplicates(for photos: [Photo]) async {
+        print("🔄 Создание групп дубликатов", photos.count)
+        guard !photos.isEmpty else { return }
+        
+        let embeddings = photos.map { $0.embedding }
+        let groupIndices = await clusterService.getImageGroups(for: embeddings, threshold: 0.99)
+
+        print("🔄 Группы дубликатов", groupIndices)
+        
+        // Конвертируем индексы в группы фото
+        let photoGroups = groupIndices.map { indices in
+            indices.compactMap { index in
+                photos.indices.contains(index) ? photos[index] : nil
+            }
+        }.filter { !$0.isEmpty }
+        
+        await MainActor.run {
+            self.groupsDuplicates = photoGroups
+            print("📁 Создано \(photoGroups.count) групп дубликатов")
         }
     }
 
     private func isScreenshot(for asset: PHAsset) async -> Bool {
         let mediaSubtypes = asset.mediaSubtypes
-        
+
         if mediaSubtypes.contains(.photoScreenshot) {
             return true
         }
@@ -122,19 +146,15 @@ class PhotoService: ObservableObject {
     
     func refreshPhotos() async {
         photos.removeAll()
-        groups.removeAll()
+        groupsSimilar.removeAll()
+        groupsDuplicates.removeAll()
         indexed = 0
         
         await loadAndIndexPhotos()
     }
     
-    func getPhotosInGroup(_ groupIndex: Int) -> [Photo] {
-        guard groupIndex < groups.count else { return [] }
-        return groups[groupIndex]
-    }
-    
     func getGroupCount() -> Int {
-        return groups.count
+        return groupsSimilar.count
     }
     
     func getTotalPhotosCount() -> Int {

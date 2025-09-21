@@ -126,8 +126,8 @@ struct SimilarPhotosTab: View {
                 .padding(.horizontal)
             }
             // Отображение групп картинок после завершения индексации
-            else if !photoService.groups.isEmpty {
-                let filteredGroups = photoService.groups.filter { $0.count > 1 }
+            else if !photoService.groupsSimilar.isEmpty {
+                let filteredGroups = photoService.groupsSimilar.filter { $0.count > 1 }
                 
                 if !filteredGroups.isEmpty {
                     VStack(alignment: .leading, spacing: 16) {      
@@ -228,20 +228,77 @@ struct DuplicatesTab: View {
             }
             // Отображение дубликатов после завершения индексации
             else if !photoService.photos.isEmpty {
-                VStack(spacing: 16) {
-                    Image(systemName: "doc.on.doc")
-                        .font(.system(size: 50))
-                        .foregroundColor(.secondary)
-                    
-                    Text("Дубликаты")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    
-                    Text("Функция в разработке")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
+                let filteredGroups = photoService.groupsDuplicates.filter { $0.count > 1 }
+                
+                if !filteredGroups.isEmpty {
+                    VStack(alignment: .leading, spacing: 16) {      
+                        ScrollView {
+                            LazyVStack(spacing: 20) {
+                                ForEach(Array(filteredGroups.enumerated()), id: \.offset) { groupIndex, group in
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        Text("Дубликаты \(groupIndex + 1) (\(group.count) фото)")
+                                            .font(.headline)
+                                            .padding(.horizontal)
+                                        
+                                        ScrollView(.horizontal, showsIndicators: false) {
+                                            HStack(spacing: 12) {
+                                                ForEach(group, id: \.asset.localIdentifier) { photo in
+                                                    AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 120)) { image in
+                                                        image
+                                                            .resizable()
+                                                            .aspectRatio(contentMode: .fill)
+                                                            .frame(width: 120, height: 120)
+                                                            .clipped()
+                                                            .cornerRadius(8)
+                                                            .shadow(radius: 4)
+                                                            .overlay(
+                                                                // Индикатор дубликата
+                                                                VStack {
+                                                                    HStack {
+                                                                        Spacer()
+                                                                        Image(systemName: "doc.on.doc")
+                                                                            .font(.caption)
+                                                                            .foregroundColor(.white)
+                                                                            .padding(4)
+                                                                            .background(Color.red.opacity(0.8))
+                                                                            .cornerRadius(4)
+                                                                    }
+                                                                    Spacer()
+                                                                }
+                                                                .padding(8)
+                                                            )
+                                                    } placeholder: {
+                                                        Rectangle()
+                                                            .fill(Color.gray.opacity(0.3))
+                                                            .frame(width: 120, height: 120)
+                                                            .cornerRadius(8)
+                                                    }
+                                                }
+                                            }
+                                            .padding(.horizontal)
+                                        }
+                                    }
+                                }
+                            }
+                            .padding(.top)
+                        }
+                    }
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 50))
+                            .foregroundColor(.secondary)
+                        
+                        Text("Дубликаты не найдены")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("В вашей галерее нет точных копий фотографий")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
                 }
-                .padding()
             }
             // Состояние загрузки фотографий
             else if photoService.photos.isEmpty {
