@@ -126,6 +126,17 @@ class PhotoService: ObservableObject {
     func getTotalPhotosCount() -> Int {
         return photos.count
     }
+    
+    func getTotalFileSize() -> Int64 {
+        return photos.reduce(0) { $0 + $1.fileSize }
+    }
+    
+    func formatFileSize(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
 
     private func getFileSize(for asset: PHAsset) async -> Int64 {
         let options = PHImageRequestOptions()

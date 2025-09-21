@@ -10,6 +10,64 @@ struct PhotosView: View {
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
+                // Статистика или прогресс индексации
+                VStack(spacing: 8) {
+                    if photoService.indexing {
+                        // Прогресс индексации
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Индексация фотографий")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("\(photoService.indexed) из \(photoService.total)")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing) {
+                                Text("Прогресс")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                ProgressView(value: Double(photoService.indexed), total: Double(photoService.total))
+                                    .progressViewStyle(LinearProgressViewStyle())
+                                    .frame(width: 80)
+                            }
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                    } else if !photoService.photos.isEmpty {
+                        // Статистика после завершения индексации
+                        HStack {
+                            VStack(alignment: .leading) {
+                                Text("Всего фотографий")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("\(photoService.getTotalPhotosCount())")
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing) {
+                                Text("Общий размер")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(photoService.formatFileSize(photoService.getTotalFileSize()))
+                                    .font(.title2)
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                    }
+                }
+                .padding(.horizontal)
+                
                 // Сегментированный контрол для табов
                 Picker("Табы", selection: $selectedTab) {
                     ForEach(0..<tabs.count, id: \.self) { index in
@@ -18,7 +76,7 @@ struct PhotosView: View {
                 }
                 .pickerStyle(SegmentedPickerStyle())
                 .padding(.horizontal)
-                .padding(.top, 8)
+                .padding(.vertical, 8)
                 
                 // Контент в зависимости от выбранного таба
                 Group {
@@ -59,20 +117,12 @@ struct SimilarPhotosTab: View {
         VStack {
             if photoService.indexing {
                 VStack(spacing: 20) {
-                    Text("Индексация фотографий")
+                    Text("Поиск похожих изображений...")
                         .font(.headline)
                         .foregroundColor(.primary)
                     
-                    Text("Обработано: \(photoService.indexed) из \(photoService.total)")
+                    Text("Анализ фотографий и создание групп")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
-                    
-                    ProgressView(value: Double(photoService.indexed), total: Double(photoService.total))
-                        .progressViewStyle(LinearProgressViewStyle())
-                        .frame(width: 200)
-                    
-                    Text("Поиск похожих изображений...")
-                        .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 .padding()
