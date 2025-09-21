@@ -12,7 +12,6 @@ struct Photo {
 class PhotoService: ObservableObject {
     static let shared = PhotoService()
     
-    // MARK: - Properties
     @Published var photos: [Photo] = []
     @Published var indexed: Int = 0
     @Published var total: Int = 0
@@ -24,18 +23,76 @@ class PhotoService: ObservableObject {
     private let clusterService: ClusterService
     private let translateService: TranslateService
     
-    // MARK: - Initialization
     init() {
         self.imageEmbeddingService = ImageEmbeddingService()
         self.clusterService = ClusterService()
         self.translateService = TranslateService()
         
-        // Загружаем и индексируем фото
         Task {
             await loadAndIndexPhotos()
         }
     }
     
+    func search(text: String) async -> [Photo] {
+        let translatedText = await translateService.translate(text: text)
+        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText, minSimilarity: 0.14, photos: photos)
+        return results.map { $0.0 }
+    }
+    
+    func refreshPhotos() async {
+        photos.removeAll()
+        groupsSimilar.removeAll()
+        groupsDuplicates.removeAll()
+        indexed = 0
+        
+        await loadAndIndexPhotos()
+    }
+    
+    func getGroupCount() -> Int {
+        return groupsSimilar.count
+    }
+    
+    func getTotalPhotosCount() -> Int {
+        return photos.count
+    }
+    
+    func getTotalFileSize() -> Int64 {
+        return photos.reduce(0) { $0 + $1.fileSize }
+    }
+    
+    func formatFileSize(_ bytes: Int64) -> String {
+        let formatter = ByteCountFormatter()
+        formatter.allowedUnits = [.useMB, .useGB]
+        formatter.countStyle = .file
+        return formatter.string(fromByteCount: bytes)
+    }
+
+    func getBluredPhotos() async -> [Photo] {
+        let results = await imageEmbeddingService.findSimilarPhotos(query: "blured photo", minSimilarity: 0.21, photos: photos)
+
+        return results.map { $0.0 }
+    }
+
+    private func getFileSize(for asset: PHAsset) async -> Int64 {
+        let options = PHImageRequestOptions()
+
+        options.isSynchronous = true
+        options.deliveryMode = .fastFormat
+        options.resizeMode = .none
+        
+        var fileSize: Int64 = 0
+        
+        PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
+            if let data = data {
+                fileSize = Int64(data.count)
+            }
+        }
+        
+        print("💾 Размер файла: \(fileSize)")
+
+        return fileSize
+    }
+
     private func loadAndIndexPhotos() async {
         // Запрашиваем разрешение на доступ к фото
         let status = PHPhotoLibrary.authorizationStatus()
@@ -135,60 +192,5 @@ class PhotoService: ObservableObject {
         }
         
         return false
-    }
-    
-    // MARK: - Public Methods
-    func search(text: String) async -> [Photo] {
-        let translatedText = await translateService.translate(text: text)
-        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText, minSimilarity: 0.14, photos: photos)
-        return results.map { $0.0 }
-    }
-    
-    func refreshPhotos() async {
-        photos.removeAll()
-        groupsSimilar.removeAll()
-        groupsDuplicates.removeAll()
-        indexed = 0
-        
-        await loadAndIndexPhotos()
-    }
-    
-    func getGroupCount() -> Int {
-        return groupsSimilar.count
-    }
-    
-    func getTotalPhotosCount() -> Int {
-        return photos.count
-    }
-    
-    func getTotalFileSize() -> Int64 {
-        return photos.reduce(0) { $0 + $1.fileSize }
-    }
-    
-    func formatFileSize(_ bytes: Int64) -> String {
-        let formatter = ByteCountFormatter()
-        formatter.allowedUnits = [.useMB, .useGB]
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
-    }
-
-    private func getFileSize(for asset: PHAsset) async -> Int64 {
-        let options = PHImageRequestOptions()
-
-        options.isSynchronous = true
-        options.deliveryMode = .fastFormat
-        options.resizeMode = .none
-        
-        var fileSize: Int64 = 0
-        
-        PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
-            if let data = data {
-                fileSize = Int64(data.count)
-            }
-        }
-        
-        print("💾 Размер файла: \(fileSize)")
-
-        return fileSize
     }
 }

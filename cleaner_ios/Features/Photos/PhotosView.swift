@@ -5,7 +5,7 @@ struct PhotosView: View {
     @ObservedObject var photoService: PhotoService
     @State private var selectedTab = 0
     
-    private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Серии"]
+    private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Размытые", "Серии"]
 
     var body: some View {
         NavigationView {
@@ -88,6 +88,8 @@ struct PhotosView: View {
                     case 2:
                         ScreenshotsTab(photoService: photoService)
                     case 3:
+                        BlurredTab(photoService: photoService)
+                    case 4:
                         SeriesTab()
                     default:
                         SimilarPhotosTab(photoService: photoService)
@@ -433,6 +435,152 @@ struct ScreenshotsTab: View {
             }
             
             Spacer()
+        }
+    }
+}
+
+// Таб с размытыми фотографиями
+struct BlurredTab: View {
+    @ObservedObject var photoService: PhotoService
+    @State private var blurredPhotos: [Photo] = []
+    @State private var isLoading = false
+    
+    var body: some View {
+        VStack {
+            if photoService.indexing {
+                VStack(spacing: 20) {
+                    Text("Поиск размытых фотографий...")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Анализ фотографий на наличие размытых изображений")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                .cornerRadius(12)
+                .padding(.horizontal)
+            }
+            // Отображение размытых фотографий после завершения индексации
+            else if !photoService.photos.isEmpty {
+                if isLoading {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                            .scaleEffect(1.5)
+                        
+                        Text("Поиск размытых фотографий...")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                    }
+                    .padding()
+                } else if !blurredPhotos.isEmpty {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Сетка размытых фотографий
+                        ScrollView {
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 12) {
+                                ForEach(blurredPhotos, id: \.asset.localIdentifier) { photo in
+                                    AsyncImage(asset: photo.asset, size: CGSize(width: 200, height: 200)) { image in
+                                        image
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                            .frame(height: 120)
+                                            .clipped()
+                                            .cornerRadius(8)
+                                            .shadow(radius: 4)
+                                            .overlay(
+                                                // Индикатор размытой фотографии
+                                                VStack {
+                                                    HStack {
+                                                        Spacer()
+                                                        Image(systemName: "eye.slash")
+                                                            .font(.caption)
+                                                            .foregroundColor(.white)
+                                                            .padding(4)
+                                                            .background(Color.orange.opacity(0.8))
+                                                            .cornerRadius(4)
+                                                    }
+                                                    Spacer()
+                                                }
+                                                .padding(8)
+                                            )
+                                    } placeholder: {
+                                        Rectangle()
+                                            .fill(Color.gray.opacity(0.3))
+                                            .frame(height: 120)
+                                            .cornerRadius(8)
+                                            .overlay(
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                            )
+                                    }
+                                }
+                            }
+                            .padding(.horizontal)
+                        }
+                    }
+                } else {
+                    VStack(spacing: 16) {
+                        Image(systemName: "eye.slash")
+                            .font(.system(size: 50))
+                            .foregroundColor(.secondary)
+                        
+                        Text("Размытые фотографии не найдены")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("В вашей галерее нет размытых изображений")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                }
+            }
+            // Состояние загрузки фотографий
+            else if photoService.photos.isEmpty {
+                VStack(spacing: 16) {
+                    ProgressView()
+                        .scaleEffect(1.5)
+                    
+                    Text("Загрузка фотографий из галереи...")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Пожалуйста, подождите")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+            }
+            
+            Spacer()
+        }
+        .onAppear {
+            loadBlurredPhotos()
+        }
+        .onChange(of: photoService.indexing) { _, newValue in
+            if !newValue && !photoService.photos.isEmpty {
+                loadBlurredPhotos()
+            }
+        }
+    }
+    
+    private func loadBlurredPhotos() {
+        guard !photoService.photos.isEmpty && !photoService.indexing else { return }
+        
+        isLoading = true
+        
+        Task {
+            let photos = await photoService.getBluredPhotos()
+            
+            await MainActor.run {
+                self.blurredPhotos = photos
+                self.isLoading = false
+            }
         }
     }
 }
