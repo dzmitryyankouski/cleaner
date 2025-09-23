@@ -1,25 +1,51 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @StateObject private var photoService = PhotoService.shared
+    
     var body: some View {
         NavigationView {
-            VStack {
-                Spacer()
-                
-                Image(systemName: "gearshape")
-                    .font(.system(size: 60))
-                    .foregroundColor(.gray)
-                
-                Text("Настройки")
-                    .font(.title2)
-                    .fontWeight(.medium)
-                    .foregroundColor(.gray)
-                
-                Text("Здесь будут настройки приложения")
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
+            VStack(spacing: 20) { 
+                VStack(alignment: .leading, spacing: 20) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Процент похожести фотографий")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("Настройте порог схожести для группировки фотографий")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        HStack {
+                            Text("0%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Slider(
+                                value: Binding(
+                                    get: { photoService.similarPhotosPercent },
+                                    set: { photoService.similarPhotosPercent = $0 }
+                                ),
+                                in: 0.0...1.0,
+                                step: 0.01
+                            )
+                            .accentColor(.blue)
+                            
+                            Text("100%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Text("Текущее значение: \(Int(photoService.similarPhotosPercent * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .fontWeight(.medium)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                }
+                .padding(.horizontal)
                 
                 Spacer()
             }

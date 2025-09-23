@@ -18,6 +18,8 @@ class PhotoService: ObservableObject {
     @Published var groupsSimilar: [[Photo]] = []
     @Published var groupsDuplicates: [[Photo]] = []
     @Published var indexing: Bool = false
+
+    @Published var similarPhotosPercent: Float = 0.85
     
     private let imageEmbeddingService: ImageEmbeddingService
     private let clusterService: ClusterService
@@ -145,7 +147,7 @@ class PhotoService: ObservableObject {
         print("🔄 Создание групп фотографий", photos.count)
         guard !embeddings.isEmpty else { return }
         
-        let groupIndices = await clusterService.getImageGroups(for: embeddings, threshold: 0.85)
+        let groupIndices = await clusterService.getImageGroups(for: embeddings, threshold: similarPhotosPercent)
 
         print("🔄 Группы фотографий", groupIndices)
         
