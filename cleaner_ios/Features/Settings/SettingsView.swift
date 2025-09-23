@@ -44,6 +44,44 @@ struct SettingsView: View {
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Процент похожести поиска")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("Настройте порог схожести для поиска фотографий")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        HStack {
+                            Text("0%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Slider(
+                                value: Binding(
+                                    get: { photoService.searchSimilarity },
+                                    set: { photoService.searchSimilarity = $0 }
+                                ),
+                                in: 0.0...1.0,
+                                step: 0.01
+                            )
+                            .accentColor(.blue)
+                            
+                            Text("100%")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Text("Текущее значение: \(Int(photoService.searchSimilarity * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .fontWeight(.medium)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
                 }
                 .padding(.horizontal)
                 

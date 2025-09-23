@@ -20,6 +20,7 @@ class PhotoService: ObservableObject {
     @Published var indexing: Bool = false
 
     @Published var similarPhotosPercent: Float = 0.85
+    @Published var searchSimilarity: Float = 0.14
     
     private let imageEmbeddingService: ImageEmbeddingService
     private let clusterService: ClusterService
@@ -37,7 +38,7 @@ class PhotoService: ObservableObject {
     
     func search(text: String) async -> [Photo] {
         let translatedText = await translateService.translate(text: text)
-        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText, minSimilarity: 0.14, photos: photos)
+        let results = await imageEmbeddingService.findSimilarPhotos(query: translatedText, minSimilarity: searchSimilarity, photos: photos)
         return results.map { $0.0 }
     }
     
