@@ -7,8 +7,8 @@ import NaturalLanguage
 import CoreVideo
 
 class ImageEmbeddingService {
-    private var mobileClipImageModel: mobileclip_s0_image?
-    private var mobileClipTextModel: mobileclip_s0_text?
+    private var mobileClipImageModel: Any?
+    private var mobileClipTextModel: Any?
     private var concurrentTasks = 10
 
     var tokenizer: CLIPTokenizer?
@@ -17,6 +17,28 @@ class ImageEmbeddingService {
         loadImageModel()
         loadTextModel()
         loadTokenizer()
+    }
+
+    func switchModel(model: String) {
+        do {
+            switch model {
+                case "s0":
+                    mobileClipImageModel = try mobileclip_s0_image()
+                    mobileClipTextModel = try mobileclip_s0_text()
+                case "s1":
+                    mobileClipImageModel = try mobileclip_s1_image()
+                    mobileClipTextModel = try mobileclip_s1_text()
+                case "s2":
+                    mobileClipImageModel = try mobileclip_s2_image()
+                    mobileClipTextModel = try mobileclip_s2_text()
+                default:
+                    mobileClipImageModel = try mobileclip_s0_image()
+                    mobileClipTextModel = try mobileclip_s0_text()
+            }
+            print("✅ Модель \(model) успешно загружена")
+        } catch {
+            print("❌ Ошибка загрузки модели \(model): \(error)")
+        }
     }
     
     private func loadTokenizer() {
@@ -97,18 +119,21 @@ class ImageEmbeddingService {
                 print("❌ Image model not loaded")
                 return []
             }
-            
-            let output = try await mobileClipImageModel.prediction(image: pixelBuffer)
-            
-            // Конвертируем MLMultiArray в [Float]
-            let count = output.final_emb_1.count
-            var result = [Float](repeating: 0, count: count)
-            
-            for i in 0..<count {
-                result[i] = Float(truncating: output.final_emb_1[i])
+        
+            // Определяем тип модели и вызываем соответствующий метод prediction
+            if let s0Model = mobileClipImageModel as? mobileclip_s0_image {
+                let output = try await s0Model.prediction(image: pixelBuffer)
+                return convertMultiArrayToFloatArray(output.final_emb_1)
+            } else if let s1Model = mobileClipImageModel as? mobileclip_s1_image {
+                let output = try await s1Model.prediction(image: pixelBuffer)
+                return convertMultiArrayToFloatArray(output.final_emb_1)
+            } else if let s2Model = mobileClipImageModel as? mobileclip_s2_image {
+                let output = try await s2Model.prediction(image: pixelBuffer)
+                return convertMultiArrayToFloatArray(output.final_emb_1)
+            } else {
+                print("❌ Unknown image model type")
+                return []
             }
-            
-            return result
         } catch {
             print("❌ Error: \(error)")
             return []
@@ -146,16 +171,20 @@ class ImageEmbeddingService {
                 inputArray[index] = NSNumber(value: element)
             }
 
-            let output = try model.prediction(text: inputArray).final_emb_1
-            
-            let count = output.count
-            var result = [Float](repeating: 0, count: count)
-
-            for i in 0..<count {
-                result[i] = Float(truncating: output[i])
+            // Определяем тип модели и вызываем соответствующий метод prediction
+            if let s0Model = model as? mobileclip_s0_text {
+                let output = try s0Model.prediction(text: inputArray)
+                return convertMultiArrayToFloatArray(output.final_emb_1)
+            } else if let s1Model = model as? mobileclip_s1_text {
+                let output = try s1Model.prediction(text: inputArray)
+                return convertMultiArrayToFloatArray(output.final_emb_1)
+            } else if let s2Model = model as? mobileclip_s2_text {
+                let output = try s2Model.prediction(text: inputArray)
+                return convertMultiArrayToFloatArray(output.final_emb_1)
+            } else {
+                print("❌ Unknown text model type")
+                return []
             }
-
-            return result
         } catch {
             print(error.localizedDescription)
             return []

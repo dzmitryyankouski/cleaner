@@ -82,6 +82,35 @@ struct SettingsView: View {
                     .padding()
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
+                    
+                    // Настройка выбора модели
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Модель MobileCLIP")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        Text("Выберите модель для обработки изображений")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Picker("Модель", selection: Binding(
+                            get: { photoService.selectedModel },
+                            set: { photoService.switchModel(model: $0) }
+                        )) {
+                            Text("S0 (Быстрая)").tag("s0")
+                            Text("S1 (Средняя)").tag("s1")
+                            Text("S2 (Точная)").tag("s2")
+                        }
+                        .pickerStyle(SegmentedPickerStyle())
+                        
+                        Text("Текущая модель: \(photoService.selectedModel.uppercased())")
+                            .font(.caption)
+                            .foregroundColor(.blue)
+                            .fontWeight(.medium)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
                 }
                 .padding(.horizontal)
                 

@@ -21,6 +21,7 @@ class PhotoService: ObservableObject {
 
     @Published var similarPhotosPercent: Float = 0.85
     @Published var searchSimilarity: Float = 0.14
+    @Published var selectedModel: String = "s0"
     
     private let imageEmbeddingService: ImageEmbeddingService
     private let clusterService: ClusterService
@@ -49,6 +50,12 @@ class PhotoService: ObservableObject {
         indexed = 0
         
         await loadAndIndexPhotos()
+    }
+    
+    func switchModel(model: String) {
+        selectedModel = model
+        imageEmbeddingService.switchModel(model: model)
+        print("🔄 Переключена модель на: \(model)")
     }
     
     func getGroupCount() -> Int {
