@@ -55,7 +55,9 @@ class VideoService: ObservableObject {
             }
         }
         
-        let allVideos = await fetchVideosFromLibrary()
+        var allVideos = await fetchVideosFromLibrary()
+        
+        allVideos.sort { $0.fileSize > $1.fileSize }
         
         DispatchQueue.main.async {
             self.videos = allVideos
@@ -149,4 +151,9 @@ class VideoService: ObservableObject {
             return String(format: "%d:%02d", minutes, seconds)
         }
     }
+    
+    // // MARK: - Sorting Methods
+    // private func sortVideos() {
+    //     videos.sort { $0.fileSize > $1.fileSize }
+    // }
 }
