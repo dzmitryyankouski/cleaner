@@ -166,9 +166,12 @@ class PhotoService: ObservableObject {
             }
         }.filter { !$0.isEmpty }
         
+        // Сортируем группы по датам (от новых к старым)
+        let sortedGroups = sortGroupsByDate(photoGroups)
+        
         await MainActor.run {
-            self.groupsSimilar = photoGroups
-            print("📁 Создано \(photoGroups.count) групп фотографий")
+            self.groupsSimilar = sortedGroups
+            print("📁 Создано \(sortedGroups.count) групп фотографий, отсортированных по датам")
         }
     }
 
@@ -188,9 +191,12 @@ class PhotoService: ObservableObject {
             }
         }.filter { !$0.isEmpty }
         
+        // Сортируем группы по датам (от новых к старым)
+        let sortedGroups = sortGroupsByDate(photoGroups)
+        
         await MainActor.run {
-            self.groupsDuplicates = photoGroups
-            print("📁 Создано \(photoGroups.count) групп дубликатов")
+            self.groupsDuplicates = sortedGroups
+            print("📁 Создано \(sortedGroups.count) групп дубликатов, отсортированных по датам")
         }
     }
 
@@ -202,5 +208,28 @@ class PhotoService: ObservableObject {
         }
         
         return false
+    }
+    
+    // MARK: - Group Sorting Methods
+    private func getLatestPhotoInGroup(_ group: [Photo]) -> Photo? {
+        return group.max { photo1, photo2 in
+            guard let date1 = photo1.asset.creationDate,
+                  let date2 = photo2.asset.creationDate else {
+                return false
+            }
+            return date1 < date2
+        }
+    }
+    
+    private func sortGroupsByDate(_ groups: [[Photo]]) -> [[Photo]] {
+        return groups.sorted { group1, group2 in
+            guard let latestPhoto1 = getLatestPhotoInGroup(group1),
+                  let latestPhoto2 = getLatestPhotoInGroup(group2),
+                  let date1 = latestPhoto1.asset.creationDate,
+                  let date2 = latestPhoto2.asset.creationDate else {
+                return false
+            }
+            return date1 > date2 // Сортируем от новых к старым
+        }
     }
 }
