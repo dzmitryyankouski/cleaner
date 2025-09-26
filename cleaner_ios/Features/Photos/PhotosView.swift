@@ -144,18 +144,17 @@ struct SimilarPhotosTab: View {
                                         ScrollView(.horizontal, showsIndicators: false) {
                                             HStack(spacing: 12) {
                                                 ForEach(group, id: \.asset.localIdentifier) { photo in
-                                                    AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 120)) { image in
+                                                    AsyncImage(asset: photo.asset, size: CGSize(width: 165, height: 220)) { image in
                                                         image
                                                             .resizable()
                                                             .aspectRatio(contentMode: .fill)
-                                                            .frame(width: 120, height: 120)
+                                                            .frame(width: 165, height: 220)
                                                             .clipped()
                                                             .cornerRadius(8)
-                                                            .shadow(radius: 4)
                                                     } placeholder: {
                                                         Rectangle()
                                                             .fill(Color.gray.opacity(0.3))
-                                                            .frame(width: 120, height: 120)
+                                                            .frame(width: 165, height: 220)
                                                             .cornerRadius(8)
                                                     }
                                                 }
@@ -245,14 +244,13 @@ struct DuplicatesTab: View {
                                         ScrollView(.horizontal, showsIndicators: false) {
                                             HStack(spacing: 12) {
                                                 ForEach(group, id: \.asset.localIdentifier) { photo in
-                                                    AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 120)) { image in
+                                                    AsyncImage(asset: photo.asset, size: CGSize(width: 165, height: 220)) { image in
                                                         image
                                                             .resizable()
                                                             .aspectRatio(contentMode: .fill)
-                                                            .frame(width: 120, height: 120)
+                                                            .frame(width: 165, height: 220)
                                                             .clipped()
                                                             .cornerRadius(8)
-                                                            .shadow(radius: 4)
                                                             .overlay(
                                                                 // Индикатор дубликата
                                                                 VStack {
@@ -272,7 +270,7 @@ struct DuplicatesTab: View {
                                                     } placeholder: {
                                                         Rectangle()
                                                             .fill(Color.gray.opacity(0.3))
-                                                            .frame(width: 120, height: 120)
+                                                            .frame(width: 165, height: 220)
                                                             .cornerRadius(8)
                                                     }
                                                 }
@@ -360,14 +358,13 @@ struct ScreenshotsTab: View {
                             GridItem(.flexible())
                         ], spacing: 12) {
                             ForEach(screenshots, id: \.asset.localIdentifier) { photo in
-                                AsyncImage(asset: photo.asset, size: CGSize(width: 200, height: 200)) { image in
+                                AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 160)) { image in
                                     image
                                         .resizable()
                                         .aspectRatio(contentMode: .fill)
-                                        .frame(height: 120)
+                                        .frame(width: 120, height: 160)
                                         .clipped()
                                         .cornerRadius(8)
-                                        .shadow(radius: 4)
                                         .overlay(
                                             // Индикатор скриншота
                                             VStack {
@@ -387,7 +384,7 @@ struct ScreenshotsTab: View {
                                 } placeholder: {
                                     Rectangle()
                                         .fill(Color.gray.opacity(0.3))
-                                        .frame(height: 120)
+                                        .frame(width: 120, height: 160)
                                         .cornerRadius(8)
                                         .overlay(
                                             ProgressView()
@@ -484,14 +481,13 @@ struct BlurredTab: View {
                                 GridItem(.flexible())
                             ], spacing: 12) {
                                 ForEach(blurredPhotos, id: \.asset.localIdentifier) { photo in
-                                    AsyncImage(asset: photo.asset, size: CGSize(width: 200, height: 200)) { image in
+                                    AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 160)) { image in
                                         image
                                             .resizable()
                                             .aspectRatio(contentMode: .fill)
-                                            .frame(height: 120)
+                                            .frame(width: 120, height: 160)
                                             .clipped()
                                             .cornerRadius(8)
-                                            .shadow(radius: 4)
                                             .overlay(
                                                 // Индикатор размытой фотографии
                                                 VStack {
@@ -511,7 +507,7 @@ struct BlurredTab: View {
                                     } placeholder: {
                                         Rectangle()
                                             .fill(Color.gray.opacity(0.3))
-                                            .frame(height: 120)
+                                            .frame(width: 120, height: 160)
                                             .cornerRadius(8)
                                             .overlay(
                                                 ProgressView()
