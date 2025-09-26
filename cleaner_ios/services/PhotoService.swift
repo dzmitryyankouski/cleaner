@@ -44,10 +44,12 @@ class PhotoService: ObservableObject {
     }
     
     func refreshPhotos() async {
-        photos.removeAll()
-        groupsSimilar.removeAll()
-        groupsDuplicates.removeAll()
-        indexed = 0
+        await MainActor.run {
+            photos.removeAll()
+            groupsSimilar.removeAll()
+            groupsDuplicates.removeAll()
+            indexed = 0
+        }
         
         await loadAndIndexPhotos()
     }
@@ -106,9 +108,11 @@ class PhotoService: ObservableObject {
         }
 
         let allPhotos = await loadPhotosFromLibrary()
-        self.total = allPhotos.count
-
-        self.indexing = true
+        
+        await MainActor.run {
+            self.total = allPhotos.count
+            self.indexing = true
+        }
 
         await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) -> Void in
             Task { @MainActor in
@@ -125,7 +129,9 @@ class PhotoService: ObservableObject {
         await createGroupsSimilar(for: self.photos.map { $0.embedding })
         await createGroupsDuplicates(for: self.photos)
 
-        self.indexing = false
+        await MainActor.run {
+            self.indexing = false
+        }
 
         print("✅ Индексация завершена", self.indexing)
     }
