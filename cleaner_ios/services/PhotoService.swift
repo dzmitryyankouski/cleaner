@@ -84,23 +84,16 @@ class PhotoService: ObservableObject {
     }
 
     private func getFileSize(for asset: PHAsset) async -> Int64 {
-        let options = PHImageRequestOptions()
-
-        options.isSynchronous = true
-        options.deliveryMode = .fastFormat
-        options.resizeMode = .none
-        
-        var fileSize: Int64 = 0
-        
-        PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, _, _, _ in
-            if let data = data {
-                fileSize = Int64(data.count)
+        return await withCheckedContinuation { continuation in
+            let resources = PHAssetResource.assetResources(for: asset)
+            if let resource = resources.first {
+                if let fileSize = resource.value(forKey: "fileSize") as? Int64, fileSize > 0 {
+                    print("💾 Размер файла (через ресурсы): \(fileSize)")
+                    continuation.resume(returning: fileSize)
+                    return
+                }
             }
         }
-        
-        print("💾 Размер файла: \(fileSize)")
-
-        return fileSize
     }
 
     private func loadAndIndexPhotos() async {
@@ -139,8 +132,6 @@ class PhotoService: ObservableObject {
     
     private func loadPhotosFromLibrary() async -> [PHAsset] {
         let fetchOptions = PHFetchOptions()
-        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        
         let photos = PHAsset.fetchAssets(with: .image, options: fetchOptions)
         
         var assets: [PHAsset] = []
