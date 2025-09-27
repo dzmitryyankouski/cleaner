@@ -40,30 +40,63 @@ struct PhotosView: View {
                         .cornerRadius(12)
                     } else if !photoService.photos.isEmpty {
                         // Статистика после завершения индексации
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text("Всего фотографий")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text("\(photoService.getTotalPhotosCount())")
-                                    .font(.title2)
-                                    .fontWeight(.bold)
+                        VStack(spacing: 12) {
+                            // Общая статистика
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Всего фотографий")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("\(photoService.getTotalPhotosCount())")
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .trailing) {
+                                    Text("Общий размер")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(photoService.formatFileSize(photoService.getTotalFileSize()))
+                                        .font(.title2)
+                                        .fontWeight(.bold)
+                                }
                             }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
                             
-                            Spacer()
-                            
-                            VStack(alignment: .trailing) {
-                                Text("Общий размер")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(photoService.formatFileSize(photoService.getTotalFileSize()))
-                                    .font(.title2)
-                                    .fontWeight(.bold)
+                            // Статистика помеченных для удаления
+                            if photoService.itemsToRemove.count > 0 {
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text("Помечено для удаления")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("\(photoService.itemsToRemove.count)")
+                                            .font(.title2)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.red)
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    VStack(alignment: .trailing) {
+                                        Text("Размер для удаления")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text(photoService.formatFileSize(photoService.itemsToRemoveFileSize))
+                                            .font(.title2)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.red)
+                                    }
+                                }
+                                .padding()
+                                .background(Color.red.opacity(0.1))
+                                .cornerRadius(12)
                             }
                         }
-                        .padding()
-                        .background(Color(.systemGray6))
-                        .cornerRadius(12)
                     }
                 }
                 .padding(.horizontal)

@@ -23,7 +23,9 @@ class PhotoService: ObservableObject {
     @Published var similarPhotosPercent: Float = 0.85
     @Published var searchSimilarity: Float = 0.14
     @Published var selectedModel: String = "s0"
+
     @Published var itemsToRemove: Set<Int> = []
+    @Published var itemsToRemoveFileSize: Int64 = 0
     
     private let imageEmbeddingService: ImageEmbeddingService
     private let clusterService: ClusterService
@@ -50,6 +52,8 @@ class PhotoService: ObservableObject {
             photos.removeAll()
             groupsSimilar.removeAll()
             groupsDuplicates.removeAll()
+            itemsToRemove.removeAll()
+            itemsToRemoveFileSize = 0
             indexed = 0
         }
         
@@ -90,7 +94,9 @@ class PhotoService: ObservableObject {
     func toggleShouldDelete(for photo: Photo) {
         if itemsToRemove.contains(photo.index) {
             itemsToRemove.remove(photo.index)
+            itemsToRemoveFileSize -= photo.fileSize
         } else {
+            itemsToRemoveFileSize += photo.fileSize
             itemsToRemove.insert(photo.index)
         }
     }
