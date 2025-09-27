@@ -3,6 +3,7 @@ import Photos
 import UIKit
 
 struct Photo {
+    let index: Int
     let asset: PHAsset
     var embedding: [Float]
     var fileSize: Int64
@@ -22,6 +23,7 @@ class PhotoService: ObservableObject {
     @Published var similarPhotosPercent: Float = 0.85
     @Published var searchSimilarity: Float = 0.14
     @Published var selectedModel: String = "s0"
+    @Published var itemsToRemove: [Int] = []
     
     private let imageEmbeddingService: ImageEmbeddingService
     private let clusterService: ClusterService
@@ -71,7 +73,7 @@ class PhotoService: ObservableObject {
     func getTotalFileSize() -> Int64 {
         return photos.reduce(0) { $0 + $1.fileSize }
     }
-    
+
     func formatFileSize(_ bytes: Int64) -> String {
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useMB, .useGB]
@@ -83,6 +85,14 @@ class PhotoService: ObservableObject {
         let results = await imageEmbeddingService.findSimilarPhotos(query: "blured photo", minSimilarity: 0.21, photos: photos)
 
         return results.map { $0.0 }
+    }
+
+    func toggleShouldDelete(for photo: Photo) {
+        if itemsToRemove.contains(photo.index) {
+            itemsToRemove.remove(at: itemsToRemove.firstIndex(of: photo.index)!)
+        } else {
+            itemsToRemove.append(photo.index)
+        }
     }
 
     private func getFileSize(for asset: PHAsset) async -> Int64 {
@@ -121,7 +131,7 @@ class PhotoService: ObservableObject {
                 let fileSize = await self.getFileSize(for: allPhotos[index])
                 let isScreenshot = await self.isScreenshot(for: allPhotos[index])
 
-                self.photos.append(Photo(asset: allPhotos[index], embedding: embedding, fileSize: fileSize, isScreenshot: isScreenshot))
+                self.photos.append(Photo(index: index, asset: allPhotos[index], embedding: embedding, fileSize: fileSize, isScreenshot: isScreenshot))
                 self.indexed += 1
             }
         })

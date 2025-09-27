@@ -151,6 +151,35 @@ struct SimilarPhotosTab: View {
                                                             .frame(width: 165, height: 220)
                                                             .clipped()
                                                             .cornerRadius(8)
+                                                            .overlay(
+                                                                // Индикатор похожих фотографий и checkbox
+                                                                VStack {
+                                                                    HStack {
+                                                                        Spacer()
+                                                                        Image(systemName: "photo.on.rectangle.angled")
+                                                                            .font(.caption)
+                                                                            .foregroundColor(.white)
+                                                                            .padding(4)
+                                                                            .background(Color.blue.opacity(0.8))
+                                                                            .cornerRadius(4)
+                                                                    }
+                                                                    Spacer()
+                                                                    HStack {
+                                                                        Spacer()
+                                                                        Button(action: {
+                                                                            photoService.toggleShouldDelete(for: photo)
+                                                                        }) {
+                                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                                                .font(.title3)
+                                                                                .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
+                                                                                .background(Color.black.opacity(0.6))
+                                                                                .clipShape(Circle())
+                                                                        }
+                                                                    }
+                                                                }
+                                                                .padding(8)
+                                                            )
+                                                        
                                                     } placeholder: {
                                                         Rectangle()
                                                             .fill(Color.gray.opacity(0.3))
@@ -252,7 +281,7 @@ struct DuplicatesTab: View {
                                                             .clipped()
                                                             .cornerRadius(8)
                                                             .overlay(
-                                                                // Индикатор дубликата
+                                                                // Индикатор дубликата и checkbox
                                                                 VStack {
                                                                     HStack {
                                                                         Spacer()
@@ -264,6 +293,18 @@ struct DuplicatesTab: View {
                                                                             .cornerRadius(4)
                                                                     }
                                                                     Spacer()
+                                                                    HStack {
+                                                                        Spacer()
+                                                                        Button(action: {
+                                                                            photoService.toggleShouldDelete(for: photo)
+                                                                        }) {
+                                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                                                .font(.title3)
+                                                                                .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
+                                                                                .background(Color.black.opacity(0.6))
+                                                                                .clipShape(Circle())
+                                                                        }
+                                                                    }
                                                                 }
                                                                 .padding(8)
                                                             )
@@ -357,7 +398,7 @@ struct ScreenshotsTab: View {
                             GridItem(.flexible()),
                             GridItem(.flexible())
                         ], spacing: 12) {
-                            ForEach(screenshots, id: \.asset.localIdentifier) { photo in
+                            ForEach(Array(screenshots.enumerated()), id: \.element.asset.localIdentifier) { index, photo in
                                 AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 160)) { image in
                                     image
                                         .resizable()
@@ -366,7 +407,7 @@ struct ScreenshotsTab: View {
                                         .clipped()
                                         .cornerRadius(8)
                                         .overlay(
-                                            // Индикатор скриншота
+                                            // Индикатор скриншота и checkbox
                                             VStack {
                                                 HStack {
                                                     Spacer()
@@ -378,6 +419,18 @@ struct ScreenshotsTab: View {
                                                         .cornerRadius(4)
                                                 }
                                                 Spacer()
+                                                HStack {
+                                                    Spacer()
+                                                    Button(action: {
+                                                        photoService.toggleShouldDelete(for: photo)
+                                                    }) {
+                                                        Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                            .font(.title3)
+                                                            .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
+                                                            .background(Color.black.opacity(0.6))
+                                                            .clipShape(Circle())
+                                                    }
+                                                }
                                             }
                                             .padding(8)
                                         )
@@ -480,7 +533,7 @@ struct BlurredTab: View {
                                 GridItem(.flexible()),
                                 GridItem(.flexible())
                             ], spacing: 12) {
-                                ForEach(blurredPhotos, id: \.asset.localIdentifier) { photo in
+                                ForEach(Array(blurredPhotos.enumerated()), id: \.element.asset.localIdentifier) { index, photo in
                                     AsyncImage(asset: photo.asset, size: CGSize(width: 120, height: 160)) { image in
                                         image
                                             .resizable()
@@ -489,7 +542,7 @@ struct BlurredTab: View {
                                             .clipped()
                                             .cornerRadius(8)
                                             .overlay(
-                                                // Индикатор размытой фотографии
+                                                // Индикатор размытой фотографии и checkbox
                                                 VStack {
                                                     HStack {
                                                         Spacer()
@@ -501,6 +554,18 @@ struct BlurredTab: View {
                                                             .cornerRadius(4)
                                                     }
                                                     Spacer()
+                                                    HStack {
+                                                        Spacer()
+                                                        Button(action: {
+                                                            photoService.toggleShouldDelete(for: photo)
+                                                        }) {
+                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                                .font(.title3)
+                                                                .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
+                                                                .background(Color.black.opacity(0.6))
+                                                                .clipShape(Circle())
+                                                        }
+                                                    }
                                                 }
                                                 .padding(8)
                                             )
