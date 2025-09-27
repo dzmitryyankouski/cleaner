@@ -78,7 +78,7 @@ struct VideosView: View {
                 }
             }
             .navigationTitle("Видеофайлы")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await videoService.refreshVideos()
             }

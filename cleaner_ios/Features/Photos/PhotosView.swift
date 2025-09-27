@@ -5,7 +5,7 @@ struct PhotosView: View {
     @ObservedObject var photoService: PhotoService
     @State private var selectedTab = 0
     
-    private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Размытые", "Серии"]
+    private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Размытые"]
 
     var body: some View {
         NavigationView {
@@ -17,10 +17,10 @@ struct PhotosView: View {
                         HStack {
                             VStack(alignment: .leading) {
                                 Text("Индексация фотографий")
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
                                 Text("\(photoService.indexed) из \(photoService.total)")
-                                    .font(.title2)
+                                    .font(.title3)
                                     .fontWeight(.bold)
                             }
                             
@@ -28,7 +28,7 @@ struct PhotosView: View {
                             
                             VStack(alignment: .trailing) {
                                 Text("Прогресс")
-                                    .font(.caption)
+                                    .font(.caption2)
                                     .foregroundColor(.secondary)
                                 ProgressView(value: Double(photoService.indexed), total: Double(photoService.total))
                                     .progressViewStyle(LinearProgressViewStyle())
@@ -45,10 +45,10 @@ struct PhotosView: View {
                             HStack {
                                 VStack(alignment: .leading) {
                                     Text("Всего фотографий")
-                                        .font(.caption)
+                                        .font(.caption2)
                                         .foregroundColor(.secondary)
                                     Text("\(photoService.getTotalPhotosCount())")
-                                        .font(.title2)
+                                        .font(.title3)
                                         .fontWeight(.bold)
                                 }
                                 
@@ -56,10 +56,10 @@ struct PhotosView: View {
                                 
                                 VStack(alignment: .trailing) {
                                     Text("Общий размер")
-                                        .font(.caption)
+                                        .font(.caption2)
                                         .foregroundColor(.secondary)
                                     Text(photoService.formatFileSize(photoService.getTotalFileSize()))
-                                        .font(.title2)
+                                        .font(.title3)
                                         .fontWeight(.bold)
                                 }
                             }
@@ -72,10 +72,10 @@ struct PhotosView: View {
                                 HStack {
                                     VStack(alignment: .leading) {
                                         Text("Помечено для удаления")
-                                            .font(.caption)
+                                            .font(.caption2)
                                             .foregroundColor(.secondary)
                                         Text("\(photoService.itemsToRemove.count)")
-                                            .font(.title2)
+                                            .font(.title3)
                                             .fontWeight(.bold)
                                             .foregroundColor(.red)
                                     }
@@ -84,10 +84,10 @@ struct PhotosView: View {
                                     
                                     VStack(alignment: .trailing) {
                                         Text("Размер для удаления")
-                                            .font(.caption)
+                                            .font(.caption2)
                                             .foregroundColor(.secondary)
                                         Text(photoService.formatFileSize(photoService.itemsToRemoveFileSize))
-                                            .font(.title2)
+                                            .font(.title3)
                                             .fontWeight(.bold)
                                             .foregroundColor(.red)
                                     }
@@ -122,8 +122,6 @@ struct PhotosView: View {
                         ScreenshotsTab(photoService: photoService)
                     case 3:
                         BlurredTab(photoService: photoService)
-                    case 4:
-                        SeriesTab()
                     default:
                         SimilarPhotosTab(photoService: photoService)
                     }
@@ -131,7 +129,7 @@ struct PhotosView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .navigationTitle("Фотографии")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await photoService.refreshPhotos()
             }
@@ -676,28 +674,6 @@ struct BlurredTab: View {
                 self.isLoading = false
             }
         }
-    }
-}
-
-// Таб с сериями
-struct SeriesTab: View {
-    var body: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "photo.stack")
-                .font(.system(size: 50))
-                .foregroundColor(.secondary)
-            
-            Text("Серии")
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            Text("Функция в разработке")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .padding()
-        
-        Spacer()
     }
 }
 

@@ -24,6 +24,7 @@ struct FilesView: View {
                 Spacer()
             }
             .navigationTitle("Файлы")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 }

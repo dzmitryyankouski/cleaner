@@ -140,6 +140,8 @@ struct SearchView: View {
                 }
             }
         }
+        .navigationTitle("Поиск")
+        .navigationBarTitleDisplayMode(.inline)
         .padding(.top, 40)
     }
     
