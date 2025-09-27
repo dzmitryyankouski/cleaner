@@ -175,6 +175,15 @@ class PhotoService: ObservableObject {
         
         // Сортируем группы по датам (от новых к старым)
         let sortedGroups = sortGroupsByDate(photoGroups)
+
+        // вызываем toggleShouldDelete для каждого фото в группе кроме первого
+        for group in sortedGroups {
+            for (index, photo) in group.enumerated() {
+                if index > 0 {
+                    toggleShouldDelete(for: photo)
+                }
+            }
+        }
         
         await MainActor.run {
             self.groupsSimilar = sortedGroups

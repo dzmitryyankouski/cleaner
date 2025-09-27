@@ -169,7 +169,7 @@ struct SimilarPhotosTab: View {
                                                                         Button(action: {
                                                                             photoService.toggleShouldDelete(for: photo)
                                                                         }) {
-                                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "trash.circle.fill" : "circle")
                                                                                 .font(.title3)
                                                                                 .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
                                                                                 .background(Color.black.opacity(0.6))
@@ -298,7 +298,7 @@ struct DuplicatesTab: View {
                                                                         Button(action: {
                                                                             photoService.toggleShouldDelete(for: photo)
                                                                         }) {
-                                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "trash.circle.fill" : "circle")
                                                                                 .font(.title3)
                                                                                 .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
                                                                                 .background(Color.black.opacity(0.6))
@@ -424,7 +424,7 @@ struct ScreenshotsTab: View {
                                                     Button(action: {
                                                         photoService.toggleShouldDelete(for: photo)
                                                     }) {
-                                                        Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                        Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "trash.circle.fill" : "circle")
                                                             .font(.title3)
                                                             .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
                                                             .background(Color.black.opacity(0.6))
@@ -559,7 +559,7 @@ struct BlurredTab: View {
                                                         Button(action: {
                                                             photoService.toggleShouldDelete(for: photo)
                                                         }) {
-                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "checkmark.circle.fill" : "circle")
+                                                            Image(systemName: photoService.itemsToRemove.contains(photo.index) ? "trash.circle.fill" : "circle")
                                                                 .font(.title3)
                                                                 .foregroundColor(photoService.itemsToRemove.contains(photo.index) ? .red : .white)
                                                                 .background(Color.black.opacity(0.6))
