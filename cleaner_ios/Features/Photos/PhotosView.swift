@@ -44,10 +44,10 @@ struct PhotosView: View {
                             // Общая статистика
                             HStack {
                                 VStack(alignment: .leading) {
-                                    Text("Всего фотографий")
+                                    Text("Фотографии")
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
-                                    Text("\(photoService.getTotalPhotosCount())")
+                                    Text("\(photoService.getTotalPhotosCount()) / \(photoService.itemsToRemove.count)")
                                         .font(.title3)
                                         .fontWeight(.bold)
                                 }
@@ -55,10 +55,10 @@ struct PhotosView: View {
                                 Spacer()
                                 
                                 VStack(alignment: .trailing) {
-                                    Text("Общий размер")
+                                    Text("Размер")
                                         .font(.caption2)
                                         .foregroundColor(.secondary)
-                                    Text(photoService.formatFileSize(photoService.getTotalFileSize()))
+                                    Text("\(photoService.formatFileSize(photoService.getTotalFileSize())) / \(photoService.formatFileSize(photoService.itemsToRemoveFileSize))")
                                         .font(.title3)
                                         .fontWeight(.bold)
                                 }
@@ -66,36 +66,6 @@ struct PhotosView: View {
                             .padding()
                             .background(Color(.systemGray6))
                             .cornerRadius(12)
-                            
-                            // Статистика помеченных для удаления
-                            if photoService.itemsToRemove.count > 0 {
-                                HStack {
-                                    VStack(alignment: .leading) {
-                                        Text("Помечено для удаления")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                        Text("\(photoService.itemsToRemove.count)")
-                                            .font(.title3)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.red)
-                                    }
-                                    
-                                    Spacer()
-                                    
-                                    VStack(alignment: .trailing) {
-                                        Text("Размер для удаления")
-                                            .font(.caption2)
-                                            .foregroundColor(.secondary)
-                                        Text(photoService.formatFileSize(photoService.itemsToRemoveFileSize))
-                                            .font(.title3)
-                                            .fontWeight(.bold)
-                                            .foregroundColor(.red)
-                                    }
-                                }
-                                .padding()
-                                .background(Color.red.opacity(0.1))
-                                .cornerRadius(12)
-                            }
                         }
                     }
                 }
@@ -141,6 +111,18 @@ struct PhotosView: View {
 struct SimilarPhotosTab: View {
     @ObservedObject var photoService: PhotoService
     
+    private var filteredGroups: [[Photo]] {
+        photoService.groupsSimilar.filter { $0.count > 1 }
+    }
+    
+    private var totalSimilarPhotos: Int {
+        filteredGroups.reduce(0) { $0 + $1.count }
+    }
+    
+    private var totalSimilarPhotosFileSize: Int64 {
+        filteredGroups.flatMap { $0 }.reduce(0) { $0 + $1.fileSize }
+    }
+    
     var body: some View {
         VStack {
             if photoService.indexing {
@@ -160,11 +142,48 @@ struct SimilarPhotosTab: View {
             }
             // Отображение групп картинок после завершения индексации
             else if !photoService.groupsSimilar.isEmpty {
-                let filteredGroups = photoService.groupsSimilar.filter { $0.count > 1 }
-                
                 if !filteredGroups.isEmpty {
-                    VStack(alignment: .leading, spacing: 16) {      
-                        ScrollView {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // Статистика похожих фотографий
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Найдено групп")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(filteredGroups.count)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .center) {
+                                    Text("Фото в группах")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(totalSimilarPhotos)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .trailing) {
+                                    Text("Общий размер")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text(photoService.formatFileSize(totalSimilarPhotosFileSize))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                            
+                            // Группы фотографий
                             LazyVStack(spacing: 20) {
                                 ForEach(Array(filteredGroups.enumerated()), id: \.offset) { groupIndex, group in
                                     VStack(alignment: .leading, spacing: 8) {
@@ -270,6 +289,18 @@ struct SimilarPhotosTab: View {
 struct DuplicatesTab: View {
     @ObservedObject var photoService: PhotoService
     
+    private var filteredGroups: [[Photo]] {
+        photoService.groupsDuplicates.filter { $0.count > 1 }
+    }
+    
+    private var totalDuplicatePhotos: Int {
+        filteredGroups.reduce(0) { $0 + $1.count }
+    }
+    
+    private var totalDuplicatePhotosFileSize: Int64 {
+        filteredGroups.flatMap { $0 }.reduce(0) { $0 + $1.fileSize }
+    }
+    
     var body: some View {
         VStack {
             if photoService.indexing {
@@ -289,11 +320,48 @@ struct DuplicatesTab: View {
             }
             // Отображение дубликатов после завершения индексации
             else if !photoService.photos.isEmpty {
-                let filteredGroups = photoService.groupsDuplicates.filter { $0.count > 1 }
-                
                 if !filteredGroups.isEmpty {
-                    VStack(alignment: .leading, spacing: 16) {      
-                        ScrollView {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // Статистика дубликатов
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Найдено групп")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(filteredGroups.count)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .center) {
+                                    Text("Дубликаты")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(totalDuplicatePhotos)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .trailing) {
+                                    Text("Общий размер")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text(photoService.formatFileSize(totalDuplicatePhotosFileSize))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                            
+                            // Группы дубликатов
                             LazyVStack(spacing: 20) {
                                 ForEach(Array(filteredGroups.enumerated()), id: \.offset) { groupIndex, group in
                                     VStack(alignment: .leading, spacing: 8) {
@@ -402,6 +470,7 @@ struct ScreenshotsTab: View {
         photoService.photos.filter { $0.isScreenshot }
     }
     
+    
     var body: some View {
         VStack {
             if photoService.indexing {
@@ -421,9 +490,39 @@ struct ScreenshotsTab: View {
             }
             // Отображение скриншотов после завершения индексации
             else if !screenshots.isEmpty {
-                VStack(alignment: .leading, spacing: 16) {
-                    // Сетка скриншотов
-                    ScrollView {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        // Статистика скриншотов
+                        VStack(spacing: 12) {
+                            // Общая статистика скриншотов
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Найдено скриншотов")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(screenshots.count)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .trailing) {
+                                    Text("Общий размер")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text(photoService.formatFileSize(screenshots.reduce(0) { $0 + $1.fileSize }))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                        
+                        // Сетка скриншотов
                         LazyVGrid(columns: [
                             GridItem(.flexible()),
                             GridItem(.flexible()),
@@ -526,6 +625,10 @@ struct BlurredTab: View {
     @State private var blurredPhotos: [Photo] = []
     @State private var isLoading = false
     
+    private var totalBlurredPhotosFileSize: Int64 {
+        blurredPhotos.reduce(0) { $0 + $1.fileSize }
+    }
+    
     var body: some View {
         VStack {
             if photoService.indexing {
@@ -556,9 +659,36 @@ struct BlurredTab: View {
                     }
                     .padding()
                 } else if !blurredPhotos.isEmpty {
-                    VStack(alignment: .leading, spacing: 16) {
-                        // Сетка размытых фотографий
-                        ScrollView {
+                    ScrollView {
+                        VStack(alignment: .leading, spacing: 16) {
+                            // Статистика размытых фотографий
+                            HStack {
+                                VStack(alignment: .leading) {
+                                    Text("Найдено размытых")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(blurredPhotos.count)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                                
+                                Spacer()
+                                
+                                VStack(alignment: .trailing) {
+                                    Text("Общий размер")
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                    Text(photoService.formatFileSize(totalBlurredPhotosFileSize))
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                }
+                            }
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .padding(.horizontal)
+                            
+                            // Сетка размытых фотографий
                             LazyVGrid(columns: [
                                 GridItem(.flexible()),
                                 GridItem(.flexible()),
