@@ -5,7 +5,7 @@ struct PhotosView: View {
     @ObservedObject var photoService: PhotoService
     @State private var selectedTab = 0
     
-    private let tabs = ["Похожие", "Дубликаты", "Скриншоты", "Размытые"]
+    private let tabs = ["Серии", "Копии", "Скриншоты", "Размытые"]
 
     var body: some View {
         NavigationView {
