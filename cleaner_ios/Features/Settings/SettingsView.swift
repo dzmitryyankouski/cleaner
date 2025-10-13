@@ -36,7 +36,7 @@ struct SettingsView: View {
                                 .foregroundColor(.secondary)
                         }
                         
-                        Text("Текущее значение: \(Int(photoService.similarPhotosPercent * 100))%")
+                        Text("Текущее значение: \(String(format: "%.1f", photoService.similarPhotosPercent * 100))%")
                             .font(.caption)
                             .foregroundColor(.blue)
                             .fontWeight(.medium)
@@ -55,7 +55,7 @@ struct SettingsView: View {
                             .foregroundColor(.secondary)
                         
                         HStack {
-                            Text("0%")
+                            Text("15%")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             
@@ -64,17 +64,17 @@ struct SettingsView: View {
                                     get: { photoService.searchSimilarity },
                                     set: { photoService.searchSimilarity = $0 }
                                 ),
-                                in: 0.0...1.0,
-                                step: 0.01
+                                in: 0.15...0.20,
+                                step: 0.001
                             )
                             .accentColor(.blue)
                             
-                            Text("100%")
+                            Text("20%")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
                         
-                        Text("Текущее значение: \(Int(photoService.searchSimilarity * 100))%")
+                        Text("Текущее значение: \(String(format: "%.1f", photoService.searchSimilarity * 100))%")
                             .font(.caption)
                             .foregroundColor(.blue)
                             .fontWeight(.medium)
