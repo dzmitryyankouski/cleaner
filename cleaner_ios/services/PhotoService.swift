@@ -20,9 +20,9 @@ class PhotoService: ObservableObject {
     @Published var groupsDuplicates: [[Photo]] = []
     @Published var indexing: Bool = false
 
-    @Published var similarPhotosPercent: Float = 0.85
-    @Published var searchSimilarity: Float = 0.14
-    @Published var selectedModel: String = "s0"
+    @Published var similarPhotosPercent: Float = 0.95
+    @Published var searchSimilarity: Float = 0.18
+    @Published var selectedModel: String = "s2"
 
     @Published var itemsToRemove: Set<Int> = []
     @Published var itemsToRemoveFileSize: Int64 = 0
