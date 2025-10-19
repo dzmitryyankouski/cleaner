@@ -21,9 +21,12 @@ class VideoService: ObservableObject {
     @Published var totalCount: Int = 0
     @Published var indexed: Int = 0
     @Published var indexing: Bool = false
+    @Published var groupsSimilar: [[Video]] = []
+    @Published var similarVideosPercent: Float = 0.85
     
-    private var concurrentTasks = 10 // Количество параллельных потоков для индексации видео
+    private var concurrentTasks = 15 // Количество параллельных потоков для индексации видео
     private let imageEmbeddingService = ImageEmbeddingService()
+    private let clusterService = ClusterService()
     
     // MARK: - Initialization
     init() {
@@ -75,6 +78,9 @@ class VideoService: ObservableObject {
         
         // Параллельная индексация видео
         await indexVideos(assets: assets)
+        
+        // Создаем группы похожих видео
+        await createGroupsSimilar(for: self.videos.map { $0.embedding })
         
         // Сортируем по размеру файла
         DispatchQueue.main.async {
@@ -357,6 +363,90 @@ class VideoService: ObservableObject {
         }
     }
     
+    // MARK: - Grouping Methods
+    
+    /// Создает группы похожих видео
+    private func createGroupsSimilar(for embeddings: [[Float]]) async {
+        print("🔄 Создание групп похожих видео", videos.count)
+        guard !embeddings.isEmpty else { return }
+        
+        // Фильтруем видео с валидными эмбеддингами (непустыми и одинаковой размерности)
+        var validVideos: [Video] = []
+        var validEmbeddings: [[Float]] = []
+        
+        // Находим стандартную размерность (от первого непустого эмбеддинга)
+        guard let firstValidEmbedding = embeddings.first(where: { !$0.isEmpty }) else {
+            print("⚠️ Нет валидных эмбеддингов для видео")
+            return
+        }
+        let standardDim = firstValidEmbedding.count
+        
+        for (index, embedding) in embeddings.enumerated() {
+            if !embedding.isEmpty && embedding.count == standardDim {
+                validVideos.append(videos[index])
+                validEmbeddings.append(embedding)
+            } else {
+                if embedding.isEmpty {
+                    print("⚠️ Видео \(index) имеет пустой эмбеддинг, пропускаем")
+                } else {
+                    print("⚠️ Видео \(index) имеет неверную размерность эмбеддинга: \(embedding.count) вместо \(standardDim), пропускаем")
+                }
+            }
+        }
+        
+        print("✅ Валидных видео для кластеризации: \(validVideos.count) из \(videos.count)")
+        
+        guard validEmbeddings.count > 1 else {
+            print("⚠️ Недостаточно валидных видео для создания групп")
+            return
+        }
+        
+        let groupIndices = await clusterService.getImageGroups(for: validEmbeddings, threshold: similarVideosPercent)
+        
+        print("🔄 Группы похожих видео", groupIndices)
+        
+        // Конвертируем индексы в группы видео (используем validVideos вместо videos)
+        let videoGroups = groupIndices.map { indices in
+            indices.compactMap { index in
+                validVideos.indices.contains(index) ? validVideos[index] : nil
+            }
+        }.filter { $0.count > 1 } // Оставляем только группы с 2+ видео
+        
+        // Сортируем группы по датам (от новых к старым)
+        let sortedGroups = sortGroupsByDate(videoGroups)
+        
+        await MainActor.run {
+            self.groupsSimilar = sortedGroups
+            print("📁 Создано \(sortedGroups.count) групп похожих видео, отсортированных по датам")
+        }
+    }
+    
+    // MARK: - Group Sorting Methods
+    
+    /// Находит самое новое видео в группе
+    private func getLatestVideoInGroup(_ group: [Video]) -> Video? {
+        return group.max { video1, video2 in
+            guard let date1 = video1.asset.creationDate,
+                  let date2 = video2.asset.creationDate else {
+                return false
+            }
+            return date1 < date2
+        }
+    }
+    
+    /// Сортирует группы видео по дате (от новых к старым)
+    private func sortGroupsByDate(_ groups: [[Video]]) -> [[Video]] {
+        return groups.sorted { group1, group2 in
+            guard let latestVideo1 = getLatestVideoInGroup(group1),
+                  let latestVideo2 = getLatestVideoInGroup(group2),
+                  let date1 = latestVideo1.asset.creationDate,
+                  let date2 = latestVideo2.asset.creationDate else {
+                return false
+            }
+            return date1 > date2 // Сортируем от новых к старым
+        }
+    }
+    
     // MARK: - Public Methods
     func refreshVideos() async {
         await loadVideosFromLibrary()
@@ -364,6 +454,10 @@ class VideoService: ObservableObject {
     
     func getVideosCount() -> Int {
         return videos.count
+    }
+    
+    func getGroupCount() -> Int {
+        return groupsSimilar.count
     }
     
     func getTotalFileSize() -> Int64 {
