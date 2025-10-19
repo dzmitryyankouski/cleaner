@@ -24,6 +24,28 @@ struct VideosView: View {
                     .background(Color(.systemGray6))
                     .cornerRadius(12)
                     .padding(.horizontal)
+                } else if videoService.indexing {
+                    VStack(spacing: 20) {
+                        Text("Индексация видео")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                        
+                        ProgressView(value: Double(videoService.indexed), total: Double(videoService.totalCount))
+                            .progressViewStyle(.linear)
+                            .padding(.horizontal)
+                        
+                        Text("\(videoService.indexed) из \(videoService.totalCount)")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        Text("Генерация эмбеддингов для поиска...")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
                 } else if videoService.videos.isEmpty {
                     VStack(spacing: 20) {
                         Image(systemName: "video.slash")

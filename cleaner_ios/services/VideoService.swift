@@ -9,6 +9,7 @@ struct Video {
     let fileSize: Int64
     let creationDate: Date?
     let modificationDate: Date?
+    let embedding: [Float]
 }
 
 class VideoService: ObservableObject {
@@ -18,6 +19,11 @@ class VideoService: ObservableObject {
     @Published var videos: [Video] = []
     @Published var isLoading: Bool = false
     @Published var totalCount: Int = 0
+    @Published var indexed: Int = 0
+    @Published var indexing: Bool = false
+    
+    private var concurrentTasks = 10 // Количество параллельных потоков для индексации видео
+    private let imageEmbeddingService = ImageEmbeddingService()
     
     // MARK: - Initialization
     init() {
@@ -30,6 +36,7 @@ class VideoService: ObservableObject {
     private func loadVideosFromLibrary() async {
         DispatchQueue.main.async {
             self.isLoading = true
+            self.indexing = true
         }
         
         // Запрашиваем разрешение на доступ к фототеке
@@ -39,6 +46,7 @@ class VideoService: ObservableObject {
             print("❌ Доступ к фототеке запрещен")
             DispatchQueue.main.async {
                 self.isLoading = false
+                self.indexing = false
             }
             return
         }
@@ -50,31 +58,38 @@ class VideoService: ObservableObject {
                 print("❌ Пользователь отказал в доступе к фототеке")
                 DispatchQueue.main.async {
                     self.isLoading = false
+                    self.indexing = false
                 }
                 return
             }
         }
         
-        var allVideos = await fetchVideosFromLibrary()
-        
-        allVideos.sort { $0.fileSize > $1.fileSize }
+        // Получаем все видео ассеты
+        let assets = await fetchVideoAssets()
         
         DispatchQueue.main.async {
-            self.videos = allVideos
-            self.totalCount = allVideos.count
+            self.totalCount = assets.count
             self.isLoading = false
-            print("✅ Загружено \(allVideos.count) видеофайлов")
+            self.indexed = 0
+        }
+        
+        // Параллельная индексация видео
+        await indexVideos(assets: assets)
+        
+        // Сортируем по размеру файла
+        DispatchQueue.main.async {
+            self.videos.sort { $0.fileSize > $1.fileSize }
+            self.indexing = false
+            print("✅ Индексация \(self.videos.count) видеофайлов завершена")
         }
     }
     
-    private func fetchVideosFromLibrary() async -> [Video] {
+    private func fetchVideoAssets() async -> [PHAsset] {
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         
         // Получаем только видеофайлы
         let videos = PHAsset.fetchAssets(with: .video, options: fetchOptions)
-        
-        var videoAssets: [Video] = []
         
         // Конвертируем в массив для работы с async/await
         var assets: [PHAsset] = []
@@ -82,20 +97,242 @@ class VideoService: ObservableObject {
             assets.append(asset)
         }
         
-        // Обрабатываем каждый ассет асинхронно
-        for asset in assets {
-            let fileSize = await getFileSize(for: asset)
-            let video = Video(
-                asset: asset,
-                duration: asset.duration,
-                fileSize: fileSize,
-                creationDate: asset.creationDate,
-                modificationDate: asset.modificationDate
-            )
-            videoAssets.append(video)
+        return assets
+    }
+    
+    /// Параллельная индексация видео с ограничением количества потоков
+    private func indexVideos(assets: [PHAsset]) async {
+        print("🔄 Начинаем индексацию \(assets.count) видеофайлов...")
+        
+        await withTaskGroup(of: (Int, Video?)?.self) { group in
+            var activeTasks = 0
+            
+            for (index, asset) in assets.enumerated() {
+                // Ждем, пока освободится место для новой таски
+                while activeTasks >= concurrentTasks {
+                    if let result = await group.next() {
+                        if let (_, video) = result, let video = video {
+                            await MainActor.run {
+                                self.videos.append(video)
+                                self.indexed += 1
+                                print("✅ Проиндексировано \(self.indexed) из \(self.totalCount)")
+                            }
+                        }
+                        activeTasks -= 1
+                    }
+                }
+                
+                group.addTask {
+                    let video = await self.processSingleVideo(asset, index: index)
+                    return (index, video)
+                }
+                activeTasks += 1
+            }
+            
+            // Обрабатываем оставшиеся результаты
+            for await result in group {
+                if let (_, video) = result, let video = video {
+                    await MainActor.run {
+                        self.videos.append(video)
+                        self.indexed += 1
+                        print("✅ Проиндексировано \(self.indexed) из \(self.totalCount)")
+                    }
+                }
+            }
+        }
+    }
+    
+    /// Обрабатывает одно видео: получает размер файла и генерирует эмбеддинг
+    private func processSingleVideo(_ asset: PHAsset, index: Int) async -> Video? {
+        let fileSize = await getFileSize(for: asset)
+        let embedding = await generateVideoEmbedding(for: asset)
+        
+        let video = Video(
+            asset: asset,
+            duration: asset.duration,
+            fileSize: fileSize,
+            creationDate: asset.creationDate,
+            modificationDate: asset.modificationDate,
+            embedding: embedding
+        )
+        
+        return video
+    }
+    
+    /// Генерирует эмбеддинг для видео, извлекая кадры каждую секунду
+    private func generateVideoEmbedding(for asset: PHAsset) async -> [Float] {
+        print("🎬 Начало генерации эмбеддинга для видео...")
+        
+        // Получаем AVAsset из PHAsset
+        guard let avAsset = await getAVAsset(for: asset) else {
+            print("❌ Не удалось получить AVAsset")
+            return []
         }
         
-        return videoAssets
+        // Извлекаем кадры из видео
+        let frames = await extractFramesFromVideo(avAsset: avAsset, duration: asset.duration)
+        
+        guard !frames.isEmpty else {
+            print("❌ Не удалось извлечь кадры из видео")
+            return []
+        }
+        
+        print("✅ Извлечено \(frames.count) кадров")
+        
+        // Генерируем эмбеддинги для каждого кадра
+        var embeddings: [[Float]] = []
+        
+        for frame in frames {
+            let embedding = await imageEmbeddingService.generateEmbedding(from: frame)
+            if !embedding.isEmpty {
+                embeddings.append(embedding)
+            }
+        }
+        
+        guard !embeddings.isEmpty else {
+            print("❌ Не удалось сгенерировать эмбеддинги для кадров")
+            return []
+        }
+        
+        print("✅ Сгенерировано \(embeddings.count) эмбеддингов")
+        
+        // Вычисляем средний эмбеддинг
+        let averageEmbedding = calculateAverageEmbedding(embeddings: embeddings)
+        
+        print("✅ Средний эмбеддинг вычислен, размер: \(averageEmbedding.count)")
+        
+        return averageEmbedding
+    }
+    
+    /// Получает AVAsset из PHAsset
+    private func getAVAsset(for asset: PHAsset) async -> AVAsset? {
+        return await withCheckedContinuation { continuation in
+            let options = PHVideoRequestOptions()
+            options.isNetworkAccessAllowed = false
+            
+            PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
+                continuation.resume(returning: avAsset)
+            }
+        }
+    }
+    
+    /// Извлекает кадры из видео (один кадр каждую секунду)
+    private func extractFramesFromVideo(avAsset: AVAsset, duration: TimeInterval) async -> [CVPixelBuffer] {
+        var frames: [CVPixelBuffer] = []
+        
+        let generator = AVAssetImageGenerator(asset: avAsset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceAfter = .zero
+        generator.requestedTimeToleranceBefore = .zero
+        
+        // Генерируем временные метки для каждой секунды
+        var times: [CMTime] = []
+        let numberOfFrames = Int(duration)
+        
+        for i in 0..<numberOfFrames {
+            let time = CMTime(seconds: Double(i), preferredTimescale: 600)
+            times.append(time)
+        }
+        
+        // Если видео длится меньше секунды, берем один кадр в середине
+        if numberOfFrames == 0 {
+            let time = CMTime(seconds: duration / 2.0, preferredTimescale: 600)
+            times.append(time)
+        }
+        
+        for time in times {
+            if let pixelBuffer = await extractFrame(generator: generator, at: time) {
+                frames.append(pixelBuffer)
+            }
+        }
+        
+        return frames
+    }
+    
+    /// Извлекает один кадр в указанное время
+    private func extractFrame(generator: AVAssetImageGenerator, at time: CMTime) async -> CVPixelBuffer? {
+        return await withCheckedContinuation { continuation in
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { _, cgImage, _, _, error in
+                if let error = error {
+                    print("❌ Ошибка извлечения кадра: \(error)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                guard let cgImage = cgImage else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let pixelBuffer = self.cgImageToPixelBuffer(cgImage)
+                continuation.resume(returning: pixelBuffer)
+            }
+        }
+    }
+    
+    /// Преобразует CGImage в CVPixelBuffer (256x256 для MobileCLIP)
+    private func cgImageToPixelBuffer(_ cgImage: CGImage) -> CVPixelBuffer? {
+        let targetWidth = 256
+        let targetHeight = 256
+        
+        var pixelBuffer: CVPixelBuffer?
+        let status = CVPixelBufferCreate(
+            kCFAllocatorDefault,
+            targetWidth,
+            targetHeight,
+            kCVPixelFormatType_32ARGB,
+            nil,
+            &pixelBuffer
+        )
+        
+        guard status == kCVReturnSuccess, let buffer = pixelBuffer else {
+            return nil
+        }
+        
+        CVPixelBufferLockBaseAddress(buffer, CVPixelBufferLockFlags(rawValue: 0))
+        defer { CVPixelBufferUnlockBaseAddress(buffer, CVPixelBufferLockFlags(rawValue: 0)) }
+        
+        let pixelData = CVPixelBufferGetBaseAddress(buffer)
+        let rgbColorSpace = CGColorSpaceCreateDeviceRGB()
+        
+        guard let context = CGContext(
+            data: pixelData,
+            width: targetWidth,
+            height: targetHeight,
+            bitsPerComponent: 8,
+            bytesPerRow: CVPixelBufferGetBytesPerRow(buffer),
+            space: rgbColorSpace,
+            bitmapInfo: CGImageAlphaInfo.noneSkipFirst.rawValue
+        ) else {
+            return nil
+        }
+        
+        context.draw(cgImage, in: CGRect(x: 0, y: 0, width: targetWidth, height: targetHeight))
+        
+        return buffer
+    }
+    
+    /// Вычисляет средний эмбеддинг из массива эмбеддингов
+    private func calculateAverageEmbedding(embeddings: [[Float]]) -> [Float] {
+        guard !embeddings.isEmpty else { return [] }
+        
+        let embeddingSize = embeddings[0].count
+        var averageEmbedding = [Float](repeating: 0, count: embeddingSize)
+        
+        // Суммируем все эмбеддинги
+        for embedding in embeddings {
+            for i in 0..<embeddingSize {
+                averageEmbedding[i] += embedding[i]
+            }
+        }
+        
+        // Делим на количество эмбеддингов для получения среднего
+        let count = Float(embeddings.count)
+        for i in 0..<embeddingSize {
+            averageEmbedding[i] /= count
+        }
+        
+        return averageEmbedding
     }
     
     private func getFileSize(for asset: PHAsset) async -> Int64 {
