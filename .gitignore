@@ -95,3 +95,5 @@ models/
 # Environment variables
 config.env
 .env
+
+.vscode/

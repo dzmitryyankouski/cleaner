@@ -18,28 +18,6 @@ class ImageEmbeddingService {
         loadTextModel()
         loadTokenizer()
     }
-
-    func switchModel(model: String) {
-        do {
-            switch model {
-                case "s0":
-                    mobileClipImageModel = try mobileclip_s0_image()
-                    mobileClipTextModel = try mobileclip_s0_text()
-                case "s1":
-                    mobileClipImageModel = try mobileclip_s1_image()
-                    mobileClipTextModel = try mobileclip_s1_text()
-                case "s2":
-                    mobileClipImageModel = try mobileclip_s2_image()
-                    mobileClipTextModel = try mobileclip_s2_text()
-                default:
-                    mobileClipImageModel = try mobileclip_s0_image()
-                    mobileClipTextModel = try mobileclip_s0_text()
-            }
-            print("✅ Модель \(model) успешно загружена")
-        } catch {
-            print("❌ Ошибка загрузки модели \(model): \(error)")
-        }
-    }
     
     private func loadTokenizer() {
         do {
@@ -53,7 +31,7 @@ class ImageEmbeddingService {
     
     private func loadImageModel() {
         do {
-            mobileClipImageModel = try mobileclip_s0_image()
+            mobileClipImageModel = try mobileclip_s2_image()
             print("Image Model loaded")
         } catch {
             print("❌ Ошибка загрузки модели изображений из Bundle: \(error)")
@@ -62,14 +40,14 @@ class ImageEmbeddingService {
     
     private func loadTextModel() {
         do {
-            mobileClipTextModel = try mobileclip_s0_text()
+            mobileClipTextModel = try mobileclip_s2_text()
             print("Text Model loaded")
         } catch {
             print("❌ Ошибка загрузки модели текста из Bundle: \(error)")
         }
     }
 
-    func indexPhotos(assets: [PHAsset], onItemCompleted: ((Int, [Float]) -> Void)? = nil) async {
+    func indexPhotos(assets: [PHAsset], onItemCompleted: ((Int, [Float]) async -> Void)? = nil) async {
         print("🔄 Начинаем индексацию \(assets.count) фотографий...")
 
         var embeddings: [[Float]] = []
@@ -84,10 +62,7 @@ class ImageEmbeddingService {
                     if let result = await group.next() {
                         if let (assetIndex, embedding) = result, let embedding = embedding {
                             embeddings.append(embedding)
-
-                            await MainActor.run {
-                                onItemCompleted?(assetIndex, embedding)
-                            }
+                            await onItemCompleted?(assetIndex, embedding)
                         }
                         activeTasks -= 1
                     }
@@ -103,11 +78,8 @@ class ImageEmbeddingService {
             // Обрабатываем оставшиеся результаты
             for await result in group {
                 if let (assetIndex, embedding) = result, let embedding = embedding {
-                    // Обновляем UI в реальном времени
-                    await MainActor.run {
-                        embeddings.append(embedding)
-                        onItemCompleted?(assetIndex, embedding)
-                    }
+                    embeddings.append(embedding)
+                    await onItemCompleted?(assetIndex, embedding)
                 }
             }
         }

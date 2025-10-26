@@ -22,7 +22,6 @@ class PhotoService: ObservableObject {
 
     @Published var similarPhotosPercent: Float = 0.95
     @Published var searchSimilarity: Float = 0.18
-    @Published var selectedModel: String = "s2"
 
     @Published var itemsToRemove: Set<Int> = []
     @Published var itemsToRemoveFileSize: Int64 = 0
@@ -58,12 +57,6 @@ class PhotoService: ObservableObject {
         }
         
         await loadAndIndexPhotos()
-    }
-    
-    func switchModel(model: String) {
-        selectedModel = model
-        imageEmbeddingService.switchModel(model: model)
-        print("🔄 Переключена модель на: \(model)")
     }
     
     func getGroupCount() -> Int {
@@ -130,13 +123,13 @@ class PhotoService: ObservableObject {
             self.indexing = true
         }
 
-        await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) -> Void in
-            Task { @MainActor in
-                guard let self = self else { return }
+        await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) async in
+            guard let self = self else { return }
 
-                let fileSize = await self.getFileSize(for: allPhotos[index])
-                let isScreenshot = await self.isScreenshot(for: allPhotos[index])
+            let fileSize = await self.getFileSize(for: allPhotos[index])
+            let isScreenshot = await self.isScreenshot(for: allPhotos[index])
 
+            await MainActor.run {
                 self.photos.append(Photo(index: index, asset: allPhotos[index], embedding: embedding, fileSize: fileSize, isScreenshot: isScreenshot))
                 self.indexed += 1
             }
