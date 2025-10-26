@@ -24,7 +24,7 @@ class VideoService: ObservableObject {
     @Published var groupsSimilar: [[Video]] = []
     @Published var similarVideosPercent: Float = 0.95
     
-    private var concurrentTasks = 10 // Количество параллельных потоков для индексации видео
+    private var concurrentTasks = 5 // Количество параллельных потоков для индексации видео
     private let imageEmbeddingService = ImageEmbeddingService()
     private let clusterService = ClusterService()
     
@@ -151,6 +151,7 @@ class VideoService: ObservableObject {
     /// Обрабатывает одно видео: получает размер файла и генерирует эмбеддинг
     private func processSingleVideo(_ asset: PHAsset, index: Int) async -> Video? {
         let fileSize = await getFileSize(for: asset)
+
         let embedding = await generateVideoEmbedding(for: asset)
         
         let video = Video(
@@ -174,7 +175,7 @@ class VideoService: ObservableObject {
             print("❌ Не удалось получить AVAsset")
             return []
         }
-        
+
         // Извлекаем кадры из видео (теперь параллельно)
         let frames = await extractFramesFromVideo(avAsset: avAsset, duration: asset.duration)
         
@@ -204,7 +205,6 @@ class VideoService: ObservableObject {
         
         // Вычисляем средний эмбеддинг
         let averageEmbedding = calculateAverageEmbedding(embeddings: embeddings)
-        
         print("✅ Средний эмбеддинг вычислен, размер: \(averageEmbedding.count)")
         
         return averageEmbedding
@@ -222,14 +222,12 @@ class VideoService: ObservableObject {
         }
     }
     
-    /// Извлекает кадры из видео (один кадр каждые 2 секунды)
     private func extractFramesFromVideo(avAsset: AVAsset, duration: TimeInterval) async -> [CVPixelBuffer] {
         let generator = AVAssetImageGenerator(asset: avAsset)
         generator.appliesPreferredTrackTransform = true
         generator.requestedTimeToleranceAfter = .zero
         generator.requestedTimeToleranceBefore = .zero
         
-        // Генерируем временные метки каждые 2 секунды
         var times: [CMTime] = []
         let numberOfSeconds = Int(duration)
         
@@ -238,17 +236,25 @@ class VideoService: ObservableObject {
             times.append(time)
         }
         
-        // Если видео длится меньше 4 секунд, берем один кадр в середине
         if times.isEmpty {
             let time = CMTime(seconds: duration / 4.0, preferredTimescale: 600)
             times.append(time)
         }
         
-        // Извлекаем кадры последовательно (AVAssetImageGenerator не потокобезопасен)
+        // Параллельная обработка кадров
         var frames: [CVPixelBuffer] = []
-        for time in times {
-            if let pixelBuffer = await extractFrame(generator: generator, at: time) {
-                frames.append(pixelBuffer)
+        
+        await withTaskGroup(of: CVPixelBuffer?.self) { group in
+            for time in times {
+                group.addTask {
+                    await self.extractFrame(generator: generator, at: time)
+                }
+            }
+            
+            for await pixelBuffer in group {
+                if let pixelBuffer = pixelBuffer {
+                    frames.append(pixelBuffer)
+                }
             }
         }
         
