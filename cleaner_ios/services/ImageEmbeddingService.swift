@@ -18,28 +18,6 @@ class ImageEmbeddingService {
         loadTextModel()
         loadTokenizer()
     }
-
-    func switchModel(model: String) {
-        do {
-            switch model {
-                case "s0":
-                    mobileClipImageModel = try mobileclip_s0_image()
-                    mobileClipTextModel = try mobileclip_s0_text()
-                case "s1":
-                    mobileClipImageModel = try mobileclip_s1_image()
-                    mobileClipTextModel = try mobileclip_s1_text()
-                case "s2":
-                    mobileClipImageModel = try mobileclip_s2_image()
-                    mobileClipTextModel = try mobileclip_s2_text()
-                default:
-                    mobileClipImageModel = try mobileclip_s0_image()
-                    mobileClipTextModel = try mobileclip_s0_text()
-            }
-            print("✅ Модель \(model) успешно загружена")
-        } catch {
-            print("❌ Ошибка загрузки модели \(model): \(error)")
-        }
-    }
     
     private func loadTokenizer() {
         do {
@@ -53,7 +31,7 @@ class ImageEmbeddingService {
     
     private func loadImageModel() {
         do {
-            mobileClipImageModel = try mobileclip_s0_image()
+            mobileClipImageModel = try mobileclip_s2_image()
             print("Image Model loaded")
         } catch {
             print("❌ Ошибка загрузки модели изображений из Bundle: \(error)")
@@ -62,7 +40,7 @@ class ImageEmbeddingService {
     
     private func loadTextModel() {
         do {
-            mobileClipTextModel = try mobileclip_s0_text()
+            mobileClipTextModel = try mobileclip_s2_text()
             print("Text Model loaded")
         } catch {
             print("❌ Ошибка загрузки модели текста из Bundle: \(error)")

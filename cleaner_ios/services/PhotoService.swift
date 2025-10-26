@@ -22,7 +22,6 @@ class PhotoService: ObservableObject {
 
     @Published var similarPhotosPercent: Float = 0.95
     @Published var searchSimilarity: Float = 0.18
-    @Published var selectedModel: String = "s2"
 
     @Published var itemsToRemove: Set<Int> = []
     @Published var itemsToRemoveFileSize: Int64 = 0
@@ -58,12 +57,6 @@ class PhotoService: ObservableObject {
         }
         
         await loadAndIndexPhotos()
-    }
-    
-    func switchModel(model: String) {
-        selectedModel = model
-        imageEmbeddingService.switchModel(model: model)
-        print("🔄 Переключена модель на: \(model)")
     }
     
     func getGroupCount() -> Int {

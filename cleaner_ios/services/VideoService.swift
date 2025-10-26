@@ -22,9 +22,9 @@ class VideoService: ObservableObject {
     @Published var indexed: Int = 0
     @Published var indexing: Bool = false
     @Published var groupsSimilar: [[Video]] = []
-    @Published var similarVideosPercent: Float = 0.85
+    @Published var similarVideosPercent: Float = 0.95
     
-    private var concurrentTasks = 15 // Количество параллельных потоков для индексации видео
+    private var concurrentTasks = 10 // Количество параллельных потоков для индексации видео
     private let imageEmbeddingService = ImageEmbeddingService()
     private let clusterService = ClusterService()
     
@@ -121,7 +121,7 @@ class VideoService: ObservableObject {
                             await MainActor.run {
                                 self.videos.append(video)
                                 self.indexed += 1
-                                print("✅ Проиндексировано \(self.indexed) из \(self.totalCount)")
+                                print("✅ Проиндексировано \(self.indexed) из \(self.totalCount), всего потоков \(activeTasks)")
                             }
                         }
                         activeTasks -= 1
@@ -175,7 +175,7 @@ class VideoService: ObservableObject {
             return []
         }
         
-        // Извлекаем кадры из видео
+        // Извлекаем кадры из видео (теперь параллельно)
         let frames = await extractFramesFromVideo(avAsset: avAsset, duration: asset.duration)
         
         guard !frames.isEmpty else {
@@ -185,9 +185,9 @@ class VideoService: ObservableObject {
         
         print("✅ Извлечено \(frames.count) кадров")
         
-        // Генерируем эмбеддинги для каждого кадра
+        // Генерируем эмбеддинги для каждого кадра последовательно
+        // (параллелизм идёт на уровне видео, не кадров)
         var embeddings: [[Float]] = []
-        
         for frame in frames {
             let embedding = await imageEmbeddingService.generateEmbedding(from: frame)
             if !embedding.isEmpty {
@@ -222,30 +222,30 @@ class VideoService: ObservableObject {
         }
     }
     
-    /// Извлекает кадры из видео (один кадр каждую секунду)
+    /// Извлекает кадры из видео (один кадр каждые 2 секунды)
     private func extractFramesFromVideo(avAsset: AVAsset, duration: TimeInterval) async -> [CVPixelBuffer] {
-        var frames: [CVPixelBuffer] = []
-        
         let generator = AVAssetImageGenerator(asset: avAsset)
         generator.appliesPreferredTrackTransform = true
         generator.requestedTimeToleranceAfter = .zero
         generator.requestedTimeToleranceBefore = .zero
         
-        // Генерируем временные метки для каждой секунды
+        // Генерируем временные метки каждые 2 секунды
         var times: [CMTime] = []
-        let numberOfFrames = Int(duration)
+        let numberOfSeconds = Int(duration)
         
-        for i in 0..<numberOfFrames {
+        for i in stride(from: 0, through: numberOfSeconds, by: 4) {
             let time = CMTime(seconds: Double(i), preferredTimescale: 600)
             times.append(time)
         }
         
-        // Если видео длится меньше секунды, берем один кадр в середине
-        if numberOfFrames == 0 {
-            let time = CMTime(seconds: duration / 2.0, preferredTimescale: 600)
+        // Если видео длится меньше 4 секунд, берем один кадр в середине
+        if times.isEmpty {
+            let time = CMTime(seconds: duration / 4.0, preferredTimescale: 600)
             times.append(time)
         }
         
+        // Извлекаем кадры последовательно (AVAssetImageGenerator не потокобезопасен)
+        var frames: [CVPixelBuffer] = []
         for time in times {
             if let pixelBuffer = await extractFrame(generator: generator, at: time) {
                 frames.append(pixelBuffer)
@@ -482,9 +482,4 @@ class VideoService: ObservableObject {
             return String(format: "%d:%02d", minutes, seconds)
         }
     }
-    
-    // // MARK: - Sorting Methods
-    // private func sortVideos() {
-    //     videos.sort { $0.fileSize > $1.fileSize }
-    // }
 }
