@@ -455,6 +455,10 @@ class VideoService: ObservableObject {
     
     // MARK: - Public Methods
     func refreshVideos() async {
+        self.videos.removeAll()
+        self.groupsSimilar.removeAll()
+        self.indexed = 0
+        
         await loadVideosFromLibrary()
     }
     
