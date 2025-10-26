@@ -69,7 +69,7 @@ class ImageEmbeddingService {
         }
     }
 
-    func indexPhotos(assets: [PHAsset], onItemCompleted: ((Int, [Float]) -> Void)? = nil) async {
+    func indexPhotos(assets: [PHAsset], onItemCompleted: ((Int, [Float]) async -> Void)? = nil) async {
         print("🔄 Начинаем индексацию \(assets.count) фотографий...")
 
         var embeddings: [[Float]] = []
@@ -84,10 +84,7 @@ class ImageEmbeddingService {
                     if let result = await group.next() {
                         if let (assetIndex, embedding) = result, let embedding = embedding {
                             embeddings.append(embedding)
-
-                            await MainActor.run {
-                                onItemCompleted?(assetIndex, embedding)
-                            }
+                            await onItemCompleted?(assetIndex, embedding)
                         }
                         activeTasks -= 1
                     }
@@ -103,11 +100,8 @@ class ImageEmbeddingService {
             // Обрабатываем оставшиеся результаты
             for await result in group {
                 if let (assetIndex, embedding) = result, let embedding = embedding {
-                    // Обновляем UI в реальном времени
-                    await MainActor.run {
-                        embeddings.append(embedding)
-                        onItemCompleted?(assetIndex, embedding)
-                    }
+                    embeddings.append(embedding)
+                    await onItemCompleted?(assetIndex, embedding)
                 }
             }
         }

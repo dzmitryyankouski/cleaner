@@ -37,7 +37,7 @@ class VideoService: ObservableObject {
     
     // MARK: - Private Methods
     private func loadVideosFromLibrary() async {
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.isLoading = true
             self.indexing = true
         }
@@ -47,7 +47,7 @@ class VideoService: ObservableObject {
         
         if status == .denied || status == .restricted {
             print("❌ Доступ к фототеке запрещен")
-            DispatchQueue.main.async {
+            await MainActor.run {
                 self.isLoading = false
                 self.indexing = false
             }
@@ -59,7 +59,7 @@ class VideoService: ObservableObject {
             let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
             if newStatus == .denied || newStatus == .restricted {
                 print("❌ Пользователь отказал в доступе к фототеке")
-                DispatchQueue.main.async {
+                await MainActor.run {
                     self.isLoading = false
                     self.indexing = false
                 }
@@ -70,7 +70,7 @@ class VideoService: ObservableObject {
         // Получаем все видео ассеты
         let assets = await fetchVideoAssets()
         
-        DispatchQueue.main.async {
+        await MainActor.run {
             self.totalCount = assets.count
             self.isLoading = false
             self.indexed = 0
@@ -81,10 +81,10 @@ class VideoService: ObservableObject {
         
         // Создаем группы похожих видео
         await createGroupsSimilar(for: self.videos.map { $0.embedding })
+
+        self.videos.sort { $0.fileSize > $1.fileSize }
         
-        // Сортируем по размеру файла
-        DispatchQueue.main.async {
-            self.videos.sort { $0.fileSize > $1.fileSize }
+        await MainActor.run {
             self.indexing = false
             print("✅ Индексация \(self.videos.count) видеофайлов завершена")
         }

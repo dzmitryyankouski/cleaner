@@ -130,13 +130,13 @@ class PhotoService: ObservableObject {
             self.indexing = true
         }
 
-        await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) -> Void in
-            Task { @MainActor in
-                guard let self = self else { return }
+        await imageEmbeddingService.indexPhotos(assets: allPhotos, onItemCompleted: { [weak self] (index: Int, embedding: [Float]) async in
+            guard let self = self else { return }
 
-                let fileSize = await self.getFileSize(for: allPhotos[index])
-                let isScreenshot = await self.isScreenshot(for: allPhotos[index])
+            let fileSize = await self.getFileSize(for: allPhotos[index])
+            let isScreenshot = await self.isScreenshot(for: allPhotos[index])
 
+            await MainActor.run {
                 self.photos.append(Photo(index: index, asset: allPhotos[index], embedding: embedding, fileSize: fileSize, isScreenshot: isScreenshot))
                 self.indexed += 1
             }
