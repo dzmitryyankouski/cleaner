@@ -22,7 +22,7 @@ class VideoService: ObservableObject {
     @Published var indexed: Int = 0
     @Published var indexing: Bool = false
     @Published var groupsSimilar: [[Video]] = []
-    @Published var similarVideosPercent: Float = 0.95
+    @Published var similarVideosPercent: Float = 0.93
     
     private var concurrentTasks = 5 // Количество параллельных потоков для индексации видео
     private let imageEmbeddingService = ImageEmbeddingService()
