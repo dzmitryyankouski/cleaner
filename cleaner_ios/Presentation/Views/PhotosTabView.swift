@@ -31,8 +31,9 @@ struct PhotosTabView: View {
                     .padding(.vertical, 8)
                 }
                 
-                // Контент таба
-                tabContent
+                if !viewModel.indexing {
+                    tabContent
+                }
             }
             .navigationTitle("Фотографии")
             .navigationBarTitleDisplayMode(.inline)
@@ -99,12 +100,7 @@ struct SimilarPhotosView: View {
     }
     
     var body: some View {
-        if viewModel.indexing {
-            LoadingView(
-                title: "Поиск похожих изображений...",
-                message: "Анализ фотографий и создание групп"
-            )
-        } else if filteredGroups.isEmpty {
+        if filteredGroups.isEmpty {
             EmptyStateView(
                 icon: "photo.on.rectangle.angled",
                 title: "Похожие фотографии не найдены",
@@ -129,12 +125,7 @@ struct DuplicatesView: View {
     }
     
     var body: some View {
-        if viewModel.indexing {
-            LoadingView(
-                title: "Поиск дубликатов...",
-                message: "Анализ фотографий на наличие точных копий"
-            )
-        } else if filteredGroups.isEmpty {
+        if filteredGroups.isEmpty {
             EmptyStateView(
                 icon: "doc.on.doc",
                 title: "Дубликаты не найдены",
@@ -159,12 +150,7 @@ struct ScreenshotsView: View {
     }
     
     var body: some View {
-        if viewModel.indexing {
-            LoadingView(
-                title: "Поиск скриншотов...",
-                message: "Анализ фотографий на наличие скриншотов"
-            )
-        } else if screenshots.isEmpty {
+        if screenshots.isEmpty {
             EmptyStateView(
                 icon: "camera.viewfinder",
                 title: "Скриншоты не найдены",
@@ -187,12 +173,7 @@ struct BlurredPhotosView: View {
     @State private var isLoading = false
     
     var body: some View {
-        if viewModel.indexing {
-            LoadingView(
-                title: "Поиск размытых фотографий...",
-                message: "Анализ фотографий на наличие размытых изображений"
-            )
-        } else if isLoading {
+       if isLoading {
             LoadingView(
                 title: "Поиск размытых фотографий..."
             )

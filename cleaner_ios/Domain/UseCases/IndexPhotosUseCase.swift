@@ -28,7 +28,7 @@ final class IndexPhotosUseCase {
     
     /// Индексирует все фотографии из библиотеки
     func execute(
-        onProgress: @escaping (Int, Photo) async -> Void
+        onProgress: @escaping (Int, Int, Photo) async -> Void
     ) async -> Result<[Photo], PhotoIndexingError> {
         // 1. Загружаем ассеты
         let assetsResult = await assetRepository.fetchPhotos()
@@ -52,7 +52,7 @@ final class IndexPhotosUseCase {
                     if let result = await group.next() {
                         if let (_, photo) = result, let photo = photo {
                             photos.append(photo)
-                            await onProgress(photos.count, photo)
+                            await onProgress(assets.count, photos.count, photo)
                         }
                         activeTasks -= 1
                     }
@@ -70,7 +70,7 @@ final class IndexPhotosUseCase {
             for await result in group {
                 if let (_, photo) = result, let photo = photo {
                     photos.append(photo)
-                    await onProgress(photos.count, photo)
+                    await onProgress(assets.count, photos.count, photo)
                 }
             }
         }

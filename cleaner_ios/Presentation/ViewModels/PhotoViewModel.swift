@@ -118,14 +118,14 @@ final class PhotoViewModel: ObservableObject {
         indexing = true
         
         // Индексация фотографий
-        let result = await indexPhotosUseCase.execute { [weak self] count, photo in
-            await self?.handlePhotoIndexed(count: count, photo: photo)
+        let result = await indexPhotosUseCase.execute { [weak self] total, indexed, photo in
+            self?.indexed = indexed
+            self?.total = total
         }
         
         switch result {
         case .success(let indexedPhotos):
             self.photos = indexedPhotos
-            self.total = indexedPhotos.count
             
             // Группируем похожие фотографии
             await createSimilarGroups()
@@ -138,13 +138,6 @@ final class PhotoViewModel: ObservableObject {
         }
         
         indexing = false
-    }
-    
-    private func handlePhotoIndexed(count: Int, photo: Photo) async {
-        indexed = count
-        if total == 0 {
-            total = count
-        }
     }
     
     private func createSimilarGroups() async {
