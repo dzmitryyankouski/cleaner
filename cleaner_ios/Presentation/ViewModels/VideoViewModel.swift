@@ -70,14 +70,14 @@ final class VideoViewModel: ObservableObject {
         indexing = true
         
         // Индексация видео
-        let result = await indexVideosUseCase.execute { [weak self] count, video in
-            await self?.handleVideoIndexed(count: count, video: video)
+        let result = await indexVideosUseCase.execute { [weak self] total, indexed, video in
+            self?.indexed = indexed
+            self?.total = total
         }
         
         switch result {
         case .success(let indexedVideos):
             self.videos = indexedVideos.sorted { $0.fileSize.bytes > $1.fileSize.bytes }
-            self.total = indexedVideos.count
             
             // Группируем похожие видео
             await createSimilarGroups()
@@ -88,13 +88,6 @@ final class VideoViewModel: ObservableObject {
         
         isLoading = false
         indexing = false
-    }
-    
-    private func handleVideoIndexed(count: Int, video: Video) async {
-        indexed = count
-        if total == 0 {
-            total = count
-        }
     }
     
     private func createSimilarGroups() async {

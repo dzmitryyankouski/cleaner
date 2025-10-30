@@ -35,7 +35,7 @@ final class IndexVideosUseCase {
     
     /// Индексирует все видео из библиотеки
     func execute(
-        onProgress: @escaping (Int, Video) async -> Void
+        onProgress: @escaping (Int, Int, Video) async -> Void
     ) async -> Result<[Video], VideoIndexingError> {
         // 1. Загружаем видео ассеты
         let assetsResult = await assetRepository.fetchVideos()
@@ -59,7 +59,7 @@ final class IndexVideosUseCase {
                     if let result = await group.next() {
                         if let (_, video) = result, let video = video {
                             videos.append(video)
-                            await onProgress(videos.count, video)
+                            await onProgress(assets.count, videos.count, video)
                         }
                         activeTasks -= 1
                     }
@@ -77,7 +77,7 @@ final class IndexVideosUseCase {
             for await result in group {
                 if let (_, video) = result, let video = video {
                     videos.append(video)
-                    await onProgress(videos.count, video)
+                    await onProgress(assets.count, videos.count, video)
                 }
             }
         }

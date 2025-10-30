@@ -27,11 +27,14 @@ struct VideosTabView: View {
                     .padding(.top, 8)
                 }
                 
-                // Контент в зависимости от выбранной вкладки
-                if selectedTab == 0 {
-                    allVideosView
+                if viewModel.indexing {
+                    ProgressLoadingView(
+                        title: "Индексация видео",
+                        current: viewModel.indexed,
+                        total: viewModel.total
+                    )
                 } else {
-                    similarVideosView
+                    tabContent
                 }
             }
             .navigationTitle("Видеофайлы")
@@ -39,6 +42,21 @@ struct VideosTabView: View {
             .refreshable {
                 await viewModel.refreshVideos()
             }
+        }
+    }
+
+
+    // MARK: - Tab Content
+    
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case 0:
+            allVideosView
+        case 1:
+            similarVideosView
+        default:
+            allVideosView
         }
     }
     
