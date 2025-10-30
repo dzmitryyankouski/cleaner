@@ -25,11 +25,6 @@ struct MainTabView: View {
                     Label("Видео", systemImage: "video")
                 }
             
-            FilesTabView()
-                .tabItem {
-                    Label("Файлы", systemImage: "folder")
-                }
-            
             SearchTabView(viewModel: photoViewModel)
                 .tabItem {
                     Label("Поиск", systemImage: "magnifyingglass")
@@ -43,15 +38,3 @@ struct MainTabView: View {
         .accentColor(.blue)
     }
 }
-
-// MARK: - Tab Views Placeholders
-
-struct FilesTabView: View {
-    var body: some View {
-        NavigationView {
-            Text("Файлы")
-                .navigationTitle("Файлы")
-        }
-    }
-}
-
