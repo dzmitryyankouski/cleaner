@@ -90,7 +90,8 @@ fastlane/test_output
 iOSInjectionProject/
 
 # Models (your custom ignore)
-models/
+/models
+cleaner_ios/models
 
 # Environment variables
 config.env
