@@ -79,21 +79,6 @@ final class PhotoViewModel: ObservableObject {
         }
     }
     
-    func getBlurredPhotos() async -> [Photo] {
-        let result = await searchPhotosUseCase.execute(
-            query: "blurred photo",
-            photos: photos,
-            minSimilarity: 0.21
-        )
-        
-        switch result {
-        case .success(let searchResults):
-            return searchResults.map { $0.item }
-        case .failure:
-            return []
-        }
-    }
-    
     // MARK: - Computed Properties
     
     var totalPhotosCount: Int {

@@ -82,8 +82,6 @@ struct PhotosTabView: View {
             DuplicatesView(viewModel: viewModel)
         case 2:
             ScreenshotsView(viewModel: viewModel)
-        case 3:
-            BlurredPhotosView(viewModel: viewModel)
         default:
             SimilarPhotosView(viewModel: viewModel)
         }
@@ -161,54 +159,6 @@ struct ScreenshotsView: View {
                 photos: screenshots,
                 viewModel: viewModel
             )
-        }
-    }
-}
-
-// MARK: - Blurred Photos View
-
-struct BlurredPhotosView: View {
-    @ObservedObject var viewModel: PhotoViewModel
-    @State private var blurredPhotos: [Photo] = []
-    @State private var isLoading = false
-    
-    var body: some View {
-       if isLoading {
-            LoadingView(
-                title: "Поиск размытых фотографий..."
-            )
-        } else if blurredPhotos.isEmpty {
-            EmptyStateView(
-                icon: "eye.slash",
-                title: "Размытые фотографии не найдены",
-                message: "В вашей галерее нет размытых изображений"
-            )
-        } else {
-            PhotoGridView(
-                photos: blurredPhotos,
-                viewModel: viewModel
-            )
-            .onAppear {
-                loadBlurredPhotos()
-            }
-            .onChange(of: viewModel.indexing) { _, newValue in
-                if !newValue {
-                    loadBlurredPhotos()
-                }
-            }
-        }
-    }
-    
-    private func loadBlurredPhotos() {
-        guard !viewModel.indexing && !viewModel.photos.isEmpty else { return }
-        
-        isLoading = true
-        Task {
-            let photos = await viewModel.getBlurredPhotos()
-            await MainActor.run {
-                self.blurredPhotos = photos
-                self.isLoading = false
-            }
         }
     }
 }
