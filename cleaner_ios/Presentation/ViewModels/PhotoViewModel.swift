@@ -44,7 +44,7 @@ final class PhotoViewModel: ObservableObject {
     // MARK: - Public Methods
     
     func search(text: String) async -> [Photo] {
-        let result = await searchPhotosUseCase.execute(
+        let result = await searchPhotosUseCase.search(
             query: text,
             photos: photos
         )

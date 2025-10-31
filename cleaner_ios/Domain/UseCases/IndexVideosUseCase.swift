@@ -138,6 +138,7 @@ final class IndexVideosUseCase {
         
         // Вычисляем средний эмбединг
         let averageEmbedding = calculateAverageEmbedding(embeddings)
+         
         return .success(averageEmbedding)
     }
     

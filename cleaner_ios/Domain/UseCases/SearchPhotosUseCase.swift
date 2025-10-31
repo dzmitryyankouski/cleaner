@@ -23,23 +23,10 @@ final class SearchPhotosUseCase {
         self.settingsProvider = settingsProvider
     }
     
-    // MARK: - Public Methods
-    
-    /// Ищет фотографии по текстовому запросу используя настройки
-    func execute(
-        query: String,
-        photos: [Photo]
-    ) async -> Result<[SearchResult<Photo>], SearchError> {
-        let minSimilarity = settingsProvider.getSettings().searchSimilarityThreshold
-        return await execute(query: query, photos: photos, minSimilarity: minSimilarity)
-    }
-    
     /// Ищет фотографии по текстовому запросу с указанным порогом
-    func execute(
-        query: String,
-        photos: [Photo],
-        minSimilarity: Float
-    ) async -> Result<[SearchResult<Photo>], SearchError> {
+    func search(query: String, photos: [Photo]) async -> Result<[SearchResult<Photo>], SearchError> {
+        let minSimilarity = settingsProvider.getSettings().searchSimilarityThreshold
+
         // 1. Переводим запрос (если есть сервис перевода)
         var searchQuery = query
         if let translationService = translationService {
