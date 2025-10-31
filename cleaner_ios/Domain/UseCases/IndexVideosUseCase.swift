@@ -38,7 +38,7 @@ final class IndexVideosUseCase {
         onProgress: @escaping (Int, Int, Video) async -> Void
     ) async -> Result<[Video], VideoIndexingError> {
         // 1. Загружаем видео ассеты
-        let assetsResult = await assetRepository.fetchVideos()
+        let assetsResult = await assetRepository.fetchAssets()
         
         guard case .success(let assets) = assetsResult else {
             if case .failure(let error) = assetsResult {

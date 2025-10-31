@@ -10,25 +10,27 @@ struct Photo: Identifiable, Equatable {
     let asset: PHAsset
     let embedding: Embedding
     let fileSize: FileSize
-    let isScreenshot: Bool
     
     init(
         index: Int,
         asset: PHAsset,
         embedding: [Float],
-        fileSize: Int64,
-        isScreenshot: Bool
+        fileSize: Int64
     ) {
         self.id = asset.localIdentifier
         self.index = index
         self.asset = asset
         self.embedding = Embedding(values: embedding)
         self.fileSize = FileSize(bytes: fileSize)
-        self.isScreenshot = isScreenshot
     }
     
     static func == (lhs: Photo, rhs: Photo) -> Bool {
         lhs.id == rhs.id
+    }
+    
+    /// Проверяет, является ли фото скриншотом
+    func isScreenshot() -> Bool {
+        asset.mediaSubtypes.contains(.photoScreenshot)
     }
 }
 

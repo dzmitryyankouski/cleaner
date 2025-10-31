@@ -31,7 +31,7 @@ final class IndexPhotosUseCase {
         onProgress: @escaping (Int, Int, Photo) async -> Void
     ) async -> Result<[Photo], PhotoIndexingError> {
         // 1. Загружаем ассеты
-        let assetsResult = await assetRepository.fetchPhotos()
+        let assetsResult = await assetRepository.fetchAssets()
         
         guard case .success(let assets) = assetsResult else {
             if case .failure(let error) = assetsResult {
@@ -98,15 +98,11 @@ final class IndexPhotosUseCase {
         let fileSizeResult = await assetRepository.getFileSize(for: asset)
         let fileSize = (try? fileSizeResult.get()) ?? 0
         
-        // Проверяем, является ли скриншотом
-        let isScreenshot = assetRepository.isScreenshot(asset)
-        
         return Photo(
             index: index,
             asset: asset,
             embedding: embedding,
-            fileSize: fileSize,
-            isScreenshot: isScreenshot
+            fileSize: fileSize
         )
     }
 }

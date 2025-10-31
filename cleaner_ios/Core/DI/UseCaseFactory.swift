@@ -61,7 +61,7 @@ final class UseCaseFactory {
         }
         
         return IndexVideosUseCase(
-            assetRepository: serviceFactory.makePhotoAssetRepository(),
+            assetRepository: serviceFactory.makeVideoAssetRepository(),
             videoRepository: serviceFactory.makeVideoAssetRepository(),
             embeddingService: embeddingService,
             imageProcessor: serviceFactory.makeImageProcessingService(),

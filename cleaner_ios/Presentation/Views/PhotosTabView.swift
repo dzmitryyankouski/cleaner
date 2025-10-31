@@ -144,7 +144,7 @@ struct ScreenshotsView: View {
     @ObservedObject var viewModel: PhotoViewModel
     
     private var screenshots: [Photo] {
-        viewModel.photos.filter { $0.isScreenshot }
+        viewModel.photos.filter { $0.isScreenshot() }
     }
     
     var body: some View {

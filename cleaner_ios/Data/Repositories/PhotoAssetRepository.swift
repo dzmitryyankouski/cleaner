@@ -8,7 +8,8 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
     
     // MARK: - Public Methods
     
-    func fetchPhotos() async -> Result<[PHAsset], AssetError> {
+    /// Загружает все фото из библиотеки
+    func fetchAssets() async -> Result<[PHAsset], AssetError> {
         // Проверяем права доступа
         let authStatus = PHPhotoLibrary.authorizationStatus()
         
@@ -35,34 +36,6 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
         return .success(assets)
     }
     
-    func fetchVideos() async -> Result<[PHAsset], AssetError> {
-        // Проверяем права доступа
-        let authStatus = PHPhotoLibrary.authorizationStatus()
-        
-        if authStatus == .denied || authStatus == .restricted {
-            return .failure(.permissionDenied)
-        }
-        
-        if authStatus == .notDetermined {
-            let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-            if newStatus == .denied || newStatus == .restricted {
-                return .failure(.permissionDenied)
-            }
-        }
-        
-        // Загружаем видео
-        let fetchOptions = PHFetchOptions()
-        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
-        let videos = PHAsset.fetchAssets(with: .video, options: fetchOptions)
-        
-        var assets: [PHAsset] = []
-        videos.enumerateObjects { asset, _, _ in
-            assets.append(asset)
-        }
-        
-        return .success(assets)
-    }
-    
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
         return await withCheckedContinuation { continuation in
             let resources = PHAssetResource.assetResources(for: asset)
@@ -75,10 +48,6 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
                 continuation.resume(returning: .failure(.fileSizeUnavailable))
             }
         }
-    }
-    
-    func isScreenshot(_ asset: PHAsset) -> Bool {
-        asset.mediaSubtypes.contains(.photoScreenshot)
     }
 }
 

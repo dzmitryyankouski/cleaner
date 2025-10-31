@@ -5,9 +5,38 @@ import AVFoundation
 // MARK: - Video Asset Repository
 
 /// Репозиторий для работы с видео ассетами из библиотеки
-final class VideoAssetRepository {
+final class VideoAssetRepository: AssetRepositoryProtocol {
     
     // MARK: - Public Methods
+    
+    /// Загружает все видео из библиотеки
+    func fetchAssets() async -> Result<[PHAsset], AssetError> {
+        // Проверяем права доступа
+        let authStatus = PHPhotoLibrary.authorizationStatus()
+        
+        if authStatus == .denied || authStatus == .restricted {
+            return .failure(.permissionDenied)
+        }
+        
+        if authStatus == .notDetermined {
+            let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+            if newStatus == .denied || newStatus == .restricted {
+                return .failure(.permissionDenied)
+            }
+        }
+        
+        // Загружаем видео
+        let fetchOptions = PHFetchOptions()
+        fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
+        let videos = PHAsset.fetchAssets(with: .video, options: fetchOptions)
+        
+        var assets: [PHAsset] = []
+        videos.enumerateObjects { asset, _, _ in
+            assets.append(asset)
+        }
+        
+        return .success(assets)
+    }
     
     /// Получает размер файла для видео
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {

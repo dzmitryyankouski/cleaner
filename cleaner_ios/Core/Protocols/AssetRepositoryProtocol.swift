@@ -5,17 +5,11 @@ import Photos
 
 /// Протокол для работы с фото и видео ассетами
 protocol AssetRepositoryProtocol {
-    /// Загружает все фото из библиотеки
-    func fetchPhotos() async -> Result<[PHAsset], AssetError>
-    
-    /// Загружает все видео из библиотеки
-    func fetchVideos() async -> Result<[PHAsset], AssetError>
+    /// Загружает все ассеты из библиотеки
+    func fetchAssets() async -> Result<[PHAsset], AssetError>
     
     /// Получает размер файла для ассета
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError>
-    
-    /// Проверяет, является ли фото скриншотом
-    func isScreenshot(_ asset: PHAsset) -> Bool
 }
 
 // MARK: - Asset Error
