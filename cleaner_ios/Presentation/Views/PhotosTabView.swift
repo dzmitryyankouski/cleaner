@@ -138,7 +138,7 @@ struct SimilarPhotosView: View {
     @ObservedObject var viewModel: PhotoViewModel
 
     private var filteredGroups: [MediaGroup<Photo>] {
-        viewModel.groupsSimilar.filter { $0.count > 1 && $0.count < 3}
+        viewModel.groupsSimilar.filter { $0.count > 1 }
     }
 
     var body: some View {
@@ -228,23 +228,21 @@ struct PhotoGroupsScrollView: View {
     @ObservedObject var viewModel: PhotoViewModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 16) {
-                // Статистика групп
-                groupStatistics
+        LazyVStack(alignment: .leading, spacing: 16) {
+            // Статистика групп
+            groupStatistics
 
-                // Группы фотографий
-                LazyVStack(spacing: 20) {
-                    ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
-                        PhotoGroupRowView(
-                            groupIndex: index,
-                            group: group,
-                            viewModel: viewModel
-                        )
-                    }
+            // Группы фотографий
+            LazyVStack(spacing: 20) {
+                ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
+                    PhotoGroupRowView(
+                        groupIndex: index,
+                        group: group,
+                        viewModel: viewModel
+                    )
                 }
-                .padding(.top)
             }
+            .padding(.top)
         }
     }
 
@@ -281,7 +279,7 @@ struct PhotoGroupRowView: View {
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                LazyHStack(spacing: 12) {
                     ForEach(group.items) { photo in
                         PhotoThumbnailCard(
                             photo: photo,
@@ -290,6 +288,7 @@ struct PhotoGroupRowView: View {
                                 viewModel.togglePhotoSelection(for: photo)
                             }
                         )
+                        .id(photo.id)
                     }
                 }
                 .padding(.horizontal)
@@ -305,26 +304,25 @@ struct PhotoGridView: View {
     @ObservedObject var viewModel: PhotoViewModel
 
     var body: some View {
-        ScrollView {
-            LazyVGrid(
-                columns: [
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                    GridItem(.flexible()),
-                ], spacing: 12
-            ) {
-                ForEach(photos) { photo in
-                    PhotoThumbnailCard(
-                        photo: photo,
-                        size: CGSize(width: 120, height: 160),
-                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                        onToggle: {
-                            viewModel.togglePhotoSelection(for: photo)
-                        }
-                    )
-                }
+        LazyVGrid(
+            columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible()),
+                GridItem(.flexible()),
+            ], spacing: 12
+        ) {
+            ForEach(photos) { photo in
+                PhotoThumbnailCard(
+                    photo: photo,
+                    size: CGSize(width: 120, height: 160),
+                    isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
+                    onToggle: {
+                        viewModel.togglePhotoSelection(for: photo)
+                    }
+                )
+                .id(photo.id)
             }
-            .padding(.horizontal)
         }
+        .padding(.horizontal)
     }
 }

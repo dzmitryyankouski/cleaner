@@ -11,7 +11,8 @@ struct PhotoThumbnailCard: View {
     let onToggle: () -> Void
     
     @State private var image: UIImage?
-    @State private var isLoading = true
+    @State private var isLoading = false
+    @State private var requestID: PHImageRequestID = PHInvalidImageRequestID
     
     var body: some View {
         ZStack {
@@ -27,6 +28,7 @@ struct PhotoThumbnailCard: View {
                 placeholderView
             }
         }
+        .drawingGroup() // Рендерим в Metal для лучшей производительности
         .onAppear {
             loadImage()
         }
@@ -84,22 +86,38 @@ struct PhotoThumbnailCard: View {
     // MARK: - Private Methods
     
     private func loadImage() {
+        // Не загружаем, если уже загружается или изображение уже загружено
+        guard !isLoading && image == nil else { return }
+        
+        isLoading = true
+        
         let options = PHImageRequestOptions()
         options.isSynchronous = false
-        options.deliveryMode = .opportunistic
-        options.resizeMode = .exact
+        options.deliveryMode = .opportunistic 
+        options.resizeMode = .fast
+        options.isNetworkAccessAllowed = false // Не загружать из iCloud при скролле
         
-        PHImageManager.default().requestImage(
+        // Сохраняем requestID сразу после создания запроса
+        // (requestImage возвращает ID синхронно, callback вызывается асинхронно)
+        var capturedRequestID: PHImageRequestID = PHInvalidImageRequestID
+        
+        let currentRequestID = PHImageManager.default().requestImage(
             for: photo.asset,
             targetSize: size,
             contentMode: .aspectFill,
             options: options
         ) { result, _ in
             DispatchQueue.main.async {
-                self.image = result
-                self.isLoading = false
+                // Проверяем, что запрос еще актуален (не был отменен)
+                // Сравниваем сохраненный requestID с захваченным
+                if self.requestID == capturedRequestID {
+                    self.image = result
+                    self.isLoading = false
+                }
             }
         }
+        
+        capturedRequestID = currentRequestID
+        self.requestID = currentRequestID
     }
 }
-
