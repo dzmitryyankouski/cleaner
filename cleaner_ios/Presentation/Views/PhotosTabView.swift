@@ -8,8 +8,6 @@ struct PhotosTabView: View {
 
     @ObservedObject var viewModel: PhotoViewModel
     @State private var selectedTab = 0
-    @State private var pickerOffset: CGFloat? = nil
-    @State private var fixedPicker: Bool = false
 
     private let tabs = ["Серии", "Копии", "Скриншоты"]
 
@@ -18,128 +16,16 @@ struct PhotosTabView: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                // Скроллируемый контент
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
                         Section {
-                            HStack {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(25)
-                            }
-                            .padding(.horizontal)
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(25)
-                            }
-                            .padding(.horizontal)
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(25)
-                            }
-                            .padding(.horizontal)
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(25)
-                            }
-                            .padding(.horizontal)
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(25)
-                            }
-                            .padding(.horizontal)
-
-                            HStack {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                    Text("Фотографии")
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding()
-                                .background(Color.gray.opacity(0.1))
-                                .cornerRadius(25)
-                            }
-                            .padding(.horizontal)
+                            tabContent
                         } header: {
-                            pickerHeader
+                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
                         }
                     }
                     .padding(.vertical)
                 }
-                .coordinateSpace(name: "scroll")
-                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                    pickerOffset = value
-                }
-
-                // if fixedPicker {
-                //     GeometryReader { geometry in
-                //         VStack(spacing: 0) {
-                //             pickerHeader
-                //         }
-                //         .frame(width: geometry.size.width)
-                //         .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
-                //     }
-                //     .frame(height: 60)
-                //     .transition(.move(edge: .top))
-                // }
-
-                // // Статистика или прогресс
-                // headerView
-
-                // // Сегментированный контрол
-                // if !viewModel.indexing && !viewModel.photos.isEmpty {
-                // Picker("Табы", selection: $selectedTab) {
-                //     ForEach(tabs.indices, id: \.self) { index in
-                //         Text(tabs[index]).tag(index)
-                //     }
-                // }
-                // .pickerStyle(SegmentedPickerStyle())
-                // .padding(.horizontal)
-                // .padding(.vertical, 8)
-                // }
-
-                // if !viewModel.indexing {
-                //     tabContent
-                // }
             }
             .navigationTitle("Фотографии")
             .toolbar {
@@ -206,10 +92,13 @@ struct PhotosTabView: View {
             SimilarPhotosView(viewModel: viewModel)
         }
     }
+}
 
-    // MARK: - Picker Header
+struct PickerHeader: View {
+    @Binding var selectedTab: Int
+    let tabs: [String]
 
-    private var pickerHeader: some View {
+    var body: some View {
         VStack(spacing: 0) {
             Picker("Табы", selection: $selectedTab) {
                 ForEach(tabs.indices, id: \.self) { index in
@@ -223,13 +112,20 @@ struct PhotosTabView: View {
     }
 }
 
-// MARK: - Scroll Offset Preference Key
-
-struct ScrollOffsetPreferenceKey: PreferenceKey {
-    static var defaultValue: CGFloat = 0
-
-    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-        value = nextValue()
+struct Info: View {
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text("Фотографии")
+                Text("Фотографии")
+                Text("Фотографии")
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(25)
+        }
+        .padding(.horizontal)
     }
 }
 
