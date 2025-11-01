@@ -9,7 +9,7 @@ struct PhotosTabView: View {
     @ObservedObject var viewModel: PhotoViewModel
     @State private var selectedTab = 0
     
-    private let tabs = ["Серии", "Копии", "Скриншоты", "Размытые"]
+    private let tabs = ["Серии", "Копии", "Скриншоты"]
     
     // MARK: - Body
     
