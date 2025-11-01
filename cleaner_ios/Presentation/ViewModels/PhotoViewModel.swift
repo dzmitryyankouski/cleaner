@@ -36,9 +36,9 @@ final class PhotoViewModel: ObservableObject {
         self.groupSimilarPhotosUseCase = groupSimilarPhotosUseCase
         self.searchPhotosUseCase = searchPhotosUseCase
         
-        // Task {
-        //     await loadAndIndexPhotos()
-        // }
+        Task {
+            await loadAndIndexPhotos()
+        }
     }
     
     // MARK: - Public Methods

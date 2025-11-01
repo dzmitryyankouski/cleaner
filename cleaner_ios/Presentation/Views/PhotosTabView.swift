@@ -102,23 +102,26 @@ struct PickerHeader: View {
         VStack(spacing: 0) {
             Picker("Табы", selection: $selectedTab) {
                 ForEach(tabs.indices, id: \.self) { index in
-                    Text(tabs[index]).tag(index)
+                    Text(tabs[index])
+                        .padding(.vertical, 2)
+                        .tag(index)
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
-            .padding(.horizontal)
-            .padding(.vertical, 8)
+            .frame(maxWidth: 300)
+            .glassEffect()
         }
     }
 }
 
 struct Info: View {
+    @ObservedObject var viewModel: PhotoViewModel
+
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 16) {
-                Text("Фотографии")
-                Text("Фотографии")
-                Text("Фотографии")
+                Text("\(viewModel.totalPhotosCount) / \(viewModel.selectedPhotosForDeletion.count)")
+                Text("\(viewModel.formattedTotalFileSize) / \(viewModel.formattedSelectedFileSize)")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding()
@@ -135,11 +138,18 @@ struct SimilarPhotosView: View {
     @ObservedObject var viewModel: PhotoViewModel
 
     private var filteredGroups: [MediaGroup<Photo>] {
-        viewModel.groupsSimilar.filter { $0.count > 1 }
+        viewModel.groupsSimilar.filter { $0.count > 1 && $0.count < 3}
     }
 
     var body: some View {
-        if filteredGroups.isEmpty {
+        if viewModel.indexing {
+            ProgressLoadingView(
+                title: "Индексация фотографий",
+                current: viewModel.indexed,
+                total: viewModel.total
+            )
+            .padding(.horizontal)
+        } else if filteredGroups.isEmpty {
             EmptyStateView(
                 icon: "photo.on.rectangle.angled",
                 title: "Похожие фотографии не найдены",
@@ -164,7 +174,14 @@ struct DuplicatesView: View {
     }
 
     var body: some View {
-        if filteredGroups.isEmpty {
+        if viewModel.indexing {
+            ProgressLoadingView(
+                title: "Индексация фотографий",
+                current: viewModel.indexed,
+                total: viewModel.total
+            )
+            .padding(.horizontal)
+        } else if filteredGroups.isEmpty {
             EmptyStateView(
                 icon: "doc.on.doc",
                 title: "Дубликаты не найдены",
