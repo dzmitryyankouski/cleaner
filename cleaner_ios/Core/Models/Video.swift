@@ -4,7 +4,7 @@ import Photos
 // MARK: - Video Model
 
 /// Модель видео с эмбедингом и метаданными
-struct Video: Identifiable, Equatable {
+struct Video: Identifiable, Equatable, Hashable {
     let id: String
     let asset: PHAsset
     let duration: Duration
@@ -32,6 +32,10 @@ struct Video: Identifiable, Equatable {
     
     static func == (lhs: Video, rhs: Video) -> Bool {
         lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
 }
 

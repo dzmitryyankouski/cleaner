@@ -14,7 +14,7 @@ struct PhotosTabView: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Статистика или прогресс
                 headerView

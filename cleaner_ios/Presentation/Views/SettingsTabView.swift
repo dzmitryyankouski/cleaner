@@ -11,7 +11,7 @@ struct SettingsTabView: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     // Photo Similarity Settings

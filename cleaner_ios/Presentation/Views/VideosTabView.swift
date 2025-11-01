@@ -14,7 +14,7 @@ struct VideosTabView: View {
     // MARK: - Body
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Табы
                 if !viewModel.isLoading && !viewModel.indexing && !viewModel.videos.isEmpty {
@@ -41,6 +41,9 @@ struct VideosTabView: View {
             .navigationBarTitleDisplayMode(.inline)
             .refreshable {
                 await viewModel.refreshVideos()
+            }
+            .navigationDestination(for: Video.self) { video in
+                VideoPlayerView(video: video)
             }
         }
     }
@@ -93,7 +96,7 @@ struct VideosTabView: View {
                 
                 // Список видео
                 List(viewModel.videos) { video in
-                    NavigationLink(destination: VideoPlayerView(video: video)) {
+                    NavigationLink(value: video) {
                         VideoRowView(video: video)
                     }
                 }
@@ -138,7 +141,7 @@ struct VideosTabView: View {
                     ForEach(Array(viewModel.groupsSimilar.enumerated()), id: \.offset) { groupIndex, group in
                         Section(header: Text("Группа \(groupIndex + 1) • \(group.count) видео")) {
                             ForEach(group.items) { video in
-                                NavigationLink(destination: VideoPlayerView(video: video)) {
+                                NavigationLink(value: video) {
                                     VideoRowView(video: video)
                                 }
                             }
