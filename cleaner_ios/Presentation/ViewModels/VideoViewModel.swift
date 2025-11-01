@@ -30,9 +30,9 @@ final class VideoViewModel: ObservableObject {
         self.indexVideosUseCase = indexVideosUseCase
         self.groupSimilarVideosUseCase = groupSimilarVideosUseCase
         
-        Task {
-            await loadAndIndexVideos()
-        }
+        // Task {
+        //     await loadAndIndexVideos()
+        // }
     }
     
     // MARK: - Public Methods
