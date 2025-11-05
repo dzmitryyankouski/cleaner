@@ -26,6 +26,8 @@ struct PhotosTabView: View {
                     }
                     .padding(.vertical)
                 }
+
+                PhotoPreview(viewModel: viewModel)
             }
             .navigationTitle("Фотографии")
             .toolbar {
@@ -281,14 +283,21 @@ struct PhotoGroupRowView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 12) {
                     ForEach(group.items) { photo in
-                        PhotoThumbnailCard(
-                            photo: photo,
-                            isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                            onToggle: {
-                                viewModel.togglePhotoSelection(for: photo)
+                        GeometryReader { geometry in
+                            PhotoThumbnailCard(
+                                photo: photo,
+                                isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
+                                onToggle: {
+                                    viewModel.togglePhotoSelection(for: photo)
+                                }
+                            )
+                            .id(photo.id)
+                            .onTapGesture {
+                                let frame = geometry.frame(in: .global)
+                                viewModel.setPreviewPhoto(for: photo, sourceFrame: frame)
                             }
-                        )
-                        .id(photo.id)
+                        }
+                        .frame(width: 165, height: 220)
                     }
                 }
                 .padding(.horizontal)
@@ -312,15 +321,22 @@ struct PhotoGridView: View {
             ], spacing: 12
         ) {
             ForEach(photos) { photo in
-                PhotoThumbnailCard(
-                    photo: photo,
-                    size: CGSize(width: 120, height: 160),
-                    isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                    onToggle: {
-                        viewModel.togglePhotoSelection(for: photo)
+                GeometryReader { geometry in
+                    PhotoThumbnailCard(
+                        photo: photo,
+                        size: CGSize(width: 120, height: 160),
+                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
+                        onToggle: {
+                            viewModel.togglePhotoSelection(for: photo)
+                        }
+                    )
+                    .id(photo.id)
+                    .onTapGesture {
+                        let frame = geometry.frame(in: .global)
+                        viewModel.setPreviewPhoto(for: photo, sourceFrame: frame)
                     }
-                )
-                .id(photo.id)
+                }
+                .frame(width: 120, height: 160)
             }
         }
         .padding(.horizontal)
