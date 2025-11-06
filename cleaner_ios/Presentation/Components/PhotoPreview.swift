@@ -13,7 +13,7 @@ struct PhotoPreview: View {
                let previewPhoto = viewModel.previewPhoto,
                let namespace = photoPreviewNamespace {
                 ZStack {
-                    Color.black.opacity(0.8)
+                    Color.gray
                         .ignoresSafeArea()
                         .onTapGesture {
                             closePreview()
@@ -48,7 +48,7 @@ struct PhotoPreview: View {
     }
     
     private func closePreview() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
+        withAnimation(.spring(response: 3, dampingFraction: 0.85)) {
             viewModel.showPreviewModel = false
             viewModel.previewPhoto = nil
         }

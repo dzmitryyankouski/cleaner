@@ -272,7 +272,7 @@ struct PhotoGroupRowView: View {
     let group: MediaGroup<Photo>
     
     @ObservedObject var viewModel: PhotoViewModel
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Группа \(groupIndex + 1) (\(group.count) фото)")
@@ -293,12 +293,11 @@ struct PhotoGroupRowView: View {
                         .onTapGesture {
                             viewModel.previewPhoto = photo
 
-                            withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
+                            withAnimation(.spring(response: 3, dampingFraction: 0.85)) {
                                 viewModel.showPreviewModel = true
                             }
                         }
                         .id(photo.id)
-                        .frame(width: 165, height: 220)
                     }
                 }
                 .padding(.horizontal)
