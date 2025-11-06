@@ -20,6 +20,7 @@ final class PhotoViewModel: ObservableObject {
     @Published var selectedPhotosFileSize: Int64 = 0
 
     @Published var previewPhoto: Photo? = nil
+    @Published var showPreviewModel: Bool = false
     
     // MARK: - Private Properties
     
@@ -71,13 +72,9 @@ final class PhotoViewModel: ObservableObject {
         await loadAndIndexPhotos()
     }
 
-    func setPreviewPhoto(for photo: Photo) {
-        previewPhoto = photo
-        print("previewPhoto: \(previewPhoto?.id)")
-    }
-
     func clearPreviewPhoto() {
         previewPhoto = nil
+        
     }
     
     func togglePhotoSelection(for photo: Photo) {

@@ -5,9 +5,12 @@ import Photos
 
 /// Карточка с миниатюрой фотографии
 struct PhotoThumbnailCard: View {
+    @Environment(\.photoPreviewNamespace) var photoPreviewNamespace
+
     let photo: Photo
     var size: CGSize = CGSize(width: 165, height: 220)
     let isSelected: Bool
+    let isPreviewing: Bool
     var onSelectAction: (() -> Void)?
     
     @State private var image: UIImage?
@@ -22,14 +25,16 @@ struct PhotoThumbnailCard: View {
     
     var body: some View {
         ZStack {
-            if let image = image {
+            if let image = image, let namespace = photoPreviewNamespace {
                 Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fill)
+                    .matchedGeometryEffect(id: photo.id, in: namespace)
                     .frame(width: size.width, height: size.height)
                     .clipped()
                     .cornerRadius(8)
                     .overlay(overlayView)
+                    .opacity(isPreviewing ? 0 : 1.0)
             } else {
                 placeholderView
             }

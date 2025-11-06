@@ -284,13 +284,18 @@ struct PhotoGroupRowView: View {
                     ForEach(group.items) { photo in
                         PhotoThumbnailCard(
                             photo: photo,
-                            isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index)
+                            isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
+                            isPreviewing: viewModel.previewPhoto?.id == photo.id
                         )
                         .onSelect {
                             viewModel.togglePhotoSelection(for: photo)
                         }
                         .onTapGesture {
-                            viewModel.setPreviewPhoto(for: photo)
+                            viewModel.previewPhoto = photo
+
+                            withAnimation(.spring(response: 3, dampingFraction: 1)) {
+                                viewModel.showPreviewModel = true
+                            }
                         }
                         .id(photo.id)
                         .frame(width: 165, height: 220)
@@ -321,14 +326,19 @@ struct PhotoGridView: View {
                     PhotoThumbnailCard(
                         photo: photo,
                         size: CGSize(width: 120, height: 160),
-                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index)
+                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
+                        isPreviewing: viewModel.previewPhoto?.id == photo.id
                     )
                     .onSelect {
                         viewModel.togglePhotoSelection(for: photo)
                     }
                     .id(photo.id)
                     .onTapGesture {
-                        viewModel.setPreviewPhoto(for: photo)
+                        viewModel.previewPhoto = photo
+
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                            viewModel.showPreviewModel = true
+                        }
                     }
                 }
                 .frame(width: 120, height: 160)

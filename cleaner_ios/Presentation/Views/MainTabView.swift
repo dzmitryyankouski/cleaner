@@ -31,31 +31,31 @@ struct MainTabView: View {
     
     var body: some View {
         ZStack {
+            TabView {
+                PhotosTabView(viewModel: photoViewModel)
+                    .tabItem {
+                        Label("Фотографии", systemImage: "photo.stack")
+                    }
+                
+                VideosTabView(viewModel: videoViewModel)
+                    .tabItem {
+                        Label("Видео", systemImage: "video")
+                    }
+                
+                SearchTabView(viewModel: photoViewModel)
+                    .tabItem {
+                        Label("Поиск", systemImage: "magnifyingglass")
+                    }
+                
+                SettingsTabView(viewModel: settingsViewModel)
+                    .tabItem {
+                        Label("Настройки", systemImage: "gearshape")
+                    }
+            }
+            .accentColor(.blue)
+            
             PhotoPreview(viewModel: photoViewModel)
-
-        TabView {
-            PhotosTabView(viewModel: photoViewModel)
-                .tabItem {
-                    Label("Фотографии", systemImage: "photo.stack")
-                }
-            
-            VideosTabView(viewModel: videoViewModel)
-                .tabItem {
-                    Label("Видео", systemImage: "video")
-                }
-            
-            SearchTabView(viewModel: photoViewModel)
-                .tabItem {
-                    Label("Поиск", systemImage: "magnifyingglass")
-                }
-            
-            SettingsTabView(viewModel: settingsViewModel)
-                .tabItem {
-                    Label("Настройки", systemImage: "gearshape")
-                }
         }
         .environment(\.photoPreviewNamespace, photoPreviewNamespace)
-        .accentColor(.blue)
-        }
     }
 }
