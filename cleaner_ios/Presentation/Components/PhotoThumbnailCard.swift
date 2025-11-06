@@ -8,11 +8,17 @@ struct PhotoThumbnailCard: View {
     let photo: Photo
     var size: CGSize = CGSize(width: 165, height: 220)
     let isSelected: Bool
-    let onToggle: () -> Void
+    var onSelectAction: (() -> Void)?
     
     @State private var image: UIImage?
     @State private var isLoading = false
     @State private var requestID: PHImageRequestID = PHInvalidImageRequestID
+    
+    func onSelect(_ action: @escaping () -> Void) -> Self {
+        var copy = self
+        copy.onSelectAction = action
+        return copy
+    }
     
     var body: some View {
         ZStack {
@@ -50,7 +56,9 @@ struct PhotoThumbnailCard: View {
             Spacer()
             HStack {
                 Spacer()
-                Button(action: onToggle) {
+                Button(action: {
+                    onSelectAction?()
+                }) {
                     Image(systemName: isSelected ? "trash.circle.fill" : "circle")
                         .font(.title3)
                         .foregroundColor(isSelected ? .red : .white)

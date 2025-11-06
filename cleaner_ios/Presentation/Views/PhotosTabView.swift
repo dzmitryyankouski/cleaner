@@ -286,11 +286,11 @@ struct PhotoGroupRowView: View {
                         GeometryReader { geometry in
                             PhotoThumbnailCard(
                                 photo: photo,
-                                isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                                onToggle: {
-                                    viewModel.togglePhotoSelection(for: photo)
-                                }
+                                isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index)
                             )
+                            .onSelect {
+                                viewModel.togglePhotoSelection(for: photo)
+                            }
                             .id(photo.id)
                             .onTapGesture {
                                 let frame = geometry.frame(in: .global)
@@ -325,11 +325,11 @@ struct PhotoGridView: View {
                     PhotoThumbnailCard(
                         photo: photo,
                         size: CGSize(width: 120, height: 160),
-                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                        onToggle: {
-                            viewModel.togglePhotoSelection(for: photo)
-                        }
+                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index)
                     )
+                    .onSelect {
+                        viewModel.togglePhotoSelection(for: photo)
+                    }
                     .id(photo.id)
                     .onTapGesture {
                         let frame = geometry.frame(in: .global)
