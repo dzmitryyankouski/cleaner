@@ -7,8 +7,6 @@ struct PhotoPreview: View {
     @State private var image: UIImage?
     @State private var isLoading = false
 
-    private let targetSize = CGSize(width: 300, height: 400)
-
     var body: some View {
         Group {
             if viewModel.showPreviewModel,
@@ -26,8 +24,6 @@ struct PhotoPreview: View {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .cornerRadius(16)
-                            .opacity(0.5)
                             .matchedGeometryEffect(id: previewPhoto.id, in: namespace)
                             .onTapGesture {
                                 closePreview()
@@ -48,7 +44,7 @@ struct PhotoPreview: View {
     }
     
     private func closePreview() {
-        withAnimation(.spring(response: 3, dampingFraction: 1)) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
             viewModel.showPreviewModel = false
             viewModel.previewPhoto = nil
         }
@@ -64,15 +60,15 @@ struct PhotoPreview: View {
         
         let options = PHImageRequestOptions()
         options.isSynchronous = false
-        options.deliveryMode = .opportunistic 
-        options.resizeMode = .fast
-        options.isNetworkAccessAllowed = false // Не загружать из iCloud при скролле
+        options.deliveryMode = .highQualityFormat
+        options.resizeMode = .none
+        options.isNetworkAccessAllowed = false
 
         
         PHImageManager.default().requestImage(
             for: asset,
-            targetSize: targetSize,
-            contentMode: .aspectFill,
+            targetSize: PHImageManagerMaximumSize,
+            contentMode: .aspectFit,
             options: options
         ) { result, _ in
             DispatchQueue.main.async {

@@ -285,7 +285,7 @@ struct PhotoGroupRowView: View {
                         PhotoThumbnailCard(
                             photo: photo,
                             isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                            isPreviewing: viewModel.previewPhoto?.id == photo.id
+                            isPreviewing: viewModel.showPreviewModel && viewModel.previewPhoto?.id == photo.id
                         )
                         .onSelect {
                             viewModel.togglePhotoSelection(for: photo)
@@ -293,7 +293,7 @@ struct PhotoGroupRowView: View {
                         .onTapGesture {
                             viewModel.previewPhoto = photo
 
-                            withAnimation(.spring(response: 3, dampingFraction: 1)) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
                                 viewModel.showPreviewModel = true
                             }
                         }
@@ -336,7 +336,7 @@ struct PhotoGridView: View {
                     .onTapGesture {
                         viewModel.previewPhoto = photo
 
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
                             viewModel.showPreviewModel = true
                         }
                     }
