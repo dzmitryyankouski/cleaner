@@ -20,7 +20,6 @@ final class PhotoViewModel: ObservableObject {
     @Published var selectedPhotosFileSize: Int64 = 0
 
     @Published var previewPhoto: Photo? = nil
-    @Published var previewSourceFrame: CGRect = .zero
     
     // MARK: - Private Properties
     
@@ -72,10 +71,9 @@ final class PhotoViewModel: ObservableObject {
         await loadAndIndexPhotos()
     }
 
-    func setPreviewPhoto(for photo: Photo, sourceFrame: CGRect) {
-        previewSourceFrame = sourceFrame
+    func setPreviewPhoto(for photo: Photo) {
         previewPhoto = photo
-        print("previewPhoto: \(previewPhoto?.id), sourceFrame: \(sourceFrame)")
+        print("previewPhoto: \(previewPhoto?.id)")
     }
 
     func clearPreviewPhoto() {

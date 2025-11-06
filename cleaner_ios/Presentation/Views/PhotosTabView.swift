@@ -272,8 +272,11 @@ struct PhotoGroupsScrollView: View {
 struct PhotoGroupRowView: View {
     let groupIndex: Int
     let group: MediaGroup<Photo>
+    
     @ObservedObject var viewModel: PhotoViewModel
-
+    
+    @Namespace private var groupNamespace
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Группа \(groupIndex + 1) (\(group.count) фото)")
@@ -283,20 +286,18 @@ struct PhotoGroupRowView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 12) {
                     ForEach(group.items) { photo in
-                        GeometryReader { geometry in
-                            PhotoThumbnailCard(
-                                photo: photo,
-                                isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index)
-                            )
-                            .onSelect {
-                                viewModel.togglePhotoSelection(for: photo)
-                            }
-                            .id(photo.id)
-                            .onTapGesture {
-                                let frame = geometry.frame(in: .global)
-                                viewModel.setPreviewPhoto(for: photo, sourceFrame: frame)
-                            }
+                        PhotoThumbnailCard(
+                            photo: photo,
+                            isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index)
+                        )
+                        .onSelect {
+                            viewModel.togglePhotoSelection(for: photo)
                         }
+                        .onTapGesture {
+                            viewModel.setPreviewPhoto(for: photo)
+                        }
+                        .matchedGeometryEffect(id: photo.id, in: groupNamespace)
+                        .id(photo.id)
                         .frame(width: 165, height: 220)
                     }
                 }
@@ -332,8 +333,7 @@ struct PhotoGridView: View {
                     }
                     .id(photo.id)
                     .onTapGesture {
-                        let frame = geometry.frame(in: .global)
-                        viewModel.setPreviewPhoto(for: photo, sourceFrame: frame)
+                        viewModel.setPreviewPhoto(for: photo)
                     }
                 }
                 .frame(width: 120, height: 160)
