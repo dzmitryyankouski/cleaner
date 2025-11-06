@@ -19,16 +19,20 @@ struct PhotoPreview: View {
                             closePreview()
                         }
 
-                    if let image = image {
-
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .matchedGeometryEffect(id: previewPhoto.id, in: namespace)
-                            .onTapGesture {
-                                closePreview()
-                            }
+                    ZStack {
+                        if let image = image {
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .onTapGesture {
+                                    closePreview()
+                                }
+                        } else {
+                            Color.clear
+                                .aspectRatio(contentMode: .fit)
+                        }
                     }
+                    .matchedGeometryEffect(id: previewPhoto.id, in: namespace)
                 }
                 .onAppear {
                     loadImage()
