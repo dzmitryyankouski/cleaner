@@ -26,8 +26,6 @@ struct PhotosTabView: View {
                     }
                     .padding(.vertical)
                 }
-
-                PhotoPreview(viewModel: viewModel)
             }
             .navigationTitle("Фотографии")
             .toolbar {
@@ -275,8 +273,6 @@ struct PhotoGroupRowView: View {
     
     @ObservedObject var viewModel: PhotoViewModel
     
-    @Namespace private var groupNamespace
-    
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Группа \(groupIndex + 1) (\(group.count) фото)")
@@ -296,7 +292,6 @@ struct PhotoGroupRowView: View {
                         .onTapGesture {
                             viewModel.setPreviewPhoto(for: photo)
                         }
-                        .matchedGeometryEffect(id: photo.id, in: groupNamespace)
                         .id(photo.id)
                         .frame(width: 165, height: 220)
                     }
