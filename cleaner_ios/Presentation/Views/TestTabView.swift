@@ -6,6 +6,8 @@ struct TestTabView: View {
     @State private var isLoading = false
     @State private var show = false
     @State private var selectedIndex: Int?
+    @State private var offset: CGSize = .zero
+    @State private var isDragging = false
 
     @Namespace var namespace
 
@@ -53,19 +55,25 @@ struct TestTabView: View {
                 ZStack {
                     Color.gray
                         .ignoresSafeArea()
+                        .opacity(max(0.6, (0.9 - abs(offset.height) / 1000.0)))
 
                     GeometryReader { geometry in
                         let imageSize = photos[index].size
                         let imageAspectRatio = imageSize.width / imageSize.height
                         let containerAspectRatio = geometry.size.width / geometry.size.height
-                        
-                        let frameWidth: CGFloat = imageAspectRatio > containerAspectRatio 
-                            ? geometry.size.width 
+
+                        let baseFrameWidth: CGFloat =
+                            imageAspectRatio > containerAspectRatio
+                            ? geometry.size.width
                             : geometry.size.height * imageAspectRatio
-                        
-                        let frameHeight: CGFloat = imageAspectRatio > containerAspectRatio 
-                            ? geometry.size.width / imageAspectRatio 
+
+                        let baseFrameHeight: CGFloat =
+                            imageAspectRatio > containerAspectRatio
+                            ? geometry.size.width / imageAspectRatio
                             : geometry.size.height
+
+                        let frameWidth = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
+                        let frameHeight = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameHeight
 
                         Color.clear
                             .overlay(
@@ -77,15 +85,32 @@ struct TestTabView: View {
                             .matchedGeometryEffect(id: index, in: namespace)
                             .frame(width: frameWidth, height: frameHeight)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .onTapGesture {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                                    show = false
-                                    selectedIndex = nil
-                                }
-                            }
+                            .offset(x: offset.width, y: offset.height)
+                            .gesture(
+                                DragGesture(minimumDistance: 0)
+                                    .onChanged { value in
+                                        isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
+
+                                        if show && isDragging {
+                                            withAnimation(
+                                                .spring(response: 0.1, dampingFraction: 0.95)
+                                            ) {
+                                                offset = value.translation
+                                            }
+                                        }
+                                    }
+                                    .onEnded { value in
+                                        withAnimation(.spring(response: 0.3, dampingFraction: 1))
+                                        {
+                                            show = show && abs(offset.height) < 100
+                                            offset = .zero
+                                            isDragging = false
+                                        }
+                                    }
+                            )
                     }
+                    .drawingGroup()
                 }
-                .drawingGroup()
                 .zIndex(2)
             }
         }
