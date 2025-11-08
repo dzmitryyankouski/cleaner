@@ -51,6 +51,10 @@ struct MainTabView: View {
                     .tabItem {
                         Label("Настройки", systemImage: "gearshape")
                     }
+                TestTabView()
+                    .tabItem {
+                        Label("Тест", systemImage: "testtube")
+                    }
             }
             .accentColor(.blue)
             
