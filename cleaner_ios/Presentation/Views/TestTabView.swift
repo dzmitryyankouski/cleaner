@@ -96,9 +96,7 @@ struct TestTabView: View {
                                                 .aspectRatio(contentMode: .fill)
                                         )
                                         .clipped()
-                                        .if(index == _selectedIndex) { view in
-                                            view.matchedGeometryEffect(id: index, in: namespace)
-                                        }
+                                        .matchedGeometryEffect(id: index == _selectedIndex ? _selectedIndex : -1, in: namespace)
                                         .frame(width: frameWidth, height: frameHeight)
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .offset(x: offset.width, y: offset.height)
@@ -237,17 +235,6 @@ struct TestTabView: View {
                 self.photos = loadedPhotos
                 self.isLoading = false
             }
-        }
-    }
-}
-
-extension View {
-    @ViewBuilder
-    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
-        if condition {
-            transform(self)
-        } else {
-            self
         }
     }
 }
