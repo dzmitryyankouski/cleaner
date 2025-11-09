@@ -1,6 +1,12 @@
 import Photos
 import SwiftUI
 
+private enum AxisLock { 
+    case none
+    case vertical
+    case horizontal 
+}
+
 struct TestTabView: View {
     @State private var photos: [UIImage] = []
     @State private var isLoading = false
@@ -8,6 +14,7 @@ struct TestTabView: View {
     @State private var selectedIndex: Int?
     @State private var offset: CGSize = .zero
     @State private var isDragging = false
+    @State private var verticalGestureMask: GestureMask = .subviews
 
     @Namespace var namespace
 
@@ -51,65 +58,131 @@ struct TestTabView: View {
                 }
             }
 
-            if let index = selectedIndex, show {
+            if let _selectedIndex = selectedIndex, show {
                 ZStack {
                     Color.gray
                         .ignoresSafeArea()
                         .opacity(max(0.6, (0.9 - abs(offset.height) / 1000.0)))
 
-                    GeometryReader { geometry in
-                        let imageSize = photos[index].size
-                        let imageAspectRatio = imageSize.width / imageSize.height
-                        let containerAspectRatio = geometry.size.width / geometry.size.height
+                    HStack {
+                        TabView(selection: $selectedIndex) {
+                            ForEach(photos.indices, id: \.self) { index in
+                                GeometryReader { geometry in
+                                    let imageSize = photos[index].size
+                                    let imageAspectRatio = imageSize.width / imageSize.height
+                                    let containerAspectRatio =
+                                        geometry.size.width / geometry.size.height
 
-                        let baseFrameWidth: CGFloat =
-                            imageAspectRatio > containerAspectRatio
-                            ? geometry.size.width
-                            : geometry.size.height * imageAspectRatio
+                                    let baseFrameWidth: CGFloat =
+                                        imageAspectRatio > containerAspectRatio
+                                        ? geometry.size.width
+                                        : geometry.size.height * imageAspectRatio
 
-                        let baseFrameHeight: CGFloat =
-                            imageAspectRatio > containerAspectRatio
-                            ? geometry.size.width / imageAspectRatio
-                            : geometry.size.height
+                                    let baseFrameHeight: CGFloat =
+                                        imageAspectRatio > containerAspectRatio
+                                        ? geometry.size.width / imageAspectRatio
+                                        : geometry.size.height
 
-                        let frameWidth = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
-                        let frameHeight = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameHeight
+                                    let frameWidth =
+                                        max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
+                                    let frameHeight =
+                                        max(0.8, (1 - abs(offset.height) / 1000.0))
+                                        * baseFrameHeight
 
-                        Color.clear
-                            .overlay(
-                                Image(uiImage: photos[index])
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            )
-                            .clipped()
-                            .matchedGeometryEffect(id: index, in: namespace)
-                            .frame(width: frameWidth, height: frameHeight)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .offset(x: offset.width, y: offset.height)
-                            .gesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { value in
-                                        isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
+                                    Color.clear
+                                        .overlay(
+                                            Image(uiImage: photos[index])
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                        )
+                                        .clipped()
+                                        .if(index == _selectedIndex) { view in
+                                            view.matchedGeometryEffect(id: index, in: namespace)
+                                        }
+                                        .frame(width: frameWidth, height: frameHeight)
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                        .offset(x: offset.width, y: offset.height)
+                                }
+                                .tag(index)
+                                .opacity(index != _selectedIndex && isDragging ? 0 : 1)
+                            }
+                        }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
 
-                                        if show && isDragging {
-                                            withAnimation(
-                                                .spring(response: 0.1, dampingFraction: 0.95)
-                                            ) {
-                                                offset = value.translation
-                                            }
+                                    if show && isDragging {
+                                        withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
+                                            offset = value.translation
                                         }
                                     }
-                                    .onEnded { value in
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 1))
-                                        {
-                                            show = show && abs(offset.height) < 100
-                                            offset = .zero
-                                            isDragging = false
-                                        }
+                                }
+                                 .onEnded { _ in
+                                    withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
+                                        show = show && abs(offset.height) < 100
+                                        offset = .zero
+                                        isDragging = false
                                     }
+                                }
                             )
                     }
-                    .drawingGroup()
+
+
+                    // GeometryReader { geometry in
+                    //     let imageSize = photos[index].size
+                    //     let imageAspectRatio = imageSize.width / imageSize.height
+                    //     let containerAspectRatio = geometry.size.width / geometry.size.height
+
+                    //     let baseFrameWidth: CGFloat =
+                    //         imageAspectRatio > containerAspectRatio
+                    //         ? geometry.size.width
+                    //         : geometry.size.height * imageAspectRatio
+
+                    //     let baseFrameHeight: CGFloat =
+                    //         imageAspectRatio > containerAspectRatio
+                    //         ? geometry.size.width / imageAspectRatio
+                    //         : geometry.size.height
+
+                    //     let frameWidth = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
+                    //     let frameHeight = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameHeight
+
+                    //     Color.clear
+                    //         .overlay(
+                    //             Image(uiImage: photos[index])
+                    //                 .resizable()
+                    //                 .aspectRatio(contentMode: .fill)
+                    //         )
+                    //         .clipped()
+                    //         .matchedGeometryEffect(id: index, in: namespace)
+                    //         .frame(width: frameWidth, height: frameHeight)
+                    //         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    //         .offset(x: offset.width, y: offset.height)
+                            // .gesture(
+                            //     DragGesture(minimumDistance: 0)
+                            //         .onChanged { value in
+                            //             isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
+
+                            //             if show && isDragging {
+                            //                 withAnimation(
+                            //                     .spring(response: 0.1, dampingFraction: 0.95)
+                            //                 ) {
+                            //                     offset = value.translation
+                            //                 }
+                            //             }
+                            //         }
+                            //         .onEnded { value in
+                            //             withAnimation(.spring(response: 0.3, dampingFraction: 1))
+                            //             {
+                            //                 show = show && abs(offset.height) < 100
+                            //                 offset = .zero
+                            //                 isDragging = false
+                            //             }
+                            //         }
+                            // )
+                    // }
+                    // .drawingGroup()
                 }
                 .zIndex(2)
             }
@@ -164,6 +237,17 @@ struct TestTabView: View {
                 self.photos = loadedPhotos
                 self.isLoading = false
             }
+        }
+    }
+}
+
+extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
         }
     }
 }
