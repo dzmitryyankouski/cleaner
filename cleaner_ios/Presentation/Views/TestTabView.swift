@@ -1,10 +1,10 @@
 import Photos
 import SwiftUI
 
-private enum AxisLock { 
+private enum AxisLock {
     case none
     case vertical
-    case horizontal 
+    case horizontal
 }
 
 struct TestTabView: View {
@@ -15,6 +15,7 @@ struct TestTabView: View {
     @State private var offset: CGSize = .zero
     @State private var isDragging = false
     @State private var verticalGestureMask: GestureMask = .subviews
+    @State private var showOverlay = false
 
     @Namespace var namespace
 
@@ -33,22 +34,26 @@ struct TestTabView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             ForEach(photos.indices, id: \.self) { index in
-                                Color.clear
-                                    .overlay(
-                                        Image(uiImage: photos[index])
-                                            .resizable()
-                                            .aspectRatio(contentMode: .fill)
-                                    )
-                                    .clipped()
-                                    .matchedGeometryEffect(id: index, in: namespace)
-                                    .frame(width: 100, height: 100)
-                                    .onTapGesture {
-                                        withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                                            show.toggle()
-                                            selectedIndex = index
+                                ZStack {
+                                    Color.clear
+                                        .overlay(
+                                            Image(uiImage: photos[index])
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fill)
+                                        )
+                                        .clipped()
+                                        .matchedGeometryEffect(id: index, in: namespace)
+                                        .frame(width: 100, height: 100)
+                                        .onTapGesture {
+                                            withAnimation(
+                                                .spring(response: 0.4, dampingFraction: 1)
+                                            ) {
+                                                show.toggle()
+                                                selectedIndex = index
+                                            }
                                         }
-                                    }
-                                    .zIndex(selectedIndex == index ? 1 : 0)
+                                        .zIndex(selectedIndex == index ? 1 : 0)
+                                }
                             }
                         }
                     }
@@ -64,125 +69,88 @@ struct TestTabView: View {
                         .ignoresSafeArea()
                         .opacity(max(0.6, (0.9 - abs(offset.height) / 1000.0)))
 
-                    HStack {
-                        TabView(selection: $selectedIndex) {
-                            ForEach(photos.indices, id: \.self) { index in
-                                GeometryReader { geometry in
-                                    let imageSize = photos[index].size
-                                    let imageAspectRatio = imageSize.width / imageSize.height
-                                    let containerAspectRatio =
-                                        geometry.size.width / geometry.size.height
-
-                                    let baseFrameWidth: CGFloat =
-                                        imageAspectRatio > containerAspectRatio
-                                        ? geometry.size.width
-                                        : geometry.size.height * imageAspectRatio
-
-                                    let baseFrameHeight: CGFloat =
-                                        imageAspectRatio > containerAspectRatio
-                                        ? geometry.size.width / imageAspectRatio
-                                        : geometry.size.height
-
-                                    let frameWidth =
-                                        max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
-                                    let frameHeight =
-                                        max(0.8, (1 - abs(offset.height) / 1000.0))
-                                        * baseFrameHeight
-
-                                    Color.clear
-                                        .overlay(
-                                            Image(uiImage: photos[index])
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                        )
-                                        .clipped()
-                                        .matchedGeometryEffect(id: index == _selectedIndex ? _selectedIndex : -1, in: namespace)
-                                        .frame(width: frameWidth, height: frameHeight)
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                        .offset(x: offset.width, y: offset.height)
-                                }
+                    TabView(selection: $selectedIndex) {
+                        ForEach(photos.indices, id: \.self) { index in
+                            Color.clear
+                                .overlay(
+                                    Image(uiImage: photos[index])
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                )
+                                .clipped()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .offset(x: offset.width, y: offset.height)
                                 .tag(index)
-                                .opacity(index != _selectedIndex && isDragging ? 0 : 1)
-                            }
                         }
-                        .tabViewStyle(.page(indexDisplayMode: .never))
-                        .simultaneousGesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { value in
-                                    isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
-
-                                    if show && isDragging {
-                                        withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
-                                            offset = value.translation
-                                        }
-                                    }
-                                }
-                                 .onEnded { _ in
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                                        show = show && abs(offset.height) < 100
-                                        offset = .zero
-                                        isDragging = false
-                                    }
-                                }
-                            )
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
+                    .simultaneousGesture(
+                        DragGesture(minimumDistance: 0)
+                            .onChanged { value in
+                                isDragging =
+                                    isDragging
+                                    || abs(value.translation.width) < abs(value.translation.height)
 
+                                if show && isDragging {
+                                    showOverlay = true
+                                    withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
+                                        offset = value.translation
+                                    }
+                                }
+                            }
+                            .onEnded { value in
+                                withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
+                                    show = show && abs(offset.height) < 100
+                                    offset = .zero
+                                    isDragging = false
+                                    showOverlay = false
+                                }
+                            }
+                    )
+                    .opacity(showOverlay ? 0 : 1)
 
-                    // GeometryReader { geometry in
-                    //     let imageSize = photos[index].size
-                    //     let imageAspectRatio = imageSize.width / imageSize.height
-                    //     let containerAspectRatio = geometry.size.width / geometry.size.height
+                    GeometryReader { geometry in
+                        let imageSize = photos[_selectedIndex].size
+                        let imageAspectRatio = imageSize.width / imageSize.height
+                        let containerAspectRatio = geometry.size.width / geometry.size.height
 
-                    //     let baseFrameWidth: CGFloat =
-                    //         imageAspectRatio > containerAspectRatio
-                    //         ? geometry.size.width
-                    //         : geometry.size.height * imageAspectRatio
+                        let baseFrameWidth: CGFloat =
+                            imageAspectRatio > containerAspectRatio
+                            ? geometry.size.width
+                            : geometry.size.height * imageAspectRatio
 
-                    //     let baseFrameHeight: CGFloat =
-                    //         imageAspectRatio > containerAspectRatio
-                    //         ? geometry.size.width / imageAspectRatio
-                    //         : geometry.size.height
+                        let baseFrameHeight: CGFloat =
+                            imageAspectRatio > containerAspectRatio
+                            ? geometry.size.width / imageAspectRatio
+                            : geometry.size.height
 
-                    //     let frameWidth = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
-                    //     let frameHeight = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameHeight
+                        let frameWidth = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
+                        let frameHeight = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameHeight
 
-                    //     Color.clear
-                    //         .overlay(
-                    //             Image(uiImage: photos[index])
-                    //                 .resizable()
-                    //                 .aspectRatio(contentMode: .fill)
-                    //         )
-                    //         .clipped()
-                    //         .matchedGeometryEffect(id: index, in: namespace)
-                    //         .frame(width: frameWidth, height: frameHeight)
-                    //         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    //         .offset(x: offset.width, y: offset.height)
-                            // .gesture(
-                            //     DragGesture(minimumDistance: 0)
-                            //         .onChanged { value in
-                            //             isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
-
-                            //             if show && isDragging {
-                            //                 withAnimation(
-                            //                     .spring(response: 0.1, dampingFraction: 0.95)
-                            //                 ) {
-                            //                     offset = value.translation
-                            //                 }
-                            //             }
-                            //         }
-                            //         .onEnded { value in
-                            //             withAnimation(.spring(response: 0.3, dampingFraction: 1))
-                            //             {
-                            //                 show = show && abs(offset.height) < 100
-                            //                 offset = .zero
-                            //                 isDragging = false
-                            //             }
-                            //         }
-                            // )
-                    // }
-                    // .drawingGroup()
+                        Color.clear
+                            .overlay(
+                                Image(uiImage: photos[_selectedIndex])
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                            )
+                            .clipped()
+                            .matchedGeometryEffect(id: _selectedIndex, in: namespace)
+                            .frame(width: frameWidth, height: frameHeight)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .offset(x: offset.width, y: offset.height)
+                            .allowsHitTesting(false)
+                    }
+                    .drawingGroup()
+                    .opacity(showOverlay ? 1 : 0)
                 }
                 .zIndex(2)
+                .onAppear {
+                    showOverlay = true
+
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        showOverlay = false
+                    }
+                }
             }
         }
     }
