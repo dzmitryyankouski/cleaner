@@ -50,7 +50,7 @@ struct TestTabView: View {
                                         updateLayout(for: index)
 
                                         withAnimation(
-                                            .spring(response: 0.4, dampingFraction: 1)
+                                            .spring(response: 0.4, dampingFraction: 0.85)
                                         ) {
                                             show.toggle()
                                             selectedIndex = index
@@ -84,6 +84,7 @@ struct TestTabView: View {
                                     .clipped()
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                                     .offset(x: offset.width, y: offset.height)
+                                    .scaleEffect(1 - (abs(offset.height) / 1000))
                                     .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
                                     .tag(index)
                             }
@@ -101,7 +102,7 @@ struct TestTabView: View {
                         )
                         .clipped()
                         .matchedGeometryEffect(id: _selectedIndex, in: namespace)
-                        .frame(width: baseFrameSize.width, height: baseFrameSize.height)
+                        .frame(width: baseFrameSize.width * (1 - (abs(offset.height) / 1000)), height: baseFrameSize.height * (1 - (abs(offset.height) / 1000)))
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .offset(x: offset.width, y: offset.height)
                         .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
@@ -136,15 +137,21 @@ struct TestTabView: View {
                 }
             }
             .onEnded { _ in
-                let shouldShow = show && abs(offset.height) < 100
+                isDragging = false
 
-                showTabView = shouldShow
-
-                withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                    show = shouldShow
+                if show && abs(offset.height) < 100 {
                     offset = .zero
-                    isDragging = false
-                    showOverlay = false
+
+                    withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
+                        showOverlay = false
+                    }
+                } else {
+                    showTabView = false
+
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                        offset = .zero
+                        show = false
+                    }
                 }
             }
     }
@@ -223,8 +230,5 @@ struct TestTabView: View {
             : containerHeight
 
         baseFrameSize = CGSize(width: baseFrameWidth, height: baseFrameHeight)
-
-        print("🔄 baseFrameSize: \(baseFrameSize)")
-        print("🔄 imageAspectRatio: \(imageAspectRatio)")
     }
 }
