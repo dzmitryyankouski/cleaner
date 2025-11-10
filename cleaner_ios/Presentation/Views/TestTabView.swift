@@ -16,8 +16,10 @@ struct TestTabView: View {
     @State private var isDragging = false
     @State private var verticalGestureMask: GestureMask = .subviews
     @State private var showOverlay = false
+    @State private var baseFrameSize: CGSize = UIScreen.main.bounds.size
 
     @Namespace var namespace
+    private let screenBounds = UIScreen.main.bounds
 
     var body: some View {
         ZStack {
@@ -45,6 +47,8 @@ struct TestTabView: View {
                                         .matchedGeometryEffect(id: index, in: namespace)
                                         .frame(width: 100, height: 100)
                                         .onTapGesture {
+                                            updateLayout(for: index)
+
                                             withAnimation(
                                                 .spring(response: 0.4, dampingFraction: 1)
                                             ) {
@@ -84,64 +88,25 @@ struct TestTabView: View {
                         }
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
-                    .simultaneousGesture(
-                        DragGesture(minimumDistance: 0)
-                            .onChanged { value in
-                                isDragging =
-                                    isDragging
-                                    || abs(value.translation.width) < abs(value.translation.height)
-
-                                if show && isDragging {
-                                    showOverlay = true
-                                    withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
-                                        offset = value.translation
-                                    }
-                                }
-                            }
-                            .onEnded { value in
-                                withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                                    show = show && abs(offset.height) < 100
-                                    offset = .zero
-                                    isDragging = false
-                                    showOverlay = false
-                                }
-                            }
-                    )
+                    .simultaneousGesture(overlayDragGesture())
                     .opacity(showOverlay ? 0 : 1)
 
-                    GeometryReader { geometry in
-                        let imageSize = photos[_selectedIndex].size
-                        let imageAspectRatio = imageSize.width / imageSize.height
-                        let containerAspectRatio = geometry.size.width / geometry.size.height
 
-                        let baseFrameWidth: CGFloat =
-                            imageAspectRatio > containerAspectRatio
-                            ? geometry.size.width
-                            : geometry.size.height * imageAspectRatio
-
-                        let baseFrameHeight: CGFloat =
-                            imageAspectRatio > containerAspectRatio
-                            ? geometry.size.width / imageAspectRatio
-                            : geometry.size.height
-
-                        let frameWidth = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameWidth
-                        let frameHeight = max(0.8, (1 - abs(offset.height) / 1000.0)) * baseFrameHeight
-
-                        Color.clear
-                            .overlay(
-                                Image(uiImage: photos[_selectedIndex])
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                            )
-                            .clipped()
-                            .matchedGeometryEffect(id: _selectedIndex, in: namespace)
-                            .frame(width: frameWidth, height: frameHeight)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .offset(x: offset.width, y: offset.height)
-                            .allowsHitTesting(false)
-                    }
-                    .drawingGroup()
-                    .opacity(showOverlay ? 1 : 0)
+                    Color.clear
+                        .overlay(
+                            Image(uiImage: photos[_selectedIndex])
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                        )
+                        .clipped()
+                        .matchedGeometryEffect(id: _selectedIndex, in: namespace)
+                        .frame(width: baseFrameSize.width, height: baseFrameSize.height)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .offset(x: offset.width, y: offset.height)
+                        .opacity(showOverlay ? 1 : 0)
+                        .gesture(overlayDragGesture())
+                        .drawingGroup()
+                    
                 }
                 .zIndex(2)
                 .onAppear {
@@ -151,8 +116,35 @@ struct TestTabView: View {
                         showOverlay = false
                     }
                 }
+                .onChange(of: selectedIndex) { newValue in
+                    updateLayout(for: newValue)
+                }
             }
         }
+    }
+
+    private func overlayDragGesture() -> some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { value in
+                isDragging =
+                    isDragging
+                    || abs(value.translation.width) < abs(value.translation.height)
+
+                if show && isDragging {
+                    showOverlay = true
+                    withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
+                        offset = value.translation
+                    }
+                }
+            }
+            .onEnded { _ in
+                withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
+                    show = show && abs(offset.height) < 100
+                    offset = .zero
+                    isDragging = false
+                    showOverlay = false
+                }
+            }
     }
 
     private func loadPhotos() {
@@ -204,5 +196,33 @@ struct TestTabView: View {
                 self.isLoading = false
             }
         }
+    }
+
+    private func updateLayout(for index: Int?) {
+        guard let index, photos.indices.contains(index) else {
+            return
+        }
+
+        let imageSize = photos[index].size
+        let imageAspectRatio = imageSize.width / imageSize.height
+
+        let containerWidth = screenBounds.width
+        let containerHeight = screenBounds.height
+        let containerAspectRatio = containerWidth / containerHeight
+
+        let baseFrameWidth: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth
+            : containerHeight * imageAspectRatio
+
+        let baseFrameHeight: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth / imageAspectRatio
+            : containerHeight
+
+        baseFrameSize = CGSize(width: baseFrameWidth, height: baseFrameHeight)
+
+        print("🔄 baseFrameSize: \(baseFrameSize)")
+        print("🔄 imageAspectRatio: \(imageAspectRatio)")
     }
 }
