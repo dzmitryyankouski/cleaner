@@ -136,10 +136,10 @@ struct TestTabView: View {
                     offset = value.translation
                 }
             }
-            .onEnded { _ in
+            .onEnded { value in
                 isDragging = false
 
-                if show && abs(offset.height) < 100 {
+                if show && abs(value.translation.height) < 100 && abs(value.predictedEndTranslation.height) < 250 {
                     offset = .zero
 
                     withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
