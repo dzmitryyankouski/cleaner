@@ -17,6 +17,7 @@ struct TestTabView: View {
     @State private var verticalGestureMask: GestureMask = .subviews
     @State private var showOverlay = false
     @State private var baseFrameSize: CGSize = UIScreen.main.bounds.size
+    @State private var showTabView = false
 
     @Namespace var namespace
     private let screenBounds = UIScreen.main.bounds
@@ -71,24 +72,26 @@ struct TestTabView: View {
                         .ignoresSafeArea()
                         .opacity(max(0.6, (0.9 - abs(offset.height) / 1000.0)))
 
-                    TabView(selection: $selectedIndex) {
-                        ForEach(photos.indices, id: \.self) { index in
-                            Color.clear
-                                .overlay(
-                                    Image(uiImage: photos[index])
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                )
-                                .clipped()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .offset(x: offset.width, y: offset.height)
-                                .tag(index)
+                    if showTabView {
+                        TabView(selection: $selectedIndex) {
+                            ForEach(photos.indices, id: \.self) { index in
+                                Color.clear
+                                    .overlay(
+                                        Image(uiImage: photos[index])
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                    )
+                                    .clipped()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .offset(x: offset.width, y: offset.height)
+                                    .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
+                                    .tag(index)
+                            }
                         }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        .simultaneousGesture(overlayDragGesture())
+                        .opacity(showOverlay ? 0 : 1)
                     }
-                    .tabViewStyle(.page(indexDisplayMode: .never))
-                    .simultaneousGesture(overlayDragGesture())
-                    .opacity(showOverlay ? 0 : 1)
-
 
                     Color.clear
                         .overlay(
@@ -101,9 +104,9 @@ struct TestTabView: View {
                         .frame(width: baseFrameSize.width, height: baseFrameSize.height)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .offset(x: offset.width, y: offset.height)
+                        .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
                         .opacity(showOverlay ? 1 : 0)
                         .gesture(overlayDragGesture())
-                        .drawingGroup()
                     
                 }
                 .zIndex(2)
@@ -112,6 +115,7 @@ struct TestTabView: View {
 
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         showOverlay = false
+                        showTabView = true
                     }
                 }
                 .onChange(of: selectedIndex) { newValue in
@@ -124,20 +128,22 @@ struct TestTabView: View {
     private func overlayDragGesture() -> some Gesture {
         DragGesture(minimumDistance: 0)
             .onChanged { value in
-                isDragging =
-                    isDragging
-                    || abs(value.translation.width) < abs(value.translation.height)
+                isDragging = isDragging || abs(value.translation.width) < abs(value.translation.height)
 
                 if show && isDragging {
                     showOverlay = true
-                    withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
-                        offset = value.translation
-                    }
+                    offset = value.translation
                 }
             }
             .onEnded { _ in
+                let shouldShow = show && abs(offset.height) < 100
+
+                if !shouldShow {
+                    showTabView = false
+                }
+
                 withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                    show = show && abs(offset.height) < 100
+                    show = shouldShow
                     offset = .zero
                     isDragging = false
                     showOverlay = false
