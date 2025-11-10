@@ -61,7 +61,7 @@ struct TestTabView: View {
 
             if let _selectedIndex = selectedIndex, show {
                 ZStack {
-                    Color.gray
+                    Color.white
                         .ignoresSafeArea()
                         .opacity(max(0.6, (0.9 - abs(offset.height) / 1000.0)))
 
