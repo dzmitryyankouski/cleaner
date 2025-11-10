@@ -36,28 +36,26 @@ struct TestTabView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack {
                             ForEach(photos.indices, id: \.self) { index in
-                                ZStack {
-                                    Color.clear
-                                        .overlay(
-                                            Image(uiImage: photos[index])
-                                                .resizable()
-                                                .aspectRatio(contentMode: .fill)
-                                        )
-                                        .clipped()
-                                        .matchedGeometryEffect(id: index, in: namespace)
-                                        .frame(width: 100, height: 100)
-                                        .onTapGesture {
-                                            updateLayout(for: index)
+                                Color.clear
+                                    .overlay(
+                                        Image(uiImage: photos[index])
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fill)
+                                    )
+                                    .clipped()
+                                    .matchedGeometryEffect(id: index, in: namespace)
+                                    .frame(width: 100, height: 100)
+                                    .onTapGesture {
+                                        updateLayout(for: index)
 
-                                            withAnimation(
-                                                .spring(response: 0.4, dampingFraction: 1)
-                                            ) {
-                                                show.toggle()
-                                                selectedIndex = index
-                                            }
+                                        withAnimation(
+                                            .spring(response: 0.4, dampingFraction: 1)
+                                        ) {
+                                            show.toggle()
+                                            selectedIndex = index
                                         }
-                                        .zIndex(selectedIndex == index ? 1 : 0)
-                                }
+                                    }
+                                    .zIndex(selectedIndex == index ? 1 : 0)
                             }
                         }
                     }
