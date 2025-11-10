@@ -138,9 +138,7 @@ struct TestTabView: View {
             .onEnded { _ in
                 let shouldShow = show && abs(offset.height) < 100
 
-                if !shouldShow {
-                    showTabView = false
-                }
+                showTabView = shouldShow
 
                 withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
                     show = shouldShow
