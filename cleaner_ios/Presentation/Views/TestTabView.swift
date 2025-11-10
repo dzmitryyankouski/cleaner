@@ -1,12 +1,6 @@
 import Photos
 import SwiftUI
 
-private enum AxisLock {
-    case none
-    case vertical
-    case horizontal
-}
-
 struct TestTabView: View {
     @State private var photos: [UIImage] = []
     @State private var isLoading = false
@@ -14,7 +8,6 @@ struct TestTabView: View {
     @State private var selectedIndex: Int?
     @State private var offset: CGSize = .zero
     @State private var isDragging = false
-    @State private var verticalGestureMask: GestureMask = .subviews
     @State private var showOverlay = false
     @State private var baseFrameSize: CGSize = UIScreen.main.bounds.size
     @State private var showTabView = false
