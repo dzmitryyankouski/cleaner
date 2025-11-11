@@ -34,7 +34,7 @@ struct PhotoView: View {
                 }
 
                 .clipped()
-                //.matchedGeometryEffect(id: photo.id, in: namespace)
+                .matchedGeometryEffect(id: photo.id, in: namespace)
                 .onAppear {
                     loadImage()
                 }

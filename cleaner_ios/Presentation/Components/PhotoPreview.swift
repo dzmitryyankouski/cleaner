@@ -37,13 +37,11 @@ struct PhotoPreview: View {
                     // }
 
                     PhotoView(photo: previewPhoto, size: basicSize, quality: .high, contentMode: .fill, frameSize: $baseFrameSize)
-                        .matchedGeometryEffect(id: previewPhoto.id, in: namespace)
                         .frame(width: 400, height: 400)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .offset(x: offset.width, y: offset.height)
                         .gesture(overlayDragGesture())
                        // .opacity(showOverlay ? 1 : 0)
-
                 }
                 .zIndex(2)
                 .onAppear {
