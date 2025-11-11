@@ -1,6 +1,12 @@
 import Foundation
 import SwiftUI
 
+struct PreviewModel {
+    let photo: Photo
+    let size: CGSize
+    let items: [Photo]
+}
+
 // MARK: - Photo View Model
 
 /// ViewModel для управления фотографиями
@@ -19,8 +25,7 @@ final class PhotoViewModel: ObservableObject {
     @Published var selectedPhotosForDeletion: Set<Int> = []
     @Published var selectedPhotosFileSize: Int64 = 0
 
-    @Published var previewPhoto: Photo? = nil
-    @Published var showPreviewModel: Bool = false
+    @Published var previewPhoto: PreviewPhoto? = nil
     
     // MARK: - Private Properties
     
@@ -72,9 +77,16 @@ final class PhotoViewModel: ObservableObject {
         await loadAndIndexPhotos()
     }
 
+    func previewPhoto(photo: Photo, size: CGSize, items: [Photo]) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
+            self.previewPhoto = PreviewPhoto(photo: photo, size: size, items: items)
+        }
+    }
+
     func clearPreviewPhoto() {
-        previewPhoto = nil
-        
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
+            self.previewPhoto = nil
+        }
     }
     
     func togglePhotoSelection(for photo: Photo) {

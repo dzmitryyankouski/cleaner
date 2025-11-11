@@ -5,7 +5,7 @@ import SwiftUI
 // MARK: - Photo Model
 
 /// Модель фотографии с эмбедингом и метаданными
-struct Photo: Identifiable, Equatable {
+struct Photo: Identifiable, Equatable, Hashable {
     let id: String
     let index: Int
     let asset: PHAsset
@@ -27,6 +27,10 @@ struct Photo: Identifiable, Equatable {
     
     static func == (lhs: Photo, rhs: Photo) -> Bool {
         lhs.id == rhs.id
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
     }
     
     /// Проверяет, является ли фото скриншотом

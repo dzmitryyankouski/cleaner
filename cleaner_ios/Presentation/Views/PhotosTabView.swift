@@ -73,10 +73,38 @@ struct SimilarPhotosView: View {
                 message: "Попробуйте выбрать другие изображения"
             )
         } else {
-            PhotoGroupsScrollView(
-                groups: filteredGroups
-            )
+            LazyVStack(alignment: .leading, spacing: 16) {
+                StatisticCardView(statistics: [
+                    .init(label: "Найдено групп", value: "\(filteredGroups.count)", alignment: .leading),
+                    .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
+                    .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
+                ])
+                .padding(.horizontal)
+
+                LazyVStack(spacing: 20) {
+                    ForEach(Array(filteredGroups.enumerated()), id: \.offset) { index, group in
+                        PhotoGroupRowView(
+                            groupIndex: index,
+                            group: group,
+                            onPreviewPhoto: { photo, size in
+                                print("Preview photo: \(photo.id) with size \(size)")
+                                viewModel.previewPhoto(photo: photo, size: size, items: group.items)
+                            }
+                        )
+                    }
+                }
+                .padding(.top)
+            }
         }
+    }
+
+    private var totalPhotosCount: Int {
+        filteredGroups.reduce(0) { $0 + $1.count }
+    }
+
+    private var totalFileSize: String {
+        let bytes = filteredGroups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
+        return FileSize(bytes: bytes).formatted
     }
 }
 
@@ -102,10 +130,37 @@ struct DuplicatesView: View {
                 message: "В вашей галерее нет точных копий фотографий"
             )
         } else {
-            PhotoGroupsScrollView(
-                groups: filteredGroups
-            )
+            LazyVStack(alignment: .leading, spacing: 16) {
+                StatisticCardView(statistics: [
+                    .init(label: "Найдено групп", value: "\(filteredGroups.count)", alignment: .leading),
+                    .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
+                    .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
+                ])
+                .padding(.horizontal)
+
+                LazyVStack(spacing: 20) {
+                    ForEach(Array(filteredGroups.enumerated()), id: \.offset) { index, group in
+                        PhotoGroupRowView(
+                            groupIndex: index,
+                            group: group,
+                            onPreviewPhoto: { photo, size in
+                                print("Preview photo: \(photo.id) with size \(size)")
+                            }
+                        )
+                    }
+                }
+                .padding(.top)
+            }
         }
+    }
+
+    private var totalPhotosCount: Int {
+        filteredGroups.reduce(0) { $0 + $1.count }
+    }
+
+    private var totalFileSize: String {
+        let bytes = filteredGroups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
+        return FileSize(bytes: bytes).formatted
     }
 }
 
@@ -126,63 +181,15 @@ struct ScreenshotsView: View {
                 message: "В вашей галерее нет скриншотов"
             )
         } else {
-            PhotoGridView(
-                photos: screenshots
-            )
+            PhotoGridView(photos: screenshots)
         }
     }
 }
-
-// MARK: - Photo Groups Scroll View
-
-struct PhotoGroupsScrollView: View {
-    let groups: [MediaGroup<Photo>]
-    @EnvironmentObject var viewModel: PhotoViewModel
-
-    var body: some View {
-        LazyVStack(alignment: .leading, spacing: 16) {
-            // Статистика групп
-            groupStatistics
-
-            // Группы фотографий
-            LazyVStack(spacing: 20) {
-                ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
-                    PhotoGroupRowView(
-                        groupIndex: index,
-                        group: group
-                    )
-                }
-            }
-            .padding(.top)
-        }
-    }
-
-    private var groupStatistics: some View {
-        StatisticCardView(statistics: [
-            .init(label: "Найдено групп", value: "\(groups.count)", alignment: .leading),
-            .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
-            .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
-        ])
-        .padding(.horizontal)
-    }
-
-    private var totalPhotosCount: Int {
-        groups.reduce(0) { $0 + $1.count }
-    }
-
-    private var totalFileSize: String {
-        let bytes = groups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
-        return FileSize(bytes: bytes).formatted
-    }
-}
-
-// MARK: - Photo Group Row View
 
 struct PhotoGroupRowView: View {
     let groupIndex: Int
     let group: MediaGroup<Photo>
-    
-    @EnvironmentObject var viewModel: PhotoViewModel
+    let onPreviewPhoto: (Photo, CGSize) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -195,29 +202,18 @@ struct PhotoGroupRowView: View {
                     ForEach(group.items) { photo in
                         PhotoThumbnailCard(
                             photo: photo,
-                            isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                            isPreviewing: viewModel.showPreviewModel && viewModel.previewPhoto?.id == photo.id
-                        )
-                        .onSelect {
-                            viewModel.togglePhotoSelection(for: photo)
-                        }
-                        .onTapGesture {
-                            viewModel.previewPhoto = photo
-
-                            withAnimation(.spring(response: 3, dampingFraction: 0.85)) {
-                                viewModel.showPreviewModel = true
+                            onPreviewPhoto: { size in
+                                onPreviewPhoto(photo, size)
                             }
-                        }
+                        )
                         .id(photo.id)
                     }
                 }
                 .padding(.horizontal)
-                .scrollClipDisabled(true)
             }
+            .scrollClipDisabled(true)
         }
     }
-
-
 }
 
 // MARK: - Photo Grid View
@@ -235,26 +231,26 @@ struct PhotoGridView: View {
             ], spacing: 12
         ) {
             ForEach(photos) { photo in
-                GeometryReader { geometry in
-                    PhotoThumbnailCard(
-                        photo: photo,
-                        size: CGSize(width: 120, height: 160),
-                        isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                        isPreviewing: viewModel.previewPhoto?.id == photo.id
-                    )
-                    .onSelect {
-                        viewModel.togglePhotoSelection(for: photo)
-                    }
-                    .id(photo.id)
-                    .onTapGesture {
-                        viewModel.previewPhoto = photo
+                // GeometryReader { geometry in
+                //     PhotoThumbnailCard(
+                //         photo: photo,
+                //         size: CGSize(width: 120, height: 160),
+                //         isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
+                //         isPreviewing: viewModel.previewPhoto?.id == photo.id
+                //     )
+                //     .onSelect {
+                //         viewModel.togglePhotoSelection(for: photo)
+                //     }
+                //     .id(photo.id)
+                //     .onTapGesture {
+                //         viewModel.previewPhoto = photo
 
-                        withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                            viewModel.showPreviewModel = true
-                        }
-                    }
-                }
-                .frame(width: 120, height: 160)
+                //         withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
+                //             viewModel.showPreviewModel = true
+                //         }
+                //     }
+                // }
+                // .frame(width: 120, height: 160)
             }
         }
         .padding(.horizontal)

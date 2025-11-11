@@ -63,7 +63,8 @@ struct MainTabView: View {
             }
             .accentColor(.blue)
             
-            PhotoPreview(viewModel: photoViewModel)
+            PhotoPreview()
+                .environmentObject(photoViewModel)
         }
         .environment(\.photoPreviewNamespace, photoPreviewNamespace)
     }
