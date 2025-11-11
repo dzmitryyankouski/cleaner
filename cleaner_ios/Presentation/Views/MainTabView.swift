@@ -32,25 +32,30 @@ struct MainTabView: View {
     var body: some View {
         ZStack {
             TabView {
-                PhotosTabView(viewModel: photoViewModel)
+                PhotosTabView()
                     .tabItem {
                         Label("Фотографии", systemImage: "photo.stack")
                     }
+                    .environmentObject(photoViewModel)
                 
-                VideosTabView(viewModel: videoViewModel)
+                VideosTabView()
                     .tabItem {
                         Label("Видео", systemImage: "video")
                     }
-                
-                SearchTabView(viewModel: photoViewModel)
+                    .environmentObject(videoViewModel)
+
+                SearchTabView()
                     .tabItem {
                         Label("Поиск", systemImage: "magnifyingglass")
                     }
-                
-                SettingsTabView(viewModel: settingsViewModel)
+                    .environmentObject(photoViewModel)
+
+                SettingsTabView()
                     .tabItem {
                         Label("Настройки", systemImage: "gearshape")
                     }
+                    .environmentObject(settingsViewModel)
+
                 TestTabView()
                     .tabItem {
                         Label("Тест", systemImage: "testtube")

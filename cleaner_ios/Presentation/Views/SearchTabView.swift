@@ -7,7 +7,7 @@ struct SearchTabView: View {
     
     // MARK: - Properties
     
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
     @State private var searchText: String = ""
     @State private var searchResults: [Photo] = []
     @State private var isSearching = false

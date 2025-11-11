@@ -6,7 +6,7 @@ struct SettingsTabView: View {
     
     // MARK: - Properties
     
-    @StateObject var viewModel: SettingsViewModel
+    @EnvironmentObject var viewModel: SettingsViewModel
     
     // MARK: - Body
     
@@ -144,14 +144,3 @@ struct SettingSliderCard: View {
         .padding(.horizontal)
     }
 }
-
-// MARK: - Preview
-
-#Preview {
-    SettingsTabView(
-        viewModel: SettingsViewModel(
-            settingsStorage: UserDefaultsSettingsStorage()
-        )
-    )
-}
-

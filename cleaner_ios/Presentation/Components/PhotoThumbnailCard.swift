@@ -16,6 +16,8 @@ struct PhotoThumbnailCard: View {
     @State private var image: UIImage?
     @State private var isLoading = false
     @State private var requestID: PHImageRequestID = PHInvalidImageRequestID
+    
+    private let screenBounds = UIScreen.main.bounds
 
     func onSelect(_ action: @escaping () -> Void) -> Self {
         var copy = self
@@ -25,81 +27,102 @@ struct PhotoThumbnailCard: View {
 
     var body: some View {
         if let namespace = photoPreviewNamespace {
-            ZStack {
-                VStack {
-                    HStack {
-                        Spacer()
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.caption)
-                            .foregroundColor(.white)
-                            .padding(4)
-                            .background(Color.blue.opacity(0.8))
-                            .cornerRadius(4)
-                    }
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: {
-                            onSelectAction?()
-                        }) {
-                            Image(systemName: isSelected ? "trash.circle.fill" : "circle")
-                                .font(.title3)
-                                .foregroundColor(isSelected ? .red : .white)
-                                .background(Color.black.opacity(0.6))
-                                .clipShape(Circle())
-                        }
-                    }
-                }
-                .padding(8)
-            }
-            .frame(width: size.width, height: size.height)
-            .background(
-                ZStack {
+
+            Color.clear
+                .overlay {
                     if let image = image {
                         Image(uiImage: image)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .cornerRadius(8)
                     }
                 }
+                .clipped()
                 .matchedGeometryEffect(id: photo.id, in: namespace)
-            )
-            // .drawingGroup()  // Рендерим в Metal для лучшей производительности
-            .onAppear {
-                loadImage()
-            }
+                .frame(width: 100, height: 100)
+                .onTapGesture {
+                    onSelectAction?()
+                }
+                .zIndex(isPreviewing ? 1 : 0)
+                .onAppear {
+                    loadImage()
+                }
+
+
+            // ZStack {
+            //     VStack {
+            //         HStack {
+            //             Spacer()
+            //             Image(systemName: "photo.on.rectangle.angled")
+            //                 .font(.caption)
+            //                 .foregroundColor(.white)
+            //                 .padding(4)
+            //                 .background(Color.blue.opacity(0.8))
+            //                 .cornerRadius(4)
+            //         }
+            //         Spacer()
+            //         HStack {
+            //             Spacer()
+            //             Button(action: {
+            //                 onSelectAction?()
+            //             }) {
+            //                 Image(systemName: isSelected ? "trash.circle.fill" : "circle")
+            //                     .font(.title3)
+            //                     .foregroundColor(isSelected ? .red : .white)
+            //                     .background(Color.black.opacity(0.6))
+            //                     .clipShape(Circle())
+            //             }
+            //         }
+            //     }
+            //     .padding(8)
+            // }
+            // .frame(width: size.width, height: size.height)
+            // .background(
+            //     ZStack {
+            //         if let image = image {
+            //             Image(uiImage: image)
+            //                 .resizable()
+            //                 .aspectRatio(contentMode: .fill)
+            //                 .cornerRadius(8)
+            //         }
+            //     }
+            //     .matchedGeometryEffect(id: photo.id, in: namespace)
+            // )
+            // // .drawingGroup()  // Рендерим в Metal для лучшей производительности
+            // .onAppear {
+            //     loadImage()
+            // }
         }
     }
 
     // MARK: - Overlay View
 
-    private var overlayView: some View {
-        VStack {
-            HStack {
-                Spacer()
-                Image(systemName: "photo.on.rectangle.angled")
-                    .font(.caption)
-                    .foregroundColor(.white)
-                    .padding(4)
-                    .background(Color.blue.opacity(0.8))
-                    .cornerRadius(4)
-            }
-            Spacer()
-            HStack {
-                Spacer()
-                Button(action: {
-                    onSelectAction?()
-                }) {
-                    Image(systemName: isSelected ? "trash.circle.fill" : "circle")
-                        .font(.title3)
-                        .foregroundColor(isSelected ? .red : .white)
-                        .background(Color.black.opacity(0.6))
-                        .clipShape(Circle())
-                }
-            }
-        }
-        .padding(8)
-    }
+    // private var overlayView: some View {
+    //     VStack {
+    //         HStack {
+    //             Spacer()
+    //             Image(systemName: "photo.on.rectangle.angled")
+    //                 .font(.caption)
+    //                 .foregroundColor(.white)
+    //                 .padding(4)
+    //                 .background(Color.blue.opacity(0.8))
+    //                 .cornerRadius(4)
+    //         }
+    //         Spacer()
+    //         HStack {
+    //             Spacer()
+    //             Button(action: {
+    //                 onSelectAction?()
+    //             }) {
+    //                 Image(systemName: isSelected ? "trash.circle.fill" : "circle")
+    //                     .font(.title3)
+    //                     .foregroundColor(isSelected ? .red : .white)
+    //                     .background(Color.black.opacity(0.6))
+    //                     .clipShape(Circle())
+    //             }
+    //         }
+    //     }
+    //     .padding(8)
+    // }
 
     // MARK: - Placeholder View
 
@@ -158,5 +181,26 @@ struct PhotoThumbnailCard: View {
 
         capturedRequestID = currentRequestID
         self.requestID = currentRequestID
+    }
+
+    private func getFrameSize() -> CGSize {
+        let imageSize = image?.size ?? .zero
+        let imageAspectRatio = imageSize.width / imageSize.height
+
+        let containerWidth = screenBounds.width
+        let containerHeight = screenBounds.height
+        let containerAspectRatio = containerWidth / containerHeight
+
+        let baseFrameWidth: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth
+            : containerHeight * imageAspectRatio
+
+        let baseFrameHeight: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth / imageAspectRatio
+            : containerHeight
+
+        return CGSize(width: baseFrameWidth, height: baseFrameHeight)
     }
 }

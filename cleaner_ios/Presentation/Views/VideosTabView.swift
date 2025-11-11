@@ -8,7 +8,7 @@ struct VideosTabView: View {
     
     // MARK: - Properties
     
-    @ObservedObject var viewModel: VideoViewModel
+    @EnvironmentObject var viewModel: VideoViewModel
     @State private var selectedTab = 0
     
     // MARK: - Body

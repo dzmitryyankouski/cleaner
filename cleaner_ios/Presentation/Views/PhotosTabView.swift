@@ -1,17 +1,11 @@
 import SwiftUI
 
-// MARK: - Photos Tab View
-
 struct PhotosTabView: View {
 
-    // MARK: - Properties
-
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
     @State private var selectedTab = 0
 
     private let tabs = ["Серии", "Копии", "Скриншоты"]
-
-    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -19,7 +13,16 @@ struct PhotosTabView: View {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
                         Section {
-                            tabContent
+                            switch selectedTab {
+                            case 0:
+                                SimilarPhotosView()
+                            case 1:
+                                DuplicatesView()
+                            case 2:
+                                ScreenshotsView()
+                            default:
+                                SimilarPhotosView()
+                            }
                         } header: {
                             PickerHeader(selectedTab: $selectedTab, tabs: tabs)
                         }
@@ -46,96 +49,10 @@ struct PhotosTabView: View {
             }
         }
     }
-
-    // MARK: - Header View
-
-    @ViewBuilder
-    private var headerView: some View {
-        if viewModel.indexing {
-            ProgressLoadingView(
-                title: "Индексация фотографий",
-                current: viewModel.indexed,
-                total: viewModel.total
-            )
-            .padding(.horizontal)
-        } else if !viewModel.photos.isEmpty {
-            StatisticCardView(statistics: [
-                .init(
-                    label: "Фотографии",
-                    value:
-                        "\(viewModel.totalPhotosCount) / \(viewModel.selectedPhotosForDeletion.count)",
-                    alignment: .leading
-                ),
-                .init(
-                    label: "Размер",
-                    value:
-                        "\(viewModel.formattedTotalFileSize) / \(viewModel.formattedSelectedFileSize)",
-                    alignment: .trailing
-                ),
-            ])
-            .padding(.horizontal)
-        }
-    }
-
-    // MARK: - Tab Content
-
-    @ViewBuilder
-    private var tabContent: some View {
-        switch selectedTab {
-        case 0:
-            SimilarPhotosView(viewModel: viewModel)
-        case 1:
-            DuplicatesView(viewModel: viewModel)
-        case 2:
-            ScreenshotsView(viewModel: viewModel)
-        default:
-            SimilarPhotosView(viewModel: viewModel)
-        }
-    }
 }
-
-struct PickerHeader: View {
-    @Binding var selectedTab: Int
-    let tabs: [String]
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Picker("Табы", selection: $selectedTab) {
-                ForEach(tabs.indices, id: \.self) { index in
-                    Text(tabs[index])
-                        .padding(.vertical, 2)
-                        .tag(index)
-                }
-            }
-            .pickerStyle(SegmentedPickerStyle())
-            .frame(maxWidth: 300)
-            .glassEffect()
-        }
-    }
-}
-
-struct Info: View {
-    @ObservedObject var viewModel: PhotoViewModel
-
-    var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 16) {
-                Text("\(viewModel.totalPhotosCount) / \(viewModel.selectedPhotosForDeletion.count)")
-                Text("\(viewModel.formattedTotalFileSize) / \(viewModel.formattedSelectedFileSize)")
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding()
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(25)
-        }
-        .padding(.horizontal)
-    }
-}
-
-// MARK: - Similar Photos View
 
 struct SimilarPhotosView: View {
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
 
     private var filteredGroups: [MediaGroup<Photo>] {
         viewModel.groupsSimilar.filter { $0.count > 1 }
@@ -157,17 +74,14 @@ struct SimilarPhotosView: View {
             )
         } else {
             PhotoGroupsScrollView(
-                groups: filteredGroups,
-                viewModel: viewModel
+                groups: filteredGroups
             )
         }
     }
 }
 
-// MARK: - Duplicates View
-
 struct DuplicatesView: View {
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
 
     private var filteredGroups: [MediaGroup<Photo>] {
         viewModel.groupsDuplicates.filter { $0.count > 1 }
@@ -189,8 +103,7 @@ struct DuplicatesView: View {
             )
         } else {
             PhotoGroupsScrollView(
-                groups: filteredGroups,
-                viewModel: viewModel
+                groups: filteredGroups
             )
         }
     }
@@ -199,7 +112,7 @@ struct DuplicatesView: View {
 // MARK: - Screenshots View
 
 struct ScreenshotsView: View {
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
 
     private var screenshots: [Photo] {
         viewModel.photos.filter { $0.isScreenshot() }
@@ -214,8 +127,7 @@ struct ScreenshotsView: View {
             )
         } else {
             PhotoGridView(
-                photos: screenshots,
-                viewModel: viewModel
+                photos: screenshots
             )
         }
     }
@@ -225,7 +137,7 @@ struct ScreenshotsView: View {
 
 struct PhotoGroupsScrollView: View {
     let groups: [MediaGroup<Photo>]
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
 
     var body: some View {
         LazyVStack(alignment: .leading, spacing: 16) {
@@ -237,8 +149,7 @@ struct PhotoGroupsScrollView: View {
                 ForEach(Array(groups.enumerated()), id: \.offset) { index, group in
                     PhotoGroupRowView(
                         groupIndex: index,
-                        group: group,
-                        viewModel: viewModel
+                        group: group
                     )
                 }
             }
@@ -271,7 +182,7 @@ struct PhotoGroupRowView: View {
     let groupIndex: Int
     let group: MediaGroup<Photo>
     
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -301,16 +212,19 @@ struct PhotoGroupRowView: View {
                     }
                 }
                 .padding(.horizontal)
+                .scrollClipDisabled(true)
             }
         }
     }
+
+
 }
 
 // MARK: - Photo Grid View
 
 struct PhotoGridView: View {
     let photos: [Photo]
-    @ObservedObject var viewModel: PhotoViewModel
+    @EnvironmentObject var viewModel: PhotoViewModel
 
     var body: some View {
         LazyVGrid(

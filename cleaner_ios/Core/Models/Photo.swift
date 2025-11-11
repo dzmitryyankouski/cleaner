@@ -1,5 +1,6 @@
 import Foundation
 import Photos
+import SwiftUI
 
 // MARK: - Photo Model
 
