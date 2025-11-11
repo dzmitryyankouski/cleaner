@@ -9,10 +9,8 @@ struct PhotoPreview: View {
     @State private var selected: String?
     @State private var showOverlay = false
     @State private var showTabView = false
-    @State private var baseFrameSize: CGSize = CGSize(width: 500, height: 500)
+    @State private var baseFrameSize: CGSize = CGSize(width: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height), height: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height))
     @State private var isDragging = false
-
-    private let basicSize: CGSize = CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
 
     var body: some View {
         Group {
@@ -36,9 +34,14 @@ struct PhotoPreview: View {
                     //     .tabViewStyle(.page(indexDisplayMode: .never))
                     // }
 
-                    PhotoView(photo: previewPhoto, quality: .high, contentMode: .fill)
-                        .offset(x: offset.width, y: offset.height)
-                        .gesture(overlayDragGesture())
+                    PhotoView(photo: previewPhoto, quality: .high, contentMode: .fill, onLoad: { image in 
+                        print("🔄 image preview loaded: \(image)")
+                        baseFrameSize = getBaseFrameSize(image: image)
+
+                    })
+                    .frame(width: baseFrameSize.width, height: baseFrameSize.height)
+                    .offset(x: offset.width, y: offset.height)
+                    .gesture(overlayDragGesture())
                        // .opacity(showOverlay ? 1 : 0)
                 }
                 .zIndex(2)
@@ -90,56 +93,26 @@ struct PhotoPreview: View {
             }
     }
 
-    // private func loadImage(photo: Photo) {
-    //     print("🔄 loadImage for preview")
-    //     guard let asset = photo.asset else {
-    //         return
-    //     }
+     private func getBaseFrameSize(image: UIImage) -> CGSize {
+        print("🔄 updateLayout \(image)")
 
-    //     print("🔄 asset: \(asset)")
-        
-    //     let options = PHImageRequestOptions()
-    //     options.isSynchronous = false
-    //     options.deliveryMode = .highQualityFormat
-    //     options.resizeMode = .none
-    //     options.isNetworkAccessAllowed = false
+        let imageSize = image.size
+        let imageAspectRatio = imageSize.width / imageSize.height
 
-        
-    //     PHImageManager.default().requestImage(
-    //         for: asset,
-    //         targetSize: PHImageManagerMaximumSize,
-    //         contentMode: .aspectFit,
-    //         options: options
-    //     ) { result, _ in
-    //         DispatchQueue.main.async {
-    //             print("🔄 result: \(result)")
-    //             photos.append(result)
-    //         }
-    //     }
-    // }
+        let containerWidth = UIScreen.main.bounds.width
+        let containerHeight = UIScreen.main.bounds.height
+        let containerAspectRatio = containerWidth / containerHeight
 
-    // private func updateLayout(for id: String?) {
-    //     guard let photo = photos.first(where: { $0.id == index }) else {
-    //         return
-    //     }
+        let baseFrameWidth: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth
+            : containerHeight * imageAspectRatio
 
-    //     let imageSize = photo.size
-    //     let imageAspectRatio = imageSize.width / imageSize.height
+        let baseFrameHeight: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth / imageAspectRatio
+            : containerHeight
 
-    //     let containerWidth = screenBounds.width
-    //     let containerHeight = screenBounds.height
-    //     let containerAspectRatio = containerWidth / containerHeight
-
-    //     let baseFrameWidth: CGFloat =
-    //         imageAspectRatio > containerAspectRatio
-    //         ? containerWidth
-    //         : containerHeight * imageAspectRatio
-
-    //     let baseFrameHeight: CGFloat =
-    //         imageAspectRatio > containerAspectRatio
-    //         ? containerWidth / imageAspectRatio
-    //         : containerHeight
-
-    //     baseFrameSize = CGSize(width: baseFrameWidth, height: baseFrameHeight)
-    // }
+        return CGSize(width: baseFrameWidth, height: baseFrameHeight)
+    }
 }

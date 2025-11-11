@@ -13,12 +13,20 @@ struct PhotoView: View {
     let photo: Photo
     let quality: PhotoQuality
     let contentMode: ContentMode
+    let onLoad: ((UIImage) -> Void)?
 
     @State private var image: UIImage?
     @State private var isLoading = false
     @State private var requestID: PHImageRequestID = PHInvalidImageRequestID
     @State private var screenBounds: CGRect = UIScreen.main.bounds
     @State private var frameSize: CGSize = CGSize(width: 300, height: 300)
+    
+    init(photo: Photo, quality: PhotoQuality, contentMode: ContentMode, onLoad: ((UIImage) -> Void)? = nil) {
+        self.photo = photo
+        self.quality = quality
+        self.contentMode = contentMode
+        self.onLoad = onLoad
+    }
 
     var body: some View {
         if let namespace = photoPreviewNamespace {
@@ -72,6 +80,10 @@ struct PhotoView: View {
                 if self.requestID == capturedRequestID {
                     self.image = result
                     self.isLoading = false
+
+                    if let onLoad = onLoad, let result = result {
+                        onLoad(result)
+                    }
                 }
             }
         }
