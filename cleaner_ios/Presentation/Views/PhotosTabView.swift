@@ -86,9 +86,9 @@ struct SimilarPhotosView: View {
                         PhotoGroupRowView(
                             groupIndex: index,
                             group: group,
-                            onPreviewPhoto: { photo, size in
-                                print("Preview photo: \(photo.id) with size \(size)")
-                                viewModel.previewPhoto(photo: photo, size: size, items: group.items)
+                            onPreviewPhoto: { photo in
+                                print("Preview photo: \(photo.id)")
+                                viewModel.previewPhoto(photo: photo, items: group.items)
                             }
                         )
                     }
@@ -143,8 +143,8 @@ struct DuplicatesView: View {
                         PhotoGroupRowView(
                             groupIndex: index,
                             group: group,
-                            onPreviewPhoto: { photo, size in
-                                print("Preview photo: \(photo.id) with size \(size)")
+                            onPreviewPhoto: { photo in
+                                print("Preview photo: \(photo.id)")
                             }
                         )
                     }
@@ -189,7 +189,7 @@ struct ScreenshotsView: View {
 struct PhotoGroupRowView: View {
     let groupIndex: Int
     let group: MediaGroup<Photo>
-    let onPreviewPhoto: (Photo, CGSize) -> Void
+    let onPreviewPhoto: (Photo) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -202,8 +202,8 @@ struct PhotoGroupRowView: View {
                     ForEach(group.items) { photo in
                         PhotoThumbnailCard(
                             photo: photo,
-                            onPreviewPhoto: { size in
-                                onPreviewPhoto(photo, size)
+                            onPreviewPhoto: {
+                                onPreviewPhoto(photo)
                             }
                         )
                         .id(photo.id)

@@ -5,16 +5,14 @@ struct PhotoThumbnailCard: View {
     @Environment(\.photoPreviewNamespace) var photoPreviewNamespace
 
     let photo: Photo
-    let onPreviewPhoto: (CGSize) -> Void
-
-    @State private var frameSize: CGSize = .zero
+    let onPreviewPhoto: () -> Void
 
     var body: some View {
         if let namespace = photoPreviewNamespace {
-        PhotoView(photo: photo, size: CGSize(width: 150, height: 150), quality: .low, contentMode: .fill, frameSize: $frameSize)
+        PhotoView(photo: photo, quality: .low, contentMode: .fill)
             .frame(width: 150, height: 150)
                 .onTapGesture {
-                    onPreviewPhoto(frameSize)
+                    onPreviewPhoto()
                 }
         }
     }

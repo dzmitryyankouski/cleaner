@@ -11,16 +11,14 @@ struct PhotoView: View {
     @Environment(\.photoPreviewNamespace) var photoPreviewNamespace
 
     let photo: Photo
-    let size: CGSize
     let quality: PhotoQuality
-    let contentMode: ContentMode?
-
-    @Binding var frameSize: CGSize
+    let contentMode: ContentMode
 
     @State private var image: UIImage?
     @State private var isLoading = false
     @State private var requestID: PHImageRequestID = PHInvalidImageRequestID
     @State private var screenBounds: CGRect = UIScreen.main.bounds
+    @State private var frameSize: CGSize = CGSize(width: 300, height: 300)
 
     var body: some View {
         if let namespace = photoPreviewNamespace {
@@ -29,7 +27,7 @@ struct PhotoView: View {
                     if let image = image {
                         Image(uiImage: image)
                             .resizable()
-                            .aspectRatio(contentMode: contentMode ?? .fill)
+                            .aspectRatio(contentMode: contentMode)
                     }
                 }
 
@@ -66,7 +64,7 @@ struct PhotoView: View {
 
         let currentRequestID = PHImageManager.default().requestImage(
             for: photo.asset,
-            targetSize: size,
+            targetSize: self.getTargetSize(),
             contentMode: .aspectFill,
             options: options
         ) { result, _ in
@@ -76,17 +74,25 @@ struct PhotoView: View {
                     self.isLoading = false
                 }
             }
-
-           // self.updateLayout()
         }
 
         capturedRequestID = currentRequestID
         self.requestID = currentRequestID
     }
 
-    private func updateLayout() {
-        print("🔄 updateLayout for photo: \(photo.id)")
-        guard let image = image else { return }
+    private func getTargetSize() -> CGSize {
+        switch quality {
+        case .low:
+            return CGSize(width: 150, height: 150)
+        case .medium:
+            return CGSize(width: 300, height: 300)
+        case .high:
+            return PHImageManagerMaximumSize
+        }
+    }
+
+    private func updateLayout(image: UIImage) {
+        print("🔄 updateLayout for photo: \(photo.id) for image: \(image)")
 
         let imageSize = image.size
         let imageAspectRatio = imageSize.width / imageSize.height
@@ -106,5 +112,7 @@ struct PhotoView: View {
             : containerHeight
 
         frameSize = CGSize(width: baseFrameWidth, height: baseFrameHeight)
+
+        print("🔄 frameSize: \(frameSize)")
     }
 }

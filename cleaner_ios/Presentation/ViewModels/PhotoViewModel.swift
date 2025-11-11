@@ -77,9 +77,9 @@ final class PhotoViewModel: ObservableObject {
         await loadAndIndexPhotos()
     }
 
-    func previewPhoto(photo: Photo, size: CGSize, items: [Photo]) {
+    func previewPhoto(photo: Photo, items: [Photo]) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
-            self.previewPhoto = PreviewPhoto(photo: photo, size: size, items: items)
+            self.previewPhoto = PreviewPhoto(photo: photo, items: items)
         }
     }
 

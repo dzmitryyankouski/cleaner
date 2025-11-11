@@ -12,7 +12,7 @@ struct PhotoPreview: View {
     @State private var baseFrameSize: CGSize = CGSize(width: 500, height: 500)
     @State private var isDragging = false
 
-    private let basicSize: CGSize = CGSize(width: 500, height: 500)
+    private let basicSize: CGSize = CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
 
     var body: some View {
         Group {
@@ -36,9 +36,7 @@ struct PhotoPreview: View {
                     //     .tabViewStyle(.page(indexDisplayMode: .never))
                     // }
 
-                    PhotoView(photo: previewPhoto, size: basicSize, quality: .high, contentMode: .fill, frameSize: $baseFrameSize)
-                        .frame(width: 400, height: 400)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    PhotoView(photo: previewPhoto, quality: .high, contentMode: .fill)
                         .offset(x: offset.width, y: offset.height)
                         .gesture(overlayDragGesture())
                        // .opacity(showOverlay ? 1 : 0)
