@@ -14,6 +14,7 @@ struct PhotoView: View {
     let quality: PhotoQuality
     let contentMode: ContentMode
     let onLoad: ((UIImage) -> Void)?
+    let matchedGeometry: Bool
 
     @State private var image: UIImage?
     @State private var isLoading = false
@@ -21,16 +22,17 @@ struct PhotoView: View {
     @State private var screenBounds: CGRect = UIScreen.main.bounds
     @State private var frameSize: CGSize = CGSize(width: 300, height: 300)
     
-    init(photo: Photo, quality: PhotoQuality, contentMode: ContentMode, onLoad: ((UIImage) -> Void)? = nil) {
+    init(photo: Photo, quality: PhotoQuality, contentMode: ContentMode, onLoad: ((UIImage) -> Void)? = nil, matchedGeometry: Bool = true) {
         self.photo = photo
         self.quality = quality
         self.contentMode = contentMode
         self.onLoad = onLoad
+        self.matchedGeometry = matchedGeometry
     }
 
     var body: some View {
         if let namespace = photoPreviewNamespace {
-            Color.clear
+            let baseView = Color.clear
                 .overlay {
                     if let image = image {
                         Image(uiImage: image)
@@ -38,13 +40,30 @@ struct PhotoView: View {
                             .aspectRatio(contentMode: contentMode)
                     }
                 }
-
                 .clipped()
-                .matchedGeometryEffect(id: photo.id, in: namespace)
-                .onAppear {
-                    loadImage()
+            
+            Group {
+                if matchedGeometry {
+                    baseView.matchedGeometryEffect(id: photo.id, in: namespace)
+                } else {
+                    baseView
                 }
+            }
+            .onAppear {
+                loadImage()
+            }
+            .onDisappear {
+                cancelLoad()
+            }
         }
+    }
+    
+    private func cancelLoad() {
+        if requestID != PHInvalidImageRequestID {
+            PHImageManager.default().cancelImageRequest(requestID)
+            requestID = PHInvalidImageRequestID
+        }
+        isLoading = false
     }
 
      private func loadImage() {
@@ -53,43 +72,44 @@ struct PhotoView: View {
         isLoading = true
 
         let options = PHImageRequestOptions()
+        
         options.isSynchronous = false
         options.isNetworkAccessAllowed = false
-
+        options.deliveryMode = .opportunistic
+        
         switch quality {
         case .low:
-            options.deliveryMode = .opportunistic
             options.resizeMode = .fast
         case .medium:
-            options.deliveryMode = .highQualityFormat
             options.resizeMode = .exact
         case .high:
-            options.deliveryMode = .highQualityFormat
             options.resizeMode = .none
+            options.deliveryMode = .highQualityFormat
         }
 
-        var capturedRequestID: PHImageRequestID = PHInvalidImageRequestID
-
-        let currentRequestID = PHImageManager.default().requestImage(
+        let targetSize = self.getTargetSize()
+                
+        self.requestID = PHImageManager.default().requestImage(
             for: photo.asset,
-            targetSize: self.getTargetSize(),
+            targetSize: targetSize,
             contentMode: .aspectFill,
             options: options
-        ) { result, _ in
-            DispatchQueue.main.async {
-                if self.requestID == capturedRequestID {
-                    self.image = result
-                    self.isLoading = false
+        ) { result, info in
+            let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+            
+            if !isDegraded || quality == .low {
+                DispatchQueue.main.async {
+                    if self.requestID != PHInvalidImageRequestID {
+                        self.image = result
+                        self.isLoading = false
 
-                    if let onLoad = onLoad, let result = result {
-                        onLoad(result)
+                        if let onLoad = self.onLoad, let result = result {
+                            onLoad(result)
+                        }
                     }
                 }
             }
         }
-
-        capturedRequestID = currentRequestID
-        self.requestID = currentRequestID
     }
 
     private func getTargetSize() -> CGSize {
@@ -101,30 +121,5 @@ struct PhotoView: View {
         case .high:
             return PHImageManagerMaximumSize
         }
-    }
-
-    private func updateLayout(image: UIImage) {
-        print("🔄 updateLayout for photo: \(photo.id) for image: \(image)")
-
-        let imageSize = image.size
-        let imageAspectRatio = imageSize.width / imageSize.height
-
-        let containerWidth = screenBounds.width
-        let containerHeight = screenBounds.height
-        let containerAspectRatio = containerWidth / containerHeight
-
-        let baseFrameWidth: CGFloat =
-            imageAspectRatio > containerAspectRatio
-            ? containerWidth
-            : containerHeight * imageAspectRatio
-
-        let baseFrameHeight: CGFloat =
-            imageAspectRatio > containerAspectRatio
-            ? containerWidth / imageAspectRatio
-            : containerHeight
-
-        frameSize = CGSize(width: baseFrameWidth, height: baseFrameHeight)
-
-        print("🔄 frameSize: \(frameSize)")
     }
 }

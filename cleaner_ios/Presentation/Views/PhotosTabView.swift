@@ -86,9 +86,9 @@ struct SimilarPhotosView: View {
                         PhotoGroupRowView(
                             groupIndex: index,
                             group: group,
-                            onPreviewPhoto: { photo in
-                                print("Preview photo: \(photo.id)")
-                                viewModel.previewPhoto(photo: photo, items: group.items)
+                            onPreviewPhoto: { index in
+                                print("Preview photo: \(index)")
+                                viewModel.previewPhoto(index: index, items: group.items)
                             }
                         )
                     }
@@ -99,12 +99,14 @@ struct SimilarPhotosView: View {
     }
 
     private var totalPhotosCount: Int {
-        filteredGroups.reduce(0) { $0 + $1.count }
+        //filteredGroups.reduce(0) { $0 + $1.count }
+        return 0
     }
 
     private var totalFileSize: String {
-        let bytes = filteredGroups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
-        return FileSize(bytes: bytes).formatted
+        // let bytes = filteredGroups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
+        // return FileSize(bytes: bytes).formatted
+        return "0"
     }
 }
 
@@ -143,8 +145,8 @@ struct DuplicatesView: View {
                         PhotoGroupRowView(
                             groupIndex: index,
                             group: group,
-                            onPreviewPhoto: { photo in
-                                print("Preview photo: \(photo.id)")
+                            onPreviewPhoto: { index in
+                                print("Preview photo: \(index)")
                             }
                         )
                     }
@@ -187,9 +189,11 @@ struct ScreenshotsView: View {
 }
 
 struct PhotoGroupRowView: View {
+    @EnvironmentObject var viewModel: PhotoViewModel
+    
     let groupIndex: Int
     let group: MediaGroup<Photo>
-    let onPreviewPhoto: (Photo) -> Void
+    let onPreviewPhoto: (Int) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -198,15 +202,16 @@ struct PhotoGroupRowView: View {
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
-                    ForEach(group.items) { photo in
+                HStack(spacing: 12) {
+                    ForEach(Array(group.items.enumerated()), id: \.element.id) { index, photo in
                         PhotoThumbnailCard(
                             photo: photo,
                             onPreviewPhoto: {
-                                onPreviewPhoto(photo)
+                                onPreviewPhoto(index)
                             }
                         )
                         .id(photo.id)
+                        .zIndex(viewModel.previewPhoto?.index == index ? 10 : 0)
                     }
                 }
                 .padding(.horizontal)

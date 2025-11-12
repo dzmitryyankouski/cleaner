@@ -77,17 +77,17 @@ final class PhotoViewModel: ObservableObject {
         await loadAndIndexPhotos()
     }
 
-    func previewPhoto(photo: Photo, items: [Photo]) {
+    func previewPhoto(index: Int, items: [Photo]) {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
-            self.previewPhoto = PreviewPhoto(photo: photo, items: items)
+            self.previewPhoto = PreviewPhoto(index: index, items: items, show: true)
         }
     }
 
-    func clearPreviewPhoto() {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
-            self.previewPhoto = nil
-        }
-    }
+    // func clearPreviewPhoto() {
+    //     withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
+    //         self.previewPhoto.show = false
+    //     }
+    // }
     
     func togglePhotoSelection(for photo: Photo) {
         if selectedPhotosForDeletion.contains(photo.index) {

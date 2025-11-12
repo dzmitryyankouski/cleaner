@@ -6,50 +6,60 @@ struct PhotoPreview: View {
     @EnvironmentObject var viewModel: PhotoViewModel
 
     @State private var offset: CGSize = .zero
-    @State private var selected: String?
+    @State private var selected: Int?
     @State private var showOverlay = false
     @State private var showTabView = false
     @State private var baseFrameSize: CGSize = CGSize(width: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height), height: min(UIScreen.main.bounds.width, UIScreen.main.bounds.height))
     @State private var isDragging = false
+    
+    private var previewPhotoIndexBinding: Binding<Int> {
+        Binding(
+            get: { viewModel.previewPhoto?.index ?? 0 },
+            set: { newValue in
+                viewModel.previewPhoto?.index = newValue
+            }
+        )
+    }
 
     var body: some View {
         Group {
-            if let namespace = photoPreviewNamespace, let previewPhoto = viewModel.previewPhoto?.photo {
+            if let namespace = photoPreviewNamespace, let previewPhoto = viewModel.previewPhoto, previewPhoto.show == true {
+                
                 ZStack {
                     Color.white
                         .ignoresSafeArea()
                         .opacity(max(0.6, (0.9 - abs(offset.height) / 1000.0)))
 
-                    // if showTabView {
-                    //     TabView(selection: $selected) {
-                    //         ForEach(viewModel.previewPhoto?.items ?? [], id: \.self) { photo in
-                    //             PhotoView(photo: photo, size: basicSize, quality: .high, contentMode: .fit, frameSize: $baseFrameSize)
-                    //                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    //                 .offset(x: offset.width, y: offset.height)
-                    //                 .scaleEffect(1 - (abs(offset.height) / 1000))
-                    //                 .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
-                    //                 .tag(photo.id)
-                    //         }
-                    //     }
-                    //     .tabViewStyle(.page(indexDisplayMode: .never))
-                    // }
+                    if showTabView {
+                        TabView(selection: previewPhotoIndexBinding) {
+                            ForEach(Array(previewPhoto.items.enumerated()), id: \.element.id) { index, photo in
+                                PhotoView(photo: photo, quality: .high, contentMode: .fit, matchedGeometry: false)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .offset(x: offset.width, y: offset.height)
+                                    .scaleEffect(1 - (abs(offset.height) / 1000))
+                                    .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
+                                    .tag(index)
+                            }
+                        }
+                        .tabViewStyle(.page(indexDisplayMode: .never))
+                        .simultaneousGesture(overlayDragGesture())
+                        .opacity(showOverlay ? 0 : 1)
+                    }
 
-                    PhotoView(photo: previewPhoto, quality: .high, contentMode: .fill, onLoad: { image in 
+                    PhotoView(photo: previewPhoto.items[previewPhoto.index], quality: .high, contentMode: .fill, onLoad: { image in 
                         print("🔄 image preview loaded: \(image)")
                         baseFrameSize = getBaseFrameSize(image: image)
-
                     })
-                    .frame(width: baseFrameSize.width, height: baseFrameSize.height)
+                    .frame(width: baseFrameSize.width * (1 - (abs(offset.height) / 1000)), height: baseFrameSize.height * (1 - (abs(offset.height) / 1000)))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .offset(x: offset.width, y: offset.height)
+                    .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
+                    .opacity(showOverlay ? 1 : 0)
                     .gesture(overlayDragGesture())
-                       // .opacity(showOverlay ? 1 : 0)
+                    .id(previewPhoto.index)
                 }
                 .zIndex(2)
-                .onAppear {
-                    if selected == nil {
-                        selected = viewModel.previewPhoto?.photo.id
-                    }
-                    
+                .onAppear {    
                     showOverlay = true
 
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -87,16 +97,18 @@ struct PhotoPreview: View {
 
                     withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
                         offset = .zero
-                        viewModel.previewPhoto = nil
+                        viewModel.previewPhoto?.show = false
+                        selected = nil
                     }
                 }
             }
     }
 
-     private func getBaseFrameSize(image: UIImage) -> CGSize {
-        print("🔄 updateLayout \(image)")
-
-        let imageSize = image.size
+    private func getBaseFrameSize(image: UIImage) -> CGSize {
+        return getBaseFrameSize(imageSize: image.size)
+    }
+    
+    private func getBaseFrameSize(imageSize: CGSize) -> CGSize {
         let imageAspectRatio = imageSize.width / imageSize.height
 
         let containerWidth = UIScreen.main.bounds.width

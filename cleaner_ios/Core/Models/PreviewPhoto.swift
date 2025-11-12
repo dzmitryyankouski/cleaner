@@ -2,6 +2,7 @@ import Photos
 import SwiftUI
 
 struct PreviewPhoto {
-    let photo: Photo
+    var index: Int
     let items: [Photo]
+    var show: Bool
 }
