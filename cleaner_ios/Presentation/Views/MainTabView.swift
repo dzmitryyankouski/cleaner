@@ -32,34 +32,24 @@ struct MainTabView: View {
     var body: some View {
         ZStack {
             TabView {
-                PhotosTabView()
-                    .tabItem {
-                        Label("Фотографии", systemImage: "photo.stack")
-                    }
-                    .environmentObject(photoViewModel)
+                Tab {
+                    PhotosTabView()
+                        .environmentObject(photoViewModel)
+                } label: {
+                    Label("Фотографии", systemImage: "photo.stack")
+                }
+
+                Tab {
+                    VideosTabView()
+                        .environmentObject(videoViewModel)
+                } label: {
+                    Label("Видео", systemImage: "video")
+                }
                 
-                VideosTabView()
-                    .tabItem {
-                        Label("Видео", systemImage: "video")
-                    }
-                    .environmentObject(videoViewModel)
-
-                SearchTabView()
-                    .tabItem {
-                        Label("Поиск", systemImage: "magnifyingglass")
-                    }
-                    .environmentObject(photoViewModel)
-
-                SettingsTabView()
-                    .tabItem {
-                        Label("Настройки", systemImage: "gearshape")
-                    }
-                    .environmentObject(settingsViewModel)
-
-                TestTabView()
-                    .tabItem {
-                        Label("Тест", systemImage: "testtube")
-                    }
+                Tab(role: .search) {
+                    SearchTabView()
+                        .environmentObject(photoViewModel)
+                }
             }
             .accentColor(.blue)
             

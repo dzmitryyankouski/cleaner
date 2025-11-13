@@ -54,10 +54,6 @@ struct PhotosTabView: View {
 struct SimilarPhotosView: View {
     @EnvironmentObject var viewModel: PhotoViewModel
 
-    private var filteredGroups: [MediaGroup<Photo>] {
-        viewModel.groupsSimilar.filter { $0.count > 1 }
-    }
-
     var body: some View {
         if viewModel.indexing {
             ProgressLoadingView(
@@ -66,7 +62,7 @@ struct SimilarPhotosView: View {
                 total: viewModel.total
             )
             .padding(.horizontal)
-        } else if filteredGroups.isEmpty {
+        } else if viewModel.groupsSimilar.isEmpty {
             EmptyStateView(
                 icon: "photo.on.rectangle.angled",
                 title: "Похожие фотографии не найдены",
@@ -75,14 +71,14 @@ struct SimilarPhotosView: View {
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
                 StatisticCardView(statistics: [
-                    .init(label: "Найдено групп", value: "\(filteredGroups.count)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
-                    .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
+                    .init(label: "Найдено групп", value: "\(viewModel.groupsSimilar.count)", alignment: .leading),
+                    .init(label: "Фото в группах", value: "\(viewModel.similarPhotosCount)", alignment: .center),
+                    .init(label: "Общий размер", value: viewModel.similarPhotosFileSize, alignment: .trailing),
                 ])
                 .padding(.horizontal)
 
                 LazyVStack(spacing: 20) {
-                    ForEach(Array(filteredGroups.enumerated()), id: \.offset) { index, group in
+                    ForEach(Array(viewModel.groupsSimilar.enumerated()), id: \.offset) { index, group in
                         PhotoGroupRowView(
                             groupIndex: index,
                             group: group,
@@ -96,17 +92,6 @@ struct SimilarPhotosView: View {
                 .padding(.top)
             }
         }
-    }
-
-    private var totalPhotosCount: Int {
-        //filteredGroups.reduce(0) { $0 + $1.count }
-        return 0
-    }
-
-    private var totalFileSize: String {
-        // let bytes = filteredGroups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
-        // return FileSize(bytes: bytes).formatted
-        return "0"
     }
 }
 

@@ -15,28 +15,16 @@ struct SearchTabView: View {
     // MARK: - Body
     
     var body: some View {
-        ZStack {
-            Color.clear
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    hideKeyboard()
-                }
-            
+        NavigationStack {
             VStack(spacing: 20) {
                 if viewModel.indexing {
                     indexingView
                 } else {
-                    searchInputView
-                    
-                    Spacer()
-                    
                     resultsView
                 }
             }
-            .padding(.top, 40)
         }
-        .navigationTitle("Поиск")
-        .navigationBarTitleDisplayMode(.inline)
+        .searchable(text: $searchText)
     }
     
     // MARK: - Indexing View

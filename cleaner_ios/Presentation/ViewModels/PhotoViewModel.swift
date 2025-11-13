@@ -26,6 +26,12 @@ final class PhotoViewModel: ObservableObject {
     @Published var selectedPhotosFileSize: Int64 = 0
 
     @Published var previewPhoto: PreviewPhoto? = nil
+
+    @Published var similarPhotosCount: Int = 0
+    @Published var duplicatesPhotosCount: Int = 0
+
+    @Published var similarPhotosFileSize: String = "0"
+    @Published var duplicatesPhotosFileSize: String = "0"
     
     // MARK: - Private Properties
     
@@ -148,7 +154,7 @@ final class PhotoViewModel: ObservableObject {
     private func createSimilarGroups() async {
         let groups = await groupSimilarPhotosUseCase.groupSimilar(photos: photos)
         
-        self.groupsSimilar = groups
+        self.groupsSimilar = groups.filter { $0.count > 1 }
         
         // Автоматически выбираем фото для удаления (кроме первого в каждой группе)
         for group in groups {
@@ -156,6 +162,9 @@ final class PhotoViewModel: ObservableObject {
                 togglePhotoSelection(for: photo)
             }
         }
+
+        self.similarPhotosCount = groups.reduce(0) { $0 + $1.count }
+        self.similarPhotosFileSize = FileSize(bytes: groups.reduce(0) { $0 + $1.items.reduce(0) { $0 + $1.fileSize.bytes } }).formatted
     }
     
     private func createDuplicateGroups() async {
