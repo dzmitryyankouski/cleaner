@@ -35,9 +35,6 @@ struct PhotoPreview: View {
                             ForEach(Array(previewPhoto.items.enumerated()), id: \.element.id) { index, photo in
                                 PhotoView(photo: photo, quality: .high, contentMode: .fit, matchedGeometry: false)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .offset(x: offset.width, y: offset.height)
-                                    .scaleEffect(1 - (abs(offset.height) / 1000))
-                                    .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
                                     .tag(index)
                             }
                         }
@@ -47,13 +44,11 @@ struct PhotoPreview: View {
                     }
 
                     PhotoView(photo: previewPhoto.items[previewPhoto.index], quality: .high, contentMode: .fill, onLoad: { image in 
-                        print("🔄 image preview loaded: \(image)")
                         baseFrameSize = getBaseFrameSize(image: image)
                     })
                     .frame(width: baseFrameSize.width * (1 - (abs(offset.height) / 1000)), height: baseFrameSize.height * (1 - (abs(offset.height) / 1000)))
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .offset(x: offset.width, y: offset.height)
-                    .animation(.interactiveSpring(response: 0.1, dampingFraction: 0.95), value: offset)
                     .opacity(showOverlay ? 1 : 0)
                     .gesture(overlayDragGesture())
                     .id(previewPhoto.index)
@@ -62,9 +57,12 @@ struct PhotoPreview: View {
                 .onAppear {    
                     showOverlay = true
 
+                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        showTabView = true
+                    }
+
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         showOverlay = false
-                        showTabView = true
                     }
                 }
             }
@@ -85,13 +83,8 @@ struct PhotoPreview: View {
                 isDragging = false
 
                 if viewModel.previewPhoto != nil && abs(value.translation.height) < 100 && abs(value.predictedEndTranslation.height) < 250 {
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
-                        offset = .zero
-                    }
-                    
-                    withAnimation(.spring(response: 0.1, dampingFraction: 0.95)) {
-                        showOverlay = false
-                    }
+                    offset = .zero
+                    showOverlay = false
                 } else {
                     showTabView = false
 
