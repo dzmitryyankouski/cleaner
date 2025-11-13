@@ -35,10 +35,12 @@ struct PhotoPreview: View {
                             ForEach(Array(previewPhoto.items.enumerated()), id: \.element.id) { index, photo in
                                 PhotoView(photo: photo, quality: .high, contentMode: .fit, matchedGeometry: false)
                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .ignoresSafeArea()
                                     .tag(index)
                             }
                         }
                         .tabViewStyle(.page(indexDisplayMode: .never))
+                        .ignoresSafeArea()
                         .simultaneousGesture(overlayDragGesture())
                         .opacity(showOverlay ? 0 : 1)
                     }
@@ -51,17 +53,18 @@ struct PhotoPreview: View {
                     .offset(x: offset.width, y: offset.height)
                     .opacity(showOverlay ? 1 : 0)
                     .gesture(overlayDragGesture())
+                    .ignoresSafeArea()
                     .id(previewPhoto.index)
                 }
                 .zIndex(2)
                 .onAppear {    
                     showOverlay = true
 
-                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         showTabView = true
                     }
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                         showOverlay = false
                     }
                 }
@@ -88,7 +91,7 @@ struct PhotoPreview: View {
                 } else {
                     showTabView = false
 
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
                         offset = .zero
                         viewModel.previewPhoto?.show = false
                         selected = nil

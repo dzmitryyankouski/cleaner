@@ -78,7 +78,7 @@ final class PhotoViewModel: ObservableObject {
     }
 
     func previewPhoto(index: Int, items: [Photo]) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
             self.previewPhoto = PreviewPhoto(index: index, items: items, show: true)
         }
     }
