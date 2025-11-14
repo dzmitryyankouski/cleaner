@@ -40,7 +40,7 @@ struct PhotoView: View {
                             .aspectRatio(contentMode: contentMode)
                     }
                 }
-                .clipped()
+                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
             
             Group {
                 if matchedGeometry {

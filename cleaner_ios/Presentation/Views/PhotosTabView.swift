@@ -33,12 +33,6 @@ struct PhotosTabView: View {
             .navigationTitle("Фотографии")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Search", systemImage: "magnifyingglass") {
-                        //
-                    }
-                }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "gearshape") {
                         //
                     }
