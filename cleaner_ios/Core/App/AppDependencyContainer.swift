@@ -61,5 +61,15 @@ final class AppDependencyContainer {
             groupSimilarVideosUseCase: useCaseFactory.makeGroupSimilarVideosUseCase()
         )
     }
+
+    @MainActor
+    func makePhotoLibrary() -> PhotoLibrary? {
+        guard let photoService = serviceFactory.makePhotoService() else {
+            print("❌ Не удалось создать PhotoService для PhotoLibrary")
+            return nil
+        }
+
+        return PhotoLibrary(photoService: photoService)
+    }
 }
 

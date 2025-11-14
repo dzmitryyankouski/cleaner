@@ -10,7 +10,7 @@ enum PhotoQuality {
 struct PhotoView: View {
     @Environment(\.photoPreviewNamespace) var photoPreviewNamespace
 
-    let photo: Photo
+    let photo: PhotoModel
     let quality: PhotoQuality
     let contentMode: ContentMode
     let onLoad: ((UIImage) -> Void)?
@@ -22,7 +22,7 @@ struct PhotoView: View {
     @State private var screenBounds: CGRect = UIScreen.main.bounds
     @State private var frameSize: CGSize = CGSize(width: 300, height: 300)
     
-    init(photo: Photo, quality: PhotoQuality, contentMode: ContentMode, onLoad: ((UIImage) -> Void)? = nil, matchedGeometry: Bool = true) {
+    init(photo: PhotoModel, quality: PhotoQuality, contentMode: ContentMode, onLoad: ((UIImage) -> Void)? = nil, matchedGeometry: Bool = true) {
         self.photo = photo
         self.quality = quality
         self.contentMode = contentMode
@@ -88,9 +88,14 @@ struct PhotoView: View {
         }
 
         let targetSize = self.getTargetSize()
+        
+        guard let asset = photo.asset else {
+            isLoading = false
+            return
+        }
                 
         self.requestID = PHImageManager.default().requestImage(
-            for: photo.asset,
+            for: asset,
             targetSize: targetSize,
             contentMode: .aspectFill,
             options: options

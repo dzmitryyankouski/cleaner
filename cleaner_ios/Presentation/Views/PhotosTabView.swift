@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 struct PhotosTabView: View {
 
@@ -47,16 +48,17 @@ struct PhotosTabView: View {
 
 struct SimilarPhotosView: View {
     @EnvironmentObject var viewModel: PhotoViewModel
+    @Environment(\.photoLibrary) var photoLibrary
 
     var body: some View {
-        if viewModel.indexing {
+        if photoLibrary?.indexing ?? false {
             ProgressLoadingView(
                 title: "Индексация фотографий",
-                current: viewModel.indexed,
-                total: viewModel.total
+                current: photoLibrary?.indexed ?? 0,
+                total: photoLibrary?.total ?? 0
             )
             .padding(.horizontal)
-        } else if viewModel.groupsSimilar.isEmpty {
+        } else if photoLibrary?.similarGroups.isEmpty ?? true {
             EmptyStateView(
                 icon: "photo.on.rectangle.angled",
                 title: "Похожие фотографии не найдены",
@@ -65,22 +67,15 @@ struct SimilarPhotosView: View {
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
                 StatisticCardView(statistics: [
-                    .init(label: "Найдено групп", value: "\(viewModel.groupsSimilar.count)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(viewModel.similarPhotosCount)", alignment: .center),
-                    .init(label: "Общий размер", value: viewModel.similarPhotosFileSize, alignment: .trailing),
+                    .init(label: "Найдено групп", value: "\(photoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
+                    .init(label: "Фото в группах", value: "\(photoLibrary?.similarPhotos.count ?? 0)", alignment: .center),
+                    .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.similarPhotosFileSize ?? 0).formatted, alignment: .trailing),
                 ])
                 .padding(.horizontal)
 
                 LazyVStack(spacing: 20) {
-                    ForEach(Array(viewModel.groupsSimilar.enumerated()), id: \.offset) { index, group in
-                        PhotoGroupRowView(
-                            groupIndex: index,
-                            group: group,
-                            onPreviewPhoto: { index in
-                                print("Preview photo: \(index)")
-                                viewModel.previewPhoto(index: index, items: group.items)
-                            }
-                        )
+                    ForEach(photoLibrary?.similarGroups ?? [], id: \.id) { group in
+                        PhotoGroupRowView(group: group)
                     }
                 }
                 .padding(.top)
@@ -97,42 +92,42 @@ struct DuplicatesView: View {
     }
 
     var body: some View {
-        if viewModel.indexing {
-            ProgressLoadingView(
-                title: "Индексация фотографий",
-                current: viewModel.indexed,
-                total: viewModel.total
-            )
-            .padding(.horizontal)
-        } else if filteredGroups.isEmpty {
-            EmptyStateView(
-                icon: "doc.on.doc",
-                title: "Дубликаты не найдены",
-                message: "В вашей галерее нет точных копий фотографий"
-            )
-        } else {
-            LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCardView(statistics: [
-                    .init(label: "Найдено групп", value: "\(filteredGroups.count)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
-                    .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
-                ])
-                .padding(.horizontal)
+        // if viewModel.indexing {
+        //     ProgressLoadingView(
+        //         title: "Индексация фотографий",
+        //         current: viewModel.indexed,
+        //         total: viewModel.total
+        //     )
+        //     .padding(.horizontal)
+        // } else if filteredGroups.isEmpty {
+        //     EmptyStateView(
+        //         icon: "doc.on.doc",
+        //         title: "Дубликаты не найдены",
+        //         message: "В вашей галерее нет точных копий фотографий"
+        //     )
+        // } else {
+        //     LazyVStack(alignment: .leading, spacing: 16) {
+        //         StatisticCardView(statistics: [
+        //             .init(label: "Найдено групп", value: "\(filteredGroups.count)", alignment: .leading),
+        //             .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
+        //             .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
+        //         ])
+        //         .padding(.horizontal)
 
-                LazyVStack(spacing: 20) {
-                    ForEach(Array(filteredGroups.enumerated()), id: \.offset) { index, group in
-                        PhotoGroupRowView(
-                            groupIndex: index,
-                            group: group,
-                            onPreviewPhoto: { index in
-                                print("Preview photo: \(index)")
-                            }
-                        )
-                    }
-                }
-                .padding(.top)
-            }
-        }
+        //         LazyVStack(spacing: 20) {
+        //             ForEach(Array(filteredGroups.enumerated()), id: \.offset) { index, group in
+        //                 PhotoGroupRowView(
+        //                     groupIndex: index,
+        //                     group: group,
+        //                     onPreviewPhoto: { index in
+        //                         print("Preview photo: \(index)")
+        //                     }
+        //                 )
+        //             }
+        //         }
+        //         .padding(.top)
+        //     }
+        // }
     }
 
     private var totalPhotosCount: Int {
@@ -155,42 +150,33 @@ struct ScreenshotsView: View {
     }
 
     var body: some View {
-        if screenshots.isEmpty {
-            EmptyStateView(
-                icon: "camera.viewfinder",
-                title: "Скриншоты не найдены",
-                message: "В вашей галерее нет скриншотов"
-            )
-        } else {
-            PhotoGridView(photos: screenshots)
-        }
+        // if screenshots.isEmpty {
+        //     EmptyStateView(
+        //         icon: "camera.viewfinder",
+        //         title: "Скриншоты не найдены",
+        //         message: "В вашей галерее нет скриншотов"
+        //     )
+        // } else {
+        //     PhotoGridView(photos: screenshots)
+        // }
     }
 }
 
 struct PhotoGroupRowView: View {
-    @EnvironmentObject var viewModel: PhotoViewModel
-    
-    let groupIndex: Int
-    let group: MediaGroup<Photo>
-    let onPreviewPhoto: (Int) -> Void
+    let group: PhotoGroupModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Группа \(groupIndex + 1) (\(group.count) фото)")
+            Text("Группа (\(group.photos.count) фото)")
                 .font(.headline)
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
-                    ForEach(Array(group.items.enumerated()), id: \.element.id) { index, photo in
-                        PhotoThumbnailCard(
-                            photo: photo,
-                            onPreviewPhoto: {
-                                onPreviewPhoto(index)
-                            }
-                        )
+                    ForEach(group.photos, id: \.id) { photo in
+                        PhotoThumbnailCard(photo: photo)
                         .id(photo.id)
-                        .zIndex(viewModel.previewPhoto?.index == index ? 10 : 0)
+                        // .zIndex(viewModel.previewPhoto?.index == index ? 10 : 0)
                     }
                 }
                 .padding(.horizontal)

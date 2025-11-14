@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 import AppCenter
 import AppCenterAnalytics
 import AppCenterCrashes
@@ -24,6 +25,7 @@ struct CleanerApp: App {
         WindowGroup {
             AppRootView(container: appContainer)
         }
+        .modelContainer(for: [PhotoModel.self, PhotoGroupModel.self], inMemory: false)
     }
     
     // MARK: - Private Methods
@@ -36,6 +38,20 @@ struct CleanerApp: App {
     }
 }
 
+// MARK: - Environment Key для PhotoLibrary
+
+/// Environment key для хранения PhotoLibrary
+struct PhotoLibraryKey: EnvironmentKey {
+    static let defaultValue: PhotoLibrary? = nil
+}
+
+extension EnvironmentValues {
+    var photoLibrary: PhotoLibrary? {
+        get { self[PhotoLibraryKey.self] }
+        set { self[PhotoLibraryKey.self] = newValue }
+    }
+}
+
 // MARK: - App Root View
 
 struct AppRootView: View {
@@ -43,6 +59,7 @@ struct AppRootView: View {
     @State private var photoViewModel: PhotoViewModel?
     @State private var videoViewModel: VideoViewModel?
     @State private var settingsViewModel: SettingsViewModel?
+    @State private var photoLibrary: PhotoLibrary?
     @State private var isInitialized = false
     
     var body: some View {
@@ -56,6 +73,7 @@ struct AppRootView: View {
                         videoViewModel: videoViewModel,
                         settingsViewModel: settingsViewModel
                     )
+                    .environment(\.photoLibrary, photoLibrary)
                 } else {
                     ErrorView(
                         message: "Не удалось инициализировать приложение. Пожалуйста, перезапустите приложение."
@@ -76,6 +94,8 @@ struct AppRootView: View {
         photoViewModel = container.makePhotoViewModel()
         videoViewModel = container.makeVideoViewModel()
         settingsViewModel = container.makeSettingsViewModel()
+
+        photoLibrary = container.makePhotoLibrary()
         
         isInitialized = true
     }

@@ -1,5 +1,6 @@
 import Foundation
 import CoreVideo
+import Photos
 
 // MARK: - Embedding Service Protocol
 
@@ -10,6 +11,9 @@ protocol EmbeddingServiceProtocol {
     
     /// Генерирует эмбединг из текста
     func generateTextEmbedding(from text: String) async -> Result<[Float], EmbeddingError>
+    
+    /// Генерирует эмбединг из PHAsset
+    func generateEmbeddingFromAsset(_ asset: PHAsset) async -> Result<[Float], EmbeddingError>
     
     /// Вычисляет косинусное сходство между двумя эмбедингами
     func calculateSimilarity(_ embedding1: [Float], _ embedding2: [Float]) -> Float
