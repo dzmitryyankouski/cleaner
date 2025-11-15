@@ -96,7 +96,7 @@ final class PhotoService {
                 group.addTask { [weak self] in
                     guard let self = self else { return }
                     let photoId = photo.id
-                    guard let asset = photo.asset else { return }
+                    guard let asset = await photo.loadAsset() else { return }
                     
                     let embedding = await self.embeddingService.generateEmbeddingFromAsset(asset)
 

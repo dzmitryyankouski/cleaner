@@ -200,57 +200,34 @@ struct SearchPhotoThumbnail: View {
     @State private var isLoading = false
     
     var body: some View {
-        Group {
-            if let image = image {
-                Image(uiImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-            } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .overlay(
-                        Group {
-                            if isLoading {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                            } else {
-                                Image(systemName: "photo")
-                                    .foregroundColor(.gray)
-                                    .font(.title2)
-                            }
-                        }
-                    )
-            }
-        }
-        .onAppear {
-            loadThumbnail()
-        }
-        .onDisappear {
-            image = nil
-        }
-    }
-    
-    private func loadThumbnail() {
-        guard !isLoading && image == nil else { return }
-        
-        isLoading = true
-        let options = PHImageRequestOptions()
-        options.isSynchronous = false
-        options.deliveryMode = .opportunistic
-        options.resizeMode = .exact
-        options.isNetworkAccessAllowed = false
-        
-        PHImageManager.default().requestImage(
-            for: photo.asset,
-            targetSize: CGSize(width: 200, height: 200),
-            contentMode: .aspectFill,
-            options: options
-        ) { result, _ in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                self.image = result
-            }
-        }
+        // Group {
+        //     if let image = image {
+        //         Image(uiImage: image)
+        //             .resizable()
+        //             .aspectRatio(contentMode: .fill)
+        //     } else {
+        //         Rectangle()
+        //             .fill(Color.gray.opacity(0.3))
+        //             .overlay(
+        //                 Group {
+        //                     if isLoading {
+        //                         ProgressView()
+        //                             .scaleEffect(0.8)
+        //                     } else {
+        //                         Image(systemName: "photo")
+        //                             .foregroundColor(.gray)
+        //                             .font(.title2)
+        //                     }
+        //                 }
+        //             )
+        //     }
+        // }
+        // .onAppear {
+        //     loadThumbnail()
+        // }
+        // .onDisappear {
+        //     image = nil
+        // }
     }
 }
 

@@ -71,6 +71,21 @@ struct PhotoView: View {
 
         isLoading = true
 
+        // Загружаем asset асинхронно в фоновом потоке
+        Task {
+            guard let asset = await photo.loadAsset() else {
+                await MainActor.run {
+                    isLoading = false
+                }
+                return
+            }
+            
+            // После получения asset, загружаем изображение
+            await loadImageFromAsset(asset)
+        }
+    }
+    
+    private func loadImageFromAsset(_ asset: PHAsset) async {
         let options = PHImageRequestOptions()
         
         options.isSynchronous = false
@@ -89,29 +104,53 @@ struct PhotoView: View {
 
         let targetSize = self.getTargetSize()
         
-        guard let asset = photo.asset else {
-            isLoading = false
-            return
-        }
-                
-        self.requestID = PHImageManager.default().requestImage(
-            for: asset,
-            targetSize: targetSize,
-            contentMode: .aspectFill,
-            options: options
-        ) { result, info in
-            let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+        await withCheckedContinuation { continuation in
+            let continuationWrapper = ContinuationWrapper(continuation: continuation)
             
-            if !isDegraded || quality == .low {
-                DispatchQueue.main.async {
+            self.requestID = PHImageManager.default().requestImage(
+                for: asset,
+                targetSize: targetSize,
+                contentMode: .aspectFill,
+                options: options
+            ) { result, info in
+                let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                
+                Task { @MainActor in
                     if self.requestID != PHInvalidImageRequestID {
                         self.image = result
-                        self.isLoading = false
+                        
+                        // Для low quality или не degraded изображений завершаем загрузку
+                        if !isDegraded || self.quality == .low {
+                            self.isLoading = false
 
-                        if let onLoad = self.onLoad, let result = result {
-                            onLoad(result)
+                            if let onLoad = self.onLoad, let result = result {
+                                onLoad(result)
+                            }
                         }
                     }
+                    
+                    // Вызываем continuation только один раз
+                    continuationWrapper.resumeOnce()
+                }
+            }
+        }
+    }
+    
+    // Вспомогательный класс для безопасного вызова continuation только один раз
+    private class ContinuationWrapper {
+        private let continuation: CheckedContinuation<Void, Never>
+        private var hasResumed = false
+        private let queue = DispatchQueue(label: "com.cleaner.continuation")
+        
+        init(continuation: CheckedContinuation<Void, Never>) {
+            self.continuation = continuation
+        }
+        
+        func resumeOnce() {
+            queue.sync {
+                if !hasResumed {
+                    hasResumed = true
+                    continuation.resume()
                 }
             }
         }
