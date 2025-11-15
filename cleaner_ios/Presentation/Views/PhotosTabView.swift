@@ -3,7 +3,7 @@ import SwiftData
 
 struct PhotosTabView: View {
 
-    @EnvironmentObject var viewModel: PhotoViewModel
+    @Environment(\.photoLibrary) var photoLibrary
     @State private var selectedTab = 0
 
     private let tabs = ["Серии", "Копии", "Скриншоты"]
@@ -40,14 +40,15 @@ struct PhotosTabView: View {
                 }
             }
             .refreshable {
-                await viewModel.refreshPhotos()
+                photoLibrary?.reset()
+
+                await photoLibrary?.loadPhotos()
             }
         }
     }
 }
 
 struct SimilarPhotosView: View {
-    @EnvironmentObject var viewModel: PhotoViewModel
     @Environment(\.photoLibrary) var photoLibrary
 
     var body: some View {
@@ -85,58 +86,39 @@ struct SimilarPhotosView: View {
 }
 
 struct DuplicatesView: View {
-    @EnvironmentObject var viewModel: PhotoViewModel
-
-    private var filteredGroups: [MediaGroup<Photo>] {
-        viewModel.groupsDuplicates.filter { $0.count > 1 }
-    }
+    @Environment(\.photoLibrary) var photoLibrary
 
     var body: some View {
-        // if viewModel.indexing {
-        //     ProgressLoadingView(
-        //         title: "Индексация фотографий",
-        //         current: viewModel.indexed,
-        //         total: viewModel.total
-        //     )
-        //     .padding(.horizontal)
-        // } else if filteredGroups.isEmpty {
-        //     EmptyStateView(
-        //         icon: "doc.on.doc",
-        //         title: "Дубликаты не найдены",
-        //         message: "В вашей галерее нет точных копий фотографий"
-        //     )
-        // } else {
-        //     LazyVStack(alignment: .leading, spacing: 16) {
-        //         StatisticCardView(statistics: [
-        //             .init(label: "Найдено групп", value: "\(filteredGroups.count)", alignment: .leading),
-        //             .init(label: "Фото в группах", value: "\(totalPhotosCount)", alignment: .center),
-        //             .init(label: "Общий размер", value: totalFileSize, alignment: .trailing),
-        //         ])
-        //         .padding(.horizontal)
+        if photoLibrary?.indexing ?? false {
+            ProgressLoadingView(
+                title: "Индексация фотографий",
+                current: photoLibrary?.indexed ?? 0,
+                total: photoLibrary?.total ?? 0
+            )
+            .padding(.horizontal)
+        } else if photoLibrary?.duplicatesGroups.isEmpty ?? true {
+            EmptyStateView(
+                icon: "doc.on.doc",
+                title: "Дубликаты не найдены",
+                message: "В вашей галерее нет точных копий фотографий"
+            )
+        } else {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                StatisticCardView(statistics: [
+                    .init(label: "Найдено групп", value: "\(photoLibrary?.duplicatesGroups.count ?? 0)", alignment: .leading),
+                    .init(label: "Фото в группах", value: "\(photoLibrary?.duplicatesPhotos.count ?? 0)", alignment: .center),
+                    .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.duplicatesPhotosFileSize ?? 0).formatted, alignment: .trailing),
+                ])
+                .padding(.horizontal)
 
-        //         LazyVStack(spacing: 20) {
-        //             ForEach(Array(filteredGroups.enumerated()), id: \.offset) { index, group in
-        //                 PhotoGroupRowView(
-        //                     groupIndex: index,
-        //                     group: group,
-        //                     onPreviewPhoto: { index in
-        //                         print("Preview photo: \(index)")
-        //                     }
-        //                 )
-        //             }
-        //         }
-        //         .padding(.top)
-        //     }
-        // }
-    }
-
-    private var totalPhotosCount: Int {
-        filteredGroups.reduce(0) { $0 + $1.count }
-    }
-
-    private var totalFileSize: String {
-        let bytes = filteredGroups.flatMap { $0.items }.reduce(0) { $0 + $1.fileSize.bytes }
-        return FileSize(bytes: bytes).formatted
+                LazyVStack(spacing: 20) {
+                    ForEach(photoLibrary?.duplicatesGroups ?? [], id: \.id) { group in
+                        PhotoGroupRowView(group: group)
+                    }
+                }
+                .padding(.top)
+            }
+        }
     }
 }
 

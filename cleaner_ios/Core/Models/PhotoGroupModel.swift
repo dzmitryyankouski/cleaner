@@ -7,7 +7,7 @@ final class PhotoGroupModel {
     var type: String = "similar" // "similar" или "duplicate"
     var latestDate: Date = Date.distantPast
     
-    @Relationship(deleteRule: .nullify, inverse: \PhotoModel.group)
+    @Relationship(deleteRule: .nullify, inverse: \PhotoModel.groups)
     var photos: [PhotoModel] = []
 
     init(id: String, type: String = "similar") {
@@ -22,6 +22,13 @@ final class PhotoGroupModel {
     static var similar: FetchDescriptor<PhotoGroupModel> {
         FetchDescriptor(
             predicate: #Predicate<PhotoGroupModel> { $0.type == "similar" },
+            sortBy: [SortDescriptor(\.latestDate, order: .reverse)]
+        )
+    }
+
+    static var duplicates: FetchDescriptor<PhotoGroupModel> {
+        FetchDescriptor(
+            predicate: #Predicate<PhotoGroupModel> { $0.type == "duplicates" },
             sortBy: [SortDescriptor(\.latestDate, order: .reverse)]
         )
     }

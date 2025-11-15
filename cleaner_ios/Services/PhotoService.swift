@@ -33,6 +33,14 @@ final class PhotoService {
         return (try? context.fetch(PhotoModel.similar)) ?? []
     }
 
+    func getDuplicatesGroups() -> [PhotoGroupModel] {
+        return (try? context.fetch(PhotoGroupModel.duplicates)) ?? []
+    }
+
+    func getDuplicatesPhotos() -> [PhotoModel] {
+        return (try? context.fetch(PhotoModel.duplicates)) ?? []
+    }
+
     func getAllPhotos() async -> [PhotoModel] {
         let assets = await photoAssetRepository.fetchAssets()
 
@@ -111,8 +119,16 @@ final class PhotoService {
             print("❌ Ошибка при сохранении контекста: \(error)")
         }
     }
-    
+
     func groupSimilar(threshold: Float) async {
+        await group(type: "similar", threshold: threshold)
+    }
+
+    func groupDuplicates(threshold: Float) async {
+        await group(type: "duplicates", threshold: threshold)
+    }
+    
+    func group(type: String, threshold: Float) async {
 
         guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>()) else {
             print("❌ Нет фото для группировки")
@@ -141,10 +157,47 @@ final class PhotoService {
             guard groupPhotos.count > 1 else { continue }
             
             let groupId = UUID().uuidString
-            let group = PhotoGroupModel(id: groupId, type: "similar")
+            let group = PhotoGroupModel(id: groupId, type: type)
+            
+            // Устанавливаем связь многие-ко-многим с обеих сторон
             group.photos = groupPhotos
+
+            for photo in groupPhotos {
+                if !photo.groups.contains(where: { $0.id == group.id }) {
+                    photo.groups.append(group)
+                }
+            }
+            
             group.updateLatestDate()
             context.insert(group)
+        }
+        
+        // // Сохраняем все изменения
+        // do {
+        //     try context.save()
+        // } catch {
+        //     print("❌ Ошибка при сохранении групп: \(error)")
+        // }
+    }
+
+    func reset() {
+        do {
+            // Удаляем все группы
+            let groups = try context.fetch(FetchDescriptor<PhotoGroupModel>())
+            for group in groups {
+                context.delete(group)
+            }
+            
+            // Удаляем все фотографии
+            let photos = try context.fetch(FetchDescriptor<PhotoModel>())
+            for photo in photos {
+                context.delete(photo)
+            }
+            
+            // Сохраняем изменения
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сбросе контекста: \(error)")
         }
     }
 }

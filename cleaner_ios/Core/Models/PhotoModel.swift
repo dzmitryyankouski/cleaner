@@ -5,7 +5,8 @@ import Photos
 final class PhotoModel {
     @Attribute(.unique) var id: String
     var embedding: [Float]?
-    var group: PhotoGroupModel?
+    @Relationship(deleteRule: .nullify)
+    var groups: [PhotoGroupModel] = []
     var creationDate: Date?
     var fileSize: Int64 = 0
     
@@ -40,7 +41,17 @@ final class PhotoModel {
 
     static var similar: FetchDescriptor<PhotoModel> {
         FetchDescriptor(
-            predicate: #Predicate<PhotoModel> { $0.group?.type == "similar" }
+            predicate: #Predicate<PhotoModel> { photo in
+                photo.groups.contains { $0.type == "similar" }
+            }
+        )
+    }
+
+    static var duplicates: FetchDescriptor<PhotoModel> {
+        FetchDescriptor(
+            predicate: #Predicate<PhotoModel> { photo in
+                photo.groups.contains { $0.type == "duplicates" }
+            }
         )
     }
 
