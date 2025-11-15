@@ -15,6 +15,9 @@ class PhotoLibrary {
     var duplicatesPhotos: [PhotoModel] = []
     var duplicatesPhotosFileSize: Int64 = 0
 
+    var screenshots: [PhotoModel] = []
+    var screenshotsFileSize: Int64 = 0
+
     private let photoService: PhotoService
 
     init(photoService: PhotoService) {
@@ -50,6 +53,9 @@ class PhotoLibrary {
         duplicatesPhotos = photoService.getDuplicatesPhotos()
         duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + $1.fileSize }
 
+        screenshots = photoService.getScreenshots()
+        screenshotsFileSize = screenshots.reduce(0) { $0 + $1.fileSize }
+
         indexing = false
 
         print("✅ Фотографии загружены")
@@ -61,6 +67,7 @@ class PhotoLibrary {
         similarGroups = []
         similarPhotos = []
         similarPhotosFileSize = 0
+
         duplicatesGroups = []
         duplicatesPhotos = []
         duplicatesPhotosFileSize = 0

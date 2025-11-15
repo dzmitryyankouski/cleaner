@@ -41,6 +41,10 @@ final class PhotoService {
         return (try? context.fetch(PhotoModel.duplicates)) ?? []
     }
 
+    func getScreenshots() -> [PhotoModel] {
+        return (try? context.fetch(PhotoModel.screenshots)) ?? []
+    }
+
     func getAllPhotos() async -> [PhotoModel] {
         let assets = await photoAssetRepository.fetchAssets()
 
@@ -171,13 +175,6 @@ final class PhotoService {
             group.updateLatestDate()
             context.insert(group)
         }
-        
-        // // Сохраняем все изменения
-        // do {
-        //     try context.save()
-        // } catch {
-        //     print("❌ Ошибка при сохранении групп: \(error)")
-        // }
     }
 
     func reset() {

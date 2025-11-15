@@ -4,11 +4,13 @@ import Photos
 @Model
 final class PhotoModel {
     @Attribute(.unique) var id: String
-    var embedding: [Float]?
     @Relationship(deleteRule: .nullify)
     var groups: [PhotoGroupModel] = []
+
+    var embedding: [Float]?
     var creationDate: Date?
     var fileSize: Int64 = 0
+    var isScreenshot: Bool = false
     
     init(asset: PHAsset) {
         self.id = asset.localIdentifier
@@ -19,6 +21,8 @@ final class PhotoModel {
         if let resource = resources.first, let size = resource.value(forKey: "fileSize") as? Int64, size > 0 {
             self.fileSize = size
         }
+
+        self.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
     }
     
     var asset: PHAsset? {
@@ -33,10 +37,6 @@ final class PhotoModel {
         }
 
         return 0
-    }
-
-    func isScreenshot() -> Bool {
-        asset?.mediaSubtypes.contains(.photoScreenshot) ?? false
     }
 
     static var similar: FetchDescriptor<PhotoModel> {
@@ -58,6 +58,13 @@ final class PhotoModel {
     static var withEmbedding: FetchDescriptor<PhotoModel> {
         FetchDescriptor(
             predicate: #Predicate<PhotoModel> { $0.embedding != nil }
+        )
+    }
+
+    static var screenshots: FetchDescriptor<PhotoModel> {
+        FetchDescriptor(
+            predicate: #Predicate<PhotoModel> { $0.isScreenshot },
+            sortBy: [SortDescriptor(\.creationDate, order: .reverse)]
         )
     }
 }

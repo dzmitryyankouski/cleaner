@@ -125,22 +125,18 @@ struct DuplicatesView: View {
 // MARK: - Screenshots View
 
 struct ScreenshotsView: View {
-    @EnvironmentObject var viewModel: PhotoViewModel
-
-    private var screenshots: [Photo] {
-        viewModel.photos.filter { $0.isScreenshot() }
-    }
+    @Environment(\.photoLibrary) var photoLibrary
 
     var body: some View {
-        // if screenshots.isEmpty {
-        //     EmptyStateView(
-        //         icon: "camera.viewfinder",
-        //         title: "Скриншоты не найдены",
-        //         message: "В вашей галерее нет скриншотов"
-        //     )
-        // } else {
-        //     PhotoGridView(photos: screenshots)
-        // }
+        if photoLibrary?.screenshots.isEmpty ?? true {
+            EmptyStateView(
+                icon: "camera.viewfinder",
+                title: "Скриншоты не найдены",
+                message: "В вашей галерее нет скриншотов"
+            )
+        } else {
+            PhotoGridView(photos: photoLibrary?.screenshots ?? [])
+        }
     }
 }
 
@@ -171,8 +167,7 @@ struct PhotoGroupRowView: View {
 // MARK: - Photo Grid View
 
 struct PhotoGridView: View {
-    let photos: [Photo]
-    @EnvironmentObject var viewModel: PhotoViewModel
+    let photos: [PhotoModel]
 
     var body: some View {
         LazyVGrid(
@@ -182,27 +177,9 @@ struct PhotoGridView: View {
                 GridItem(.flexible()),
             ], spacing: 12
         ) {
-            ForEach(photos) { photo in
-                // GeometryReader { geometry in
-                //     PhotoThumbnailCard(
-                //         photo: photo,
-                //         size: CGSize(width: 120, height: 160),
-                //         isSelected: viewModel.selectedPhotosForDeletion.contains(photo.index),
-                //         isPreviewing: viewModel.previewPhoto?.id == photo.id
-                //     )
-                //     .onSelect {
-                //         viewModel.togglePhotoSelection(for: photo)
-                //     }
-                //     .id(photo.id)
-                //     .onTapGesture {
-                //         viewModel.previewPhoto = photo
-
-                //         withAnimation(.spring(response: 0.3, dampingFraction: 1)) {
-                //             viewModel.showPreviewModel = true
-                //         }
-                //     }
-                // }
-                // .frame(width: 120, height: 160)
+            ForEach(photos, id: \.id) { photo in
+                PhotoThumbnailCard(photo: photo)
+                    .id(photo.id)
             }
         }
         .padding(.horizontal)
