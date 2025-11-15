@@ -45,10 +45,32 @@ struct PhotoLibraryKey: EnvironmentKey {
     static let defaultValue: PhotoLibrary? = nil
 }
 
+// MARK: - Environment Key для PhotoPreview
+
+struct PhotoPreviewKey: EnvironmentKey {
+    static let defaultValue: PhotoPreview? = nil
+}
+
+// MARK: - Environment Key для PhotoPreviewNamespace
+
+struct PhotoPreviewNamespaceKey: EnvironmentKey {
+    static let defaultValue: Namespace.ID? = nil
+}
+
 extension EnvironmentValues {
     var photoLibrary: PhotoLibrary? {
         get { self[PhotoLibraryKey.self] }
         set { self[PhotoLibraryKey.self] = newValue }
+    }
+
+    var photoPreview: PhotoPreview? {
+        get { self[PhotoPreviewKey.self] }
+        set { self[PhotoPreviewKey.self] = newValue }
+    }
+    
+    var photoPreviewNamespace: Namespace.ID? {
+        get { self[PhotoPreviewNamespaceKey.self] }
+        set { self[PhotoPreviewNamespaceKey.self] = newValue }
     }
 }
 
@@ -60,6 +82,7 @@ struct AppRootView: View {
     @State private var videoViewModel: VideoViewModel?
     @State private var settingsViewModel: SettingsViewModel?
     @State private var photoLibrary: PhotoLibrary?
+    @State private var photoPreview: PhotoPreview?
     @State private var isInitialized = false
     
     var body: some View {
@@ -74,6 +97,7 @@ struct AppRootView: View {
                         settingsViewModel: settingsViewModel
                     )
                     .environment(\.photoLibrary, photoLibrary)
+                    .environment(\.photoPreview, photoPreview)
                 } else {
                     ErrorView(
                         message: "Не удалось инициализировать приложение. Пожалуйста, перезапустите приложение."
@@ -96,6 +120,7 @@ struct AppRootView: View {
         settingsViewModel = container.makeSettingsViewModel()
 
         photoLibrary = container.makePhotoLibrary()
+        photoPreview = container.makePhotoPreview()
         
         isInitialized = true
     }

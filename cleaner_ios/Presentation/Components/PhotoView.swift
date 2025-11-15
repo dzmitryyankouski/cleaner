@@ -13,7 +13,6 @@ struct PhotoView: View {
     let photo: PhotoModel
     let quality: PhotoQuality
     let contentMode: ContentMode
-    let onLoad: ((UIImage) -> Void)?
     let matchedGeometry: Bool
 
     @State private var image: UIImage?
@@ -22,39 +21,36 @@ struct PhotoView: View {
     @State private var screenBounds: CGRect = UIScreen.main.bounds
     @State private var frameSize: CGSize = CGSize(width: 300, height: 300)
     
-    init(photo: PhotoModel, quality: PhotoQuality, contentMode: ContentMode, onLoad: ((UIImage) -> Void)? = nil, matchedGeometry: Bool = true) {
+    init(photo: PhotoModel, quality: PhotoQuality, contentMode: ContentMode, matchedGeometry: Bool = true) {
         self.photo = photo
         self.quality = quality
         self.contentMode = contentMode
-        self.onLoad = onLoad
         self.matchedGeometry = matchedGeometry
     }
 
     var body: some View {
-        if let namespace = photoPreviewNamespace {
-            let baseView = Color.clear
-                .overlay {
-                    if let image = image {
-                        Image(uiImage: image)
-                            .resizable()
-                            .aspectRatio(contentMode: contentMode)
-                    }
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
-            
-            Group {
-                if matchedGeometry {
-                    baseView.matchedGeometryEffect(id: photo.id, in: namespace)
-                } else {
-                    baseView
+        let baseView = Color.clear
+            .overlay {
+                if let image = image {
+                    Image(uiImage: image)
+                        .resizable()
+                        .aspectRatio(contentMode: contentMode)
                 }
             }
-            .onAppear {
-                loadImage()
+            .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+        
+        Group {
+            if matchedGeometry, let namespace = photoPreviewNamespace {
+                baseView.matchedGeometryEffect(id: photo.id, in: namespace)
+            } else {
+                baseView
             }
-            .onDisappear {
-                cancelLoad()
-            }
+        }
+        .onAppear {
+            loadImage()
+        }
+        .onDisappear {
+            cancelLoad()
         }
     }
     
@@ -123,8 +119,11 @@ struct PhotoView: View {
                         if !isDegraded || self.quality == .low {
                             self.isLoading = false
 
-                            if let onLoad = self.onLoad, let result = result {
-                                onLoad(result)
+                            if let result = result {
+                                let fullScreenFrameSize = self.getFullScreenFrameSize(imageSize: result.size)
+
+                                self.photo.fullScreenFrameWidth = fullScreenFrameSize.width
+                                self.photo.fullScreenFrameHeight = fullScreenFrameSize.height
                             }
                         }
                     }
@@ -159,11 +158,31 @@ struct PhotoView: View {
     private func getTargetSize() -> CGSize {
         switch quality {
         case .low:
-            return CGSize(width: 150, height: 150)
+            return CGSize(width: 150, height: 200)
         case .medium:
-            return CGSize(width: 300, height: 300)
+            return CGSize(width: 300, height: 400)
         case .high:
             return PHImageManagerMaximumSize
         }
+    }
+
+    private func getFullScreenFrameSize(imageSize: CGSize) -> CGSize {
+        let imageAspectRatio = imageSize.width / imageSize.height
+
+        let containerWidth = UIScreen.main.bounds.width
+        let containerHeight = UIScreen.main.bounds.height
+        let containerAspectRatio = containerWidth / containerHeight
+
+        let baseFrameWidth: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth
+            : containerHeight * imageAspectRatio
+
+        let baseFrameHeight: CGFloat =
+            imageAspectRatio > containerAspectRatio
+            ? containerWidth / imageAspectRatio
+            : containerHeight
+
+        return CGSize(width: baseFrameWidth, height: baseFrameHeight)
     }
 }

@@ -25,7 +25,7 @@ struct PhotosTabView: View {
                                 SimilarPhotosView()
                             }
                         } header: {
-                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                            //PickerHeader(selectedTab: $selectedTab, tabs: tabs)
                         }
                     }
                     .padding(.vertical)
@@ -122,8 +122,6 @@ struct DuplicatesView: View {
     }
 }
 
-// MARK: - Screenshots View
-
 struct ScreenshotsView: View {
     @Environment(\.photoLibrary) var photoLibrary
 
@@ -141,6 +139,8 @@ struct ScreenshotsView: View {
 }
 
 struct PhotoGroupRowView: View {
+    @Environment(\.photoPreview) var photoPreview
+
     let group: PhotoGroupModel
 
     var body: some View {
@@ -153,8 +153,13 @@ struct PhotoGroupRowView: View {
                 HStack(spacing: 12) {
                     ForEach(group.photos, id: \.id) { photo in
                         PhotoThumbnailCard(photo: photo)
-                        .id(photo.id)
-                        // .zIndex(viewModel.previewPhoto?.index == index ? 10 : 0)
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+                                    photoPreview?.show(photos: group.photos, item: photo)
+                                }
+                            }
+                            .id(photo.id)
+                            .zIndex(photoPreview?.photo?.id == photo.id ? 10 : 0)
                     }
                 }
                 .padding(.horizontal)
