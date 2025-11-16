@@ -5,6 +5,7 @@ struct PhotosTabView: View {
 
     @Environment(\.photoLibrary) var photoLibrary
     @State private var selectedTab = 0
+    @State private var showSettings: Bool = false
 
     private let tabs = ["Серии", "Копии", "Скриншоты"]
 
@@ -35,7 +36,10 @@ struct PhotosTabView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Settings", systemImage: "gearshape") {
-                        //
+                        showSettings.toggle()
+                    }
+                    .popover(isPresented: $showSettings) {
+                        SettingsTabView()
                     }
                 }
             }
