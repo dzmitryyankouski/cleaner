@@ -1,29 +1,29 @@
 import SwiftUI
 
 struct PhotoDetailView: View {
-    let photo: PhotoModel
+    let group: PhotoGroupModel
+    let currentPhotoId: String
     var namespace: Namespace.ID
+    @State private var selectedPhotoId: String? = nil
 
     var body: some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 16) {
-                if let asset = photo.asset {
-                    PhotoView(
-                        photo: photo, quality: .high, contentMode: .fit
-                    )
-                }
+        TabView(selection: $selectedPhotoId) {
+            ForEach(group.photos, id: \.id) { photo in
+                PhotoView(
+                    photo: photo, quality: .high, contentMode: .fit
+                )
+                .id(photo.id)
+                .tag(photo.id)
             }
         }
-        .navigationTitle("Фото")
+        .tabViewStyle(.page)
+        .indexViewStyle(.page(backgroundDisplayMode: .always))
+        .navigationTitle("Группа (\(group.photos.count))")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTransition(.zoom(sourceID: photo.id, in: namespace))
-    }
-
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        .navigationTransition(.zoom(sourceID: currentPhotoId, in: namespace))
+        .onAppear {
+            selectedPhotoId = currentPhotoId
+        }
     }
 }
 

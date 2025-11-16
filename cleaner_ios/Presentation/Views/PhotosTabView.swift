@@ -1,6 +1,20 @@
 import SwiftUI
 import SwiftData
 
+struct PhotoGroupNavigationItem: Hashable {
+    let group: PhotoGroupModel
+    let currentPhotoId: String
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(group.id)
+        hasher.combine(currentPhotoId)
+    }
+    
+    static func == (lhs: PhotoGroupNavigationItem, rhs: PhotoGroupNavigationItem) -> Bool {
+        lhs.group.id == rhs.group.id && lhs.currentPhotoId == rhs.currentPhotoId
+    }
+}
+
 struct PhotosTabView: View {
 
     @Environment(\.photoLibrary) var photoLibrary
@@ -50,8 +64,8 @@ struct PhotosTabView: View {
 
                 await photoLibrary?.loadPhotos()
             }
-            .navigationDestination(for: PhotoModel.self) { photo in
-                PhotoDetailView(photo: photo, namespace: navigationTransitionNamespace)
+            .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
+                PhotoDetailView(group: item.group, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
             }
         }
     }
@@ -170,9 +184,7 @@ struct PhotoGroupRowView: View {
                         PhotoView(photo: photo, quality: .medium, contentMode: .fill)
                             .frame(width: 150, height: 200)
                             .onTapGesture {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                                    navigationPath.append(photo)
-                                }
+                                navigationPath.append(PhotoGroupNavigationItem(group: group, currentPhotoId: photo.id))
                             }
                             .id(photo.id)
                             .matchedTransitionSource(id: photo.id, in: namespace)
