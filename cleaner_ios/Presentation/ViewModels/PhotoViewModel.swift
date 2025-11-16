@@ -25,8 +25,6 @@ final class PhotoViewModel: ObservableObject {
     @Published var selectedPhotosForDeletion: Set<Int> = []
     @Published var selectedPhotosFileSize: Int64 = 0
 
-    @Published var previewPhoto: PreviewPhoto? = nil
-
     @Published var similarPhotosCount: Int = 0
     @Published var duplicatesPhotosCount: Int = 0
 
@@ -82,18 +80,6 @@ final class PhotoViewModel: ObservableObject {
         
         await loadAndIndexPhotos()
     }
-
-    func previewPhoto(index: Int, items: [Photo]) {
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.95)) {
-            self.previewPhoto = PreviewPhoto(index: index, items: items, show: true)
-        }
-    }
-
-    // func clearPreviewPhoto() {
-    //     withAnimation(.spring(response: 0.3, dampingFraction: 0.95)) {
-    //         self.previewPhoto.show = false
-    //     }
-    // }
     
     func togglePhotoSelection(for photo: Photo) {
         if selectedPhotosForDeletion.contains(photo.index) {

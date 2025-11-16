@@ -45,18 +45,6 @@ struct PhotoLibraryKey: EnvironmentKey {
     static let defaultValue: PhotoLibrary? = nil
 }
 
-// MARK: - Environment Key для PhotoPreview
-
-struct PhotoPreviewKey: EnvironmentKey {
-    static let defaultValue: PhotoPreview? = nil
-}
-
-// MARK: - Environment Key для PhotoPreviewNamespace
-
-struct PhotoPreviewNamespaceKey: EnvironmentKey {
-    static let defaultValue: Namespace.ID? = nil
-}
-
 // MARK: - Environment Key для Settings
 
 struct SettingsKey: EnvironmentKey {
@@ -69,16 +57,6 @@ extension EnvironmentValues {
         set { self[PhotoLibraryKey.self] = newValue }
     }
 
-    var photoPreview: PhotoPreview? {
-        get { self[PhotoPreviewKey.self] }
-        set { self[PhotoPreviewKey.self] = newValue }
-    }
-    
-    var photoPreviewNamespace: Namespace.ID? {
-        get { self[PhotoPreviewNamespaceKey.self] }
-        set { self[PhotoPreviewNamespaceKey.self] = newValue }
-    }
-    
     var settings: Settings? {
         get { self[SettingsKey.self] }
         set { self[SettingsKey.self] = newValue }
@@ -93,7 +71,6 @@ struct AppRootView: View {
     @State private var photoViewModel: PhotoViewModel?
     @State private var videoViewModel: VideoViewModel?
     @State private var photoLibrary: PhotoLibrary?
-    @State private var photoPreview: PhotoPreview?
     @State private var settings: Settings?
     @State private var isInitialized = false
     
@@ -108,7 +85,6 @@ struct AppRootView: View {
                         videoViewModel: videoViewModel
                     )
                     .environment(\.photoLibrary, photoLibrary)
-                    .environment(\.photoPreview, photoPreview)
                     .environment(\.settings, settings)
                 } else {
                     ErrorView(
@@ -131,7 +107,6 @@ struct AppRootView: View {
         videoViewModel = container.makeVideoViewModel()
 
         photoLibrary = container.makePhotoLibrary()
-        photoPreview = container.makePhotoPreview()
         
         settings = Settings(modelContext: modelContext)
 

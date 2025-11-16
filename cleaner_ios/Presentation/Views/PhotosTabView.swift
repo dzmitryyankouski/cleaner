@@ -6,27 +6,29 @@ struct PhotosTabView: View {
     @Environment(\.photoLibrary) var photoLibrary
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
+    @State private var navigationPath = NavigationPath()
+    @Namespace private var navigationTransitionNamespace
 
     private let tabs = ["Серии", "Копии", "Скриншоты"]
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $navigationPath) {
             ZStack(alignment: .top) {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
                         Section {
                             switch selectedTab {
                             case 0:
-                                SimilarPhotosView()
+                                SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             case 1:
-                                DuplicatesView()
+                                DuplicatesView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             case 2:
-                                ScreenshotsView()
+                                ScreenshotsView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             default:
-                                SimilarPhotosView()
+                                SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             }
                         } header: {
-                            //PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
                         }
                     }
                     .padding(.vertical)
@@ -48,12 +50,17 @@ struct PhotosTabView: View {
 
                 await photoLibrary?.loadPhotos()
             }
+            .navigationDestination(for: PhotoModel.self) { photo in
+                PhotoDetailView(photo: photo, namespace: navigationTransitionNamespace)
+            }
         }
     }
 }
 
 struct SimilarPhotosView: View {
     @Environment(\.photoLibrary) var photoLibrary
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
 
     var body: some View {
         if photoLibrary?.indexing ?? false {
@@ -80,7 +87,7 @@ struct SimilarPhotosView: View {
 
                 LazyVStack(spacing: 20) {
                     ForEach(photoLibrary?.similarGroups ?? [], id: \.id) { group in
-                        PhotoGroupRowView(group: group)
+                        PhotoGroupRowView(group: group, navigationPath: $navigationPath, namespace: namespace)
                     }
                 }
                 .padding(.top)
@@ -91,6 +98,8 @@ struct SimilarPhotosView: View {
 
 struct DuplicatesView: View {
     @Environment(\.photoLibrary) var photoLibrary
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
 
     var body: some View {
         if photoLibrary?.indexing ?? false {
@@ -117,7 +126,7 @@ struct DuplicatesView: View {
 
                 LazyVStack(spacing: 20) {
                     ForEach(photoLibrary?.duplicatesGroups ?? [], id: \.id) { group in
-                        PhotoGroupRowView(group: group)
+                        PhotoGroupRowView(group: group, navigationPath: $navigationPath, namespace: namespace)
                     }
                 }
                 .padding(.top)
@@ -128,6 +137,8 @@ struct DuplicatesView: View {
 
 struct ScreenshotsView: View {
     @Environment(\.photoLibrary) var photoLibrary
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
 
     var body: some View {
         if photoLibrary?.screenshots.isEmpty ?? true {
@@ -137,15 +148,15 @@ struct ScreenshotsView: View {
                 message: "В вашей галерее нет скриншотов"
             )
         } else {
-            PhotoGridView(photos: photoLibrary?.screenshots ?? [])
+            PhotoGridView(photos: photoLibrary?.screenshots ?? [], navigationPath: $navigationPath, namespace: namespace)
         }
     }
 }
 
 struct PhotoGroupRowView: View {
-    @Environment(\.photoPreview) var photoPreview
-
     let group: PhotoGroupModel
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -154,16 +165,17 @@ struct PhotoGroupRowView: View {
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
+                LazyHStack(spacing: 12) {
                     ForEach(group.photos, id: \.id) { photo in
-                        PhotoThumbnailCard(photo: photo)
+                        PhotoView(photo: photo, quality: .medium, contentMode: .fill)
+                            .frame(width: 150, height: 200)
                             .onTapGesture {
                                 withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                                    photoPreview?.show(photos: group.photos, item: photo)
+                                    navigationPath.append(photo)
                                 }
                             }
                             .id(photo.id)
-                            .zIndex(photoPreview?.photo?.id == photo.id ? 10 : 0)
+                            .matchedTransitionSource(id: photo.id, in: namespace)
                     }
                 }
                 .padding(.horizontal)
@@ -173,24 +185,30 @@ struct PhotoGroupRowView: View {
     }
 }
 
-// MARK: - Photo Grid View
-
 struct PhotoGridView: View {
     let photos: [PhotoModel]
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
 
     var body: some View {
-        LazyVGrid(
-            columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-            ], spacing: 12
-        ) {
-            ForEach(photos, id: \.id) { photo in
-                PhotoThumbnailCard(photo: photo)
-                    .id(photo.id)
-            }
-        }
-        .padding(.horizontal)
+        // LazyVGrid(
+        //     columns: [
+        //         GridItem(.flexible()),
+        //         GridItem(.flexible()),
+        //         GridItem(.flexible()),
+        //     ], spacing: 12
+        // ) {
+        //     ForEach(photos, id: \.id) { photo in
+        //         PhotoThumbnailCard(photo: photo)
+        //             .matchedTransitionSource(id: photo.id, in: namespace)
+        //             .onTapGesture {
+        //                 withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
+        //                     navigationPath.append(photo)
+        //                 }
+        //             }
+        //             .id(photo.id)
+        //     }
+        // }
+        // .padding(.horizontal)
     }
 }

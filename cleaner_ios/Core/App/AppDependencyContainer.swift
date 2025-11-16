@@ -61,11 +61,5 @@ final class AppDependencyContainer {
 
         return PhotoLibrary(photoService: photoService)
     }
-    
-    @MainActor
-    func makePhotoPreview() -> PhotoPreview {
-        return PhotoPreview()
-    }
-
 }
 
