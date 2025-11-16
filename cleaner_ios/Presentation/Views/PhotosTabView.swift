@@ -39,7 +39,7 @@ struct PhotosTabView: View {
                         showSettings.toggle()
                     }
                     .popover(isPresented: $showSettings) {
-                        SettingsTabView()
+                        SettingsTabView(isPresented: $showSettings)
                     }
                 }
             }

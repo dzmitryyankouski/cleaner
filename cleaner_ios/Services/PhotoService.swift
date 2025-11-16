@@ -18,7 +18,7 @@ final class PhotoService {
         self.clusteringService = clusteringService
 
         do {
-            let container = try ModelContainer(for: PhotoModel.self, PhotoGroupModel.self)
+            let container = try ModelContainer(for: PhotoModel.self, PhotoGroupModel.self, SettingsModel.self)
             self.context = ModelContext(container)
         } catch {
             fatalError("❌ Не удалось создать контекст для PhotoModel: \(error)")

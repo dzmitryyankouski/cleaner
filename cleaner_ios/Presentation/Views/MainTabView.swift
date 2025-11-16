@@ -4,7 +4,6 @@ import SwiftUI
 struct MainTabView: View {
     @StateObject var photoViewModel: PhotoViewModel
     @StateObject var videoViewModel: VideoViewModel
-    @StateObject var settingsViewModel: SettingsViewModel
     @Namespace private var photoPreviewNamespace
 
     
@@ -35,7 +34,6 @@ struct MainTabView: View {
             PhotoPreviewModal()
         }
         .environment(\.photoPreviewNamespace, photoPreviewNamespace)
-        .environmentObject(settingsViewModel)
     }
 }
 

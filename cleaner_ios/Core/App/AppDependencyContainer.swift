@@ -22,16 +22,6 @@ final class AppDependencyContainer {
         self.useCaseFactory = UseCaseFactory(serviceFactory: serviceFactory)
     }
     
-    // MARK: - View Model Factory Methods
-    
-    /// Создает SettingsViewModel с правильными зависимостями
-    @MainActor
-    func makeSettingsViewModel() -> SettingsViewModel {
-        return SettingsViewModel(
-            settingsStorage: serviceFactory.makeSettingsStorage()
-        )
-    }
-    
     /// Создает PhotoViewModel с правильными зависимостями
     @MainActor
     func makePhotoViewModel() -> PhotoViewModel? {
@@ -76,5 +66,6 @@ final class AppDependencyContainer {
     func makePhotoPreview() -> PhotoPreview {
         return PhotoPreview()
     }
+
 }
 

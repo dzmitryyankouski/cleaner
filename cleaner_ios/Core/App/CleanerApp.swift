@@ -25,7 +25,7 @@ struct CleanerApp: App {
         WindowGroup {
             AppRootView(container: appContainer)
         }
-        .modelContainer(for: [PhotoModel.self, PhotoGroupModel.self], inMemory: false)
+        .modelContainer(for: [PhotoModel.self, PhotoGroupModel.self, SettingsModel.self], inMemory: false)
     }
     
     // MARK: - Private Methods
@@ -57,6 +57,12 @@ struct PhotoPreviewNamespaceKey: EnvironmentKey {
     static let defaultValue: Namespace.ID? = nil
 }
 
+// MARK: - Environment Key для Settings
+
+struct SettingsKey: EnvironmentKey {
+    static let defaultValue: Settings? = nil
+}
+
 extension EnvironmentValues {
     var photoLibrary: PhotoLibrary? {
         get { self[PhotoLibraryKey.self] }
@@ -72,17 +78,23 @@ extension EnvironmentValues {
         get { self[PhotoPreviewNamespaceKey.self] }
         set { self[PhotoPreviewNamespaceKey.self] = newValue }
     }
+    
+    var settings: Settings? {
+        get { self[SettingsKey.self] }
+        set { self[SettingsKey.self] = newValue }
+    }
 }
 
 // MARK: - App Root View
 
 struct AppRootView: View {
     let container: AppDependencyContainer
+    @Environment(\.modelContext) private var modelContext
     @State private var photoViewModel: PhotoViewModel?
     @State private var videoViewModel: VideoViewModel?
-    @State private var settingsViewModel: SettingsViewModel?
     @State private var photoLibrary: PhotoLibrary?
     @State private var photoPreview: PhotoPreview?
+    @State private var settings: Settings?
     @State private var isInitialized = false
     
     var body: some View {
@@ -90,14 +102,14 @@ struct AppRootView: View {
             if isInitialized {
                 if let photoViewModel = photoViewModel,
                    let videoViewModel = videoViewModel,
-                   let settingsViewModel = settingsViewModel {
+                   let settings = settings {
                     MainTabView(
                         photoViewModel: photoViewModel,
-                        videoViewModel: videoViewModel,
-                        settingsViewModel: settingsViewModel
+                        videoViewModel: videoViewModel
                     )
                     .environment(\.photoLibrary, photoLibrary)
                     .environment(\.photoPreview, photoPreview)
+                    .environment(\.settings, settings)
                 } else {
                     ErrorView(
                         message: "Не удалось инициализировать приложение. Пожалуйста, перезапустите приложение."
@@ -117,11 +129,12 @@ struct AppRootView: View {
         // Создаём все ViewModels независимо
         photoViewModel = container.makePhotoViewModel()
         videoViewModel = container.makeVideoViewModel()
-        settingsViewModel = container.makeSettingsViewModel()
 
         photoLibrary = container.makePhotoLibrary()
         photoPreview = container.makePhotoPreview()
         
+        settings = Settings(modelContext: modelContext)
+
         isInitialized = true
     }
 }
