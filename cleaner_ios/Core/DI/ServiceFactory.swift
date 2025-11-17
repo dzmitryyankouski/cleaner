@@ -94,20 +94,6 @@ final class ServiceFactory {
     func makeSettingsProvider() -> SettingsProviderProtocol {
         return UserDefaultsSettingsStorage()
     }
-
-    func makePhotoService(modelContext: ModelContext) -> PhotoService? {
-        guard let embeddingService = makeEmbeddingService() else {
-            print("❌ Не удалось создать embedding service для PhotoService")
-            return nil
-        }
-
-        return PhotoService(
-            photoAssetRepository: makePhotoAssetRepository(),
-            embeddingService: embeddingService,
-            clusteringService: makeClusteringService(),
-            modelContext: modelContext
-        )
-    }
 }
 
 

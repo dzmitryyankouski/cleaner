@@ -35,9 +35,9 @@ class VideoLibrary {
         self.clusteringService = clusteringService
         self.context = modelContext
 
-        Task {
-            await loadVideos()
-        }
+        // Task {
+        //     await loadVideos()
+        // }
     }
 
     func loadVideos() async {

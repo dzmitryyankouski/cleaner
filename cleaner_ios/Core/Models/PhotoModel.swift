@@ -20,62 +20,8 @@ final class PhotoModel {
     init(asset: PHAsset) {
         self.id = asset.localIdentifier
         self.creationDate = asset.creationDate
-        
-        let resources = PHAssetResource.assetResources(for: asset)
-        
-        if let resource = resources.first, let size = resource.value(forKey: "fileSize") as? Int64, size > 0 {
-            self.fileSize = size
-        }
-
         self.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
-        
-        Self.cacheQueue.async(flags: .barrier) {
-            Self.assetCache[asset.localIdentifier] = asset
-        }
-    }
     
-    var asset: PHAsset? {
-        var cachedAsset: PHAsset?
-        Self.cacheQueue.sync {
-            cachedAsset = Self.assetCache[id]
-        }
-        return cachedAsset
-    }
-    
-    func loadAsset() async -> PHAsset? {
-        if let cached = asset {
-            return cached
-        }
-        
-        let photoId = self.id
-        
-        return await Task.detached(priority: .userInitiated) {
-            let fetchedAsset = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil).firstObject
-            
-            if let asset = fetchedAsset {
-                Self.cacheQueue.async(flags: .barrier) {
-                    Self.assetCache[photoId] = asset
-                }
-            }
-            
-            return fetchedAsset
-        }.value
-    }
-    
-    static func clearAssetCache() {
-        cacheQueue.async(flags: .barrier) {
-            assetCache.removeAll()
-        }
-    }
-
-    private func getFileSize(for asset: PHAsset) -> Int64 {
-        let resources = PHAssetResource.assetResources(for: asset)
-        
-        if let resource = resources.first, let size = resource.value(forKey: "fileSize") as? Int64, size > 0 {
-            return size
-        }
-
-        return 0
     }
 
     static var similar: FetchDescriptor<PhotoModel> {

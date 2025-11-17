@@ -79,12 +79,17 @@ final class AppDependencyContainer {
 
     @MainActor
     func makePhotoLibrary() -> PhotoLibrary? {
-        guard let photoService = serviceFactory.makePhotoService(modelContext: modelContext) else {
-            print("❌ Не удалось создать PhotoService для PhotoLibrary")
+        guard let embeddingService = serviceFactory.makeEmbeddingService() else {
+            print("❌ Не удалось создать EmbeddingService для PhotoLibrary")
             return nil
         }
 
-        return PhotoLibrary(photoService: photoService)
+        return PhotoLibrary(
+            photoAssetRepository: serviceFactory.makePhotoAssetRepository(),
+            embeddingService: embeddingService,
+            clusteringService: serviceFactory.makeClusteringService(),
+            modelContext: modelContext
+        )
     }
 
     @MainActor

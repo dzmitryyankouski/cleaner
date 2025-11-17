@@ -46,7 +46,7 @@ struct PhotoView: View {
 
         // Загружаем asset асинхронно в фоновом потоке
         Task {
-            guard let asset = await photo.loadAsset() else {
+            guard let asset = await loadAsset() else {
                 await MainActor.run {
                     isLoading = false
                 }
@@ -56,6 +56,16 @@ struct PhotoView: View {
             // После получения asset, загружаем изображение
             await loadImageFromAsset(asset)
         }
+    }
+
+    private func loadAsset() async -> PHAsset? {
+        let photoId = photo.id
+        return await Task.detached(priority: .userInitiated) {
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
+            guard let asset = assets.firstObject else { return nil }
+            
+            return asset
+        }.value
     }
     
     private func loadImageFromAsset(_ asset: PHAsset) async {
