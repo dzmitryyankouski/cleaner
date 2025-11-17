@@ -1,205 +1,208 @@
 import SwiftUI
+import SwiftData
 import Photos
 import AVKit
 
-// MARK: - Videos Tab View
-
-struct VideosTabView: View {
+struct VideoGroupNavigationItem: Hashable {
+    let videos: [VideoModel]
+    let currentVideoId: String
     
-    // MARK: - Properties
-    
-    @EnvironmentObject var viewModel: VideoViewModel
-    @State private var selectedTab = 0
-    
-    // MARK: - Body
-    
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Табы
-                if !viewModel.isLoading && !viewModel.indexing && !viewModel.videos.isEmpty {
-                    Picker("", selection: $selectedTab) {
-                        Text("Все видео").tag(0)
-                        Text("Похожие видео (\(viewModel.groupsCount))").tag(1)
-                    }
-                    .pickerStyle(SegmentedPickerStyle())
-                    .padding(.horizontal)
-                    .padding(.top, 8)
-                }
-                
-                if viewModel.indexing {
-                    ProgressLoadingView(
-                        title: "Индексация видео",
-                        current: viewModel.indexed,
-                        total: viewModel.total
-                    )
-                } else {
-                    tabContent
-                }
-            }
-            .navigationTitle("Видеофайлы")
-            .navigationBarTitleDisplayMode(.inline)
-            .refreshable {
-                await viewModel.refreshVideos()
-            }
-            .navigationDestination(for: Video.self) { video in
-                VideoPlayerView(video: video)
-            }
-        }
-    }
-
-
-    // MARK: - Tab Content
-    
-    @ViewBuilder
-    private var tabContent: some View {
-        switch selectedTab {
-        case 0:
-            allVideosView
-        case 1:
-            similarVideosView
-        default:
-            allVideosView
-        }
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(videos.map { $0.id }.joined())
+        hasher.combine(currentVideoId)
     }
     
-    // MARK: - All Videos View
-    
-    @ViewBuilder
-    private var allVideosView: some View {
-        if viewModel.isLoading {
-            LoadingView(
-                title: "Загрузка видеофайлов",
-                message: "Поиск видео в галерее..."
-            )
-        } else if viewModel.indexing {
-            ProgressLoadingView(
-                title: "Индексация видео",
-                current: viewModel.indexed,
-                total: viewModel.total,
-                message: "Генерация эмбеддингов для поиска..."
-            )
-        } else if viewModel.videos.isEmpty {
-            EmptyStateView(
-                icon: "video.slash",
-                title: "Видеофайлы не найдены",
-                message: "В вашей галерее нет видеофайлов"
-            )
-        } else {
-            VStack(spacing: 8) {
-                // Статистика
-                StatisticCardView(statistics: [
-                    .init(label: "Всего видео", value: "\(viewModel.videosCount)", alignment: .leading),
-                    .init(label: "Общий размер", value: viewModel.formattedTotalFileSize, alignment: .trailing)
-                ])
-                .padding(.horizontal)
-                
-                // Список видео
-                List(viewModel.videos) { video in
-                    NavigationLink(value: video) {
-                        VideoRowView(video: video)
-                    }
-                }
-                .listStyle(PlainListStyle())
-            }
-        }
-    }
-    
-    // MARK: - Similar Videos View
-    
-    @ViewBuilder
-    private var similarVideosView: some View {
-        if viewModel.isLoading {
-            LoadingView(
-                title: "Загрузка видеофайлов",
-                message: "Поиск видео в галерее..."
-            )
-        } else if viewModel.indexing {
-            ProgressLoadingView(
-                title: "Индексация видео",
-                current: viewModel.indexed,
-                total: viewModel.total,
-                message: "Генерация эмбеддингов для поиска..."
-            )
-        } else if viewModel.groupsSimilar.isEmpty {
-            EmptyStateView(
-                icon: "video.badge.checkmark",
-                title: "Похожих видео не найдено",
-                message: "Отличная работа! В вашей галерее нет похожих видео"
-            )
-        } else {
-            VStack(spacing: 8) {
-                // Статистика по группам
-                StatisticCardView(statistics: [
-                    .init(label: "Групп похожих", value: "\(viewModel.groupsCount)", alignment: .leading),
-                    .init(label: "Всего видео", value: "\(totalVideosInGroups)", alignment: .trailing)
-                ])
-                .padding(.horizontal)
-                
-                // Список групп
-                List {
-                    ForEach(Array(viewModel.groupsSimilar.enumerated()), id: \.offset) { groupIndex, group in
-                        Section(header: Text("Группа \(groupIndex + 1) • \(group.count) видео")) {
-                            ForEach(group.items) { video in
-                                NavigationLink(value: video) {
-                                    VideoRowView(video: video)
-                                }
-                            }
-                        }
-                    }
-                }
-                .listStyle(InsetGroupedListStyle())
-            }
-        }
-    }
-    
-    // MARK: - Computed Properties
-    
-    private var totalVideosInGroups: Int {
-        viewModel.groupsSimilar.reduce(0) { $0 + $1.count }
+    static func == (lhs: VideoGroupNavigationItem, rhs: VideoGroupNavigationItem) -> Bool {
+        lhs.videos.map { $0.id } == rhs.videos.map { $0.id } && lhs.currentVideoId == rhs.currentVideoId
     }
 }
 
-// MARK: - Video Row View
+struct VideosTabView: View {
+    @Environment(\.videoLibrary) var videoLibrary
+    @State private var selectedTab = 0
+    @State private var showSettings: Bool = false
+    @State private var navigationPath = NavigationPath()
+    @Namespace private var navigationTransitionNamespace
 
-struct VideoRowView: View {
-    let video: Video
+    private let tabs = ["Все", "Похожие"]
+
+    var body: some View {
+        NavigationStack(path: $navigationPath) {
+            ZStack(alignment: .top) {
+                ScrollView {
+                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            SimilarVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                        } header: {
+                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                        }
+                    }
+                    .padding(.vertical)
+                }
+            }
+            .navigationTitle("Видео")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: {
+                        showSettings.toggle()
+                    }) {
+                        Image(systemName: "gearshape")
+                    }
+                    .popover(isPresented: $showSettings) {
+                        SettingsTabView(isPresented: $showSettings)
+                    }
+                }
+            }
+            .refreshable {
+                videoLibrary?.reset()
+                await videoLibrary?.loadVideos()
+            }
+            .navigationDestination(for: VideoGroupNavigationItem.self) { item in
+                VideoDetailView(videos: item.videos, currentVideoId: item.currentVideoId, namespace: navigationTransitionNamespace)
+            }
+        }
+    }
+}
+
+struct AllVideosView: View {
+    @Environment(\.videoLibrary) var videoLibrary
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
+
+    var body: some View {
+        if videoLibrary?.indexing ?? false {
+            ProgressLoadingView(
+                title: "Индексация видео",
+                current: videoLibrary?.indexed ?? 0,
+                total: videoLibrary?.total ?? 0
+            )
+            .padding(.horizontal)
+        } else {
+            let allVideos = getAllVideos()
+            if allVideos.isEmpty {
+                EmptyStateView(
+                    icon: "video.slash",
+                    title: "Видео не найдены",
+                    message: "В вашей галерее нет видео"
+                )
+            } else {
+                LazyVStack(spacing: 20) {
+                    ForEach(allVideos, id: \.id) { video in
+                        VideoThumbnailCard(video: video, navigationPath: $navigationPath, namespace: namespace)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+    
+    private func getAllVideos() -> [VideoModel] {
+        guard let videoLibrary = videoLibrary else { return [] }
+        return videoLibrary.getAllVideos()
+    }
+}
+
+struct SimilarVideosView: View {
+    @Environment(\.videoLibrary) var videoLibrary
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
+
+    var body: some View {
+        if videoLibrary?.indexing ?? false {
+            ProgressLoadingView(
+                title: "Индексация видео",
+                current: videoLibrary?.indexed ?? 0,
+                total: videoLibrary?.total ?? 0
+            )
+            .padding(.horizontal)
+        } else if videoLibrary?.similarGroups.isEmpty ?? true {
+            EmptyStateView(
+                icon: "video.badge.checkmark",
+                title: "Похожие видео не найдены",
+                message: "Попробуйте выбрать другие видео"
+            )
+        } else {
+            LazyVStack(alignment: .leading, spacing: 16) {
+                StatisticCardView(statistics: [
+                    .init(label: "Найдено групп", value: "\(videoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
+                    .init(label: "Видео в группах", value: "\(videoLibrary?.similarVideos.count ?? 0)", alignment: .center),
+                    .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.similarVideosFileSize ?? 0).formatted, alignment: .trailing),
+                ])
+                .padding(.horizontal)
+
+                LazyVStack(spacing: 20) {
+                    ForEach(videoLibrary?.similarGroups ?? [], id: \.id) { group in
+                        VideoGroupRowView(group: group, navigationPath: $navigationPath, namespace: namespace)
+                    }
+                }
+                .padding(.top)
+            }
+        }
+    }
+}
+
+struct VideoGroupRowView: View {
+    let group: VideoGroupModel
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Группа (\(group.videos.count) видео)")
+                .font(.headline)
+                .padding(.horizontal)
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(group.videos, id: \.id) { video in
+                        VideoView(video: video, quality: .medium, contentMode: .fill)
+                            .frame(width: 150, height: 200)
+                            .cornerRadius(8)
+                            .clipped()
+                            .onTapGesture {
+                                navigationPath.append(VideoGroupNavigationItem(videos: group.videos, currentVideoId: video.id))
+                            }
+                            .id(video.id)
+                            .matchedTransitionSource(id: video.id, in: namespace)
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .scrollClipDisabled(true)
+        }
+    }
+}
+
+struct VideoThumbnailCard: View {
+    let video: VideoModel
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Миниатюра видео
-            VideoThumbnailView(asset: video.asset)
-                .frame(width: 80, height: 60)
+        VStack(alignment: .leading, spacing: 8) {
+            VideoView(video: video, quality: .medium, contentMode: .fill)
+                .frame(height: 200)
                 .cornerRadius(8)
                 .clipped()
             
-            VStack(alignment: .leading, spacing: 4) {
-                // Длительность видео
-                Text(video.duration.formatted)
-                    .font(.headline)
-                    .foregroundColor(.primary)
-                
-                // Размер файла
-                Text(video.fileSize.formatted)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                
-                // Дата создания
+            HStack {
                 if let creationDate = video.creationDate {
                     Text(formatDate(creationDate))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
+                
+                Spacer()
+                
+                Text(formatDuration(video.duration))
+                    .font(.caption)
+                    .foregroundColor(.secondary)
             }
-            
-            Spacer()
-            
-            // Иконка видео
-            Image(systemName: "play.circle.fill")
-                .font(.title2)
-                .foregroundColor(.blue)
         }
-        .padding(.vertical, 4)
+        .onTapGesture {
+            // Для одиночного видео создаем группу из одного элемента
+            navigationPath.append(VideoGroupNavigationItem(videos: [video], currentVideoId: video.id))
+        }
     }
     
     private func formatDate(_ date: Date) -> String {
@@ -208,133 +211,118 @@ struct VideoRowView: View {
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
+    
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let hours = Int(duration) / 3600
+        let minutes = Int(duration) % 3600 / 60
+        let seconds = Int(duration) % 60
+        
+        if hours > 0 {
+            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            return String(format: "%d:%02d", minutes, seconds)
+        }
+    }
 }
 
-// MARK: - Video Thumbnail View
+enum VideoQuality {
+    case low
+    case medium
+    case high
+}
 
-struct VideoThumbnailView: View {
-    let asset: PHAsset
+struct VideoView: View {
+    let video: VideoModel
+    let quality: VideoQuality
+    let contentMode: ContentMode
+
     @State private var thumbnail: UIImage?
+    @State private var isLoading = false
     
+    private let manager = PHCachingImageManager()
+    
+    init(video: VideoModel, quality: VideoQuality, contentMode: ContentMode) {
+        self.video = video
+        self.quality = quality
+        self.contentMode = contentMode
+    }
+
     var body: some View {
         Group {
             if let thumbnail = thumbnail {
                 Image(uiImage: thumbnail)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(contentMode: contentMode)
             } else {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
+                Color.gray.opacity(contentMode == .fill ? 0.3 : 0)
                     .overlay(
                         ProgressView()
                             .scaleEffect(0.8)
                     )
+                    .onAppear {
+                        loadThumbnail()
+                    }
             }
-        }
-        .onAppear {
-            loadThumbnail()
         }
     }
     
     private func loadThumbnail() {
-        let imageManager = PHImageManager.default()
-        let requestOptions = PHImageRequestOptions()
+        guard !isLoading && thumbnail == nil else { return }
+        isLoading = true
+
+        Task {
+            let assets = PHAsset.fetchAssets(withLocalIdentifiers: [video.id], options: nil)
+            guard let asset = assets.firstObject else {
+                await MainActor.run {
+                    isLoading = false
+                }
+                return
+            }
+            
+            await loadThumbnailFromAsset(asset)
+        }
+    }
+    
+    private func loadThumbnailFromAsset(_ asset: PHAsset) async {
+        let options = PHImageRequestOptions()
         
-        requestOptions.isSynchronous = false
-        requestOptions.deliveryMode = .opportunistic
-        requestOptions.resizeMode = .exact
-        requestOptions.isNetworkAccessAllowed = false
+        options.isSynchronous = false
+        options.isNetworkAccessAllowed = false
+        options.deliveryMode = .opportunistic
         
-        let targetSize = CGSize(width: 160, height: 120)
+        switch quality {
+        case .low:
+            options.resizeMode = .fast
+        case .medium:
+            options.resizeMode = .exact
+        case .high:
+            options.resizeMode = .none
+            options.deliveryMode = .highQualityFormat
+        }
+
+        let targetSize = getTargetSize()
         
-        imageManager.requestImage(
+        manager.requestImage(
             for: asset,
             targetSize: targetSize,
             contentMode: .aspectFill,
-            options: requestOptions
+            options: options
         ) { image, _ in
             DispatchQueue.main.async {
                 self.thumbnail = image
+                self.isLoading = false
             }
+        }
+    }
+
+    private func getTargetSize() -> CGSize {
+        switch quality {
+        case .low:
+            return CGSize(width: 150, height: 200)
+        case .medium:
+            return CGSize(width: 300, height: 400)
+        case .high:
+            return PHImageManagerMaximumSize
         }
     }
 }
-
-// MARK: - Video Player View
-
-struct VideoPlayerView: View {
-    let video: Video
-    @State private var player: AVPlayer?
-    @State private var isLoading = true
-    @Environment(\.dismiss) private var dismiss
-    
-    var body: some View {
-        ZStack {
-            Color.black.ignoresSafeArea()
-            
-            if isLoading {
-                LoadingView(
-                    title: "Загрузка видео..."
-                )
-            } else if let player = player {
-                VideoPlayer(player: player)
-                    .ignoresSafeArea()
-            } else {
-                EmptyStateView(
-                    icon: "exclamationmark.triangle",
-                    title: "Не удалось загрузить видео",
-                    message: "Попробуйте еще раз"
-                )
-            }
-        }
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                VStack {
-                    Text("Видео")
-                        .font(.headline)
-                    if let date = video.creationDate {
-                        Text(formatDate(date))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                }
-            }
-        }
-        .onAppear {
-            loadVideo()
-        }
-        .onDisappear {
-            player?.pause()
-            player = nil
-        }
-    }
-    
-    private func loadVideo() {
-        Task {
-            let options = PHVideoRequestOptions()
-            options.isNetworkAccessAllowed = true
-            options.deliveryMode = .highQualityFormat
-            
-            PHImageManager.default().requestAVAsset(forVideo: video.asset, options: options) { avAsset, _, _ in
-                DispatchQueue.main.async {
-                    if let urlAsset = avAsset as? AVURLAsset {
-                        self.player = AVPlayer(url: urlAsset.url)
-                        self.isLoading = false
-                        self.player?.play()
-                    } else {
-                        self.isLoading = false
-                    }
-                }
-            }
-        }
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-}
-

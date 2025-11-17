@@ -1,4 +1,5 @@
 import Foundation
+import SwiftData
 
 // MARK: - Service Factory
 
@@ -94,7 +95,7 @@ final class ServiceFactory {
         return UserDefaultsSettingsStorage()
     }
 
-    func makePhotoService() -> PhotoService? {
+    func makePhotoService(modelContext: ModelContext) -> PhotoService? {
         guard let embeddingService = makeEmbeddingService() else {
             print("❌ Не удалось создать embedding service для PhotoService")
             return nil
@@ -103,7 +104,8 @@ final class ServiceFactory {
         return PhotoService(
             photoAssetRepository: makePhotoAssetRepository(),
             embeddingService: embeddingService,
-            clusteringService: makeClusteringService()
+            clusteringService: makeClusteringService(),
+            modelContext: modelContext
         )
     }
 }

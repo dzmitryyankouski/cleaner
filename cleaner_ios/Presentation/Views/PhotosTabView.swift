@@ -51,8 +51,10 @@ struct PhotosTabView: View {
             .navigationTitle("Фотографии")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Settings", systemImage: "gearshape") {
+                    Button(action: {
                         showSettings.toggle()
+                    }) {
+                        Image(systemName: "gearshape")
                     }
                     .popover(isPresented: $showSettings) {
                         SettingsTabView(isPresented: $showSettings)

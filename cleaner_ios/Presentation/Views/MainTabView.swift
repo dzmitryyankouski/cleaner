@@ -17,7 +17,6 @@ struct MainTabView: View {
 
                 Tab {
                     VideosTabView()
-                        .environmentObject(videoViewModel)
                 } label: {
                     Label("Видео", systemImage: "video")
                 }

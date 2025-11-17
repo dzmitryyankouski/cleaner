@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import SwiftData
 
 // MARK: - App Dependency Container
 
@@ -14,12 +15,36 @@ final class AppDependencyContainer {
     
     private let serviceFactory: ServiceFactory
     private let useCaseFactory: UseCaseFactory
+    private let modelContainer: ModelContainer
+    private let modelContext: ModelContext
     
     // MARK: - Initialization
     
     private init() {
         self.serviceFactory = ServiceFactory.shared
         self.useCaseFactory = UseCaseFactory(serviceFactory: serviceFactory)
+        
+        // Создаем ModelContainer
+        do {
+            self.modelContainer = try ModelContainer(
+                for: PhotoModel.self,
+                PhotoGroupModel.self,
+                VideoModel.self,
+                VideoGroupModel.self,
+                SettingsModel.self,
+                configurations: ModelConfiguration(isStoredInMemoryOnly: false)
+            )
+            self.modelContext = ModelContext(modelContainer)
+        } catch {
+            fatalError("❌ Не удалось создать ModelContainer: \(error)")
+        }
+    }
+    
+    // MARK: - Model Container Access
+    
+    /// Возвращает ModelContainer для использования в SwiftUI
+    func getModelContainer() -> ModelContainer {
+        return modelContainer
     }
     
     /// Создает PhotoViewModel с правильными зависимостями
@@ -54,7 +79,7 @@ final class AppDependencyContainer {
 
     @MainActor
     func makePhotoLibrary() -> PhotoLibrary? {
-        guard let photoService = serviceFactory.makePhotoService() else {
+        guard let photoService = serviceFactory.makePhotoService(modelContext: modelContext) else {
             print("❌ Не удалось создать PhotoService для PhotoLibrary")
             return nil
         }
@@ -73,8 +98,14 @@ final class AppDependencyContainer {
             videoAssetRepository: serviceFactory.makeVideoAssetRepository(),
             embeddingService: embeddingService,
             imageProcessor: serviceFactory.makeImageProcessingService(),
-            clusteringService: serviceFactory.makeClusteringService()
+            clusteringService: serviceFactory.makeClusteringService(),
+            modelContext: modelContext
         )
+    }
+    
+    @MainActor
+    func makeSettings() -> Settings {
+        return Settings(modelContext: modelContext)
     }
 }
 

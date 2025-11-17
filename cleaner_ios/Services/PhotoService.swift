@@ -11,18 +11,13 @@ final class PhotoService {
     init(
         photoAssetRepository: AssetRepositoryProtocol,
         embeddingService: EmbeddingServiceProtocol,
-        clusteringService: ClusteringServiceProtocol
+        clusteringService: ClusteringServiceProtocol,
+        modelContext: ModelContext
     ) {
         self.photoAssetRepository = photoAssetRepository
         self.embeddingService = embeddingService
         self.clusteringService = clusteringService
-
-        do {
-            let container = try ModelContainer(for: PhotoModel.self, PhotoGroupModel.self, SettingsModel.self)
-            self.context = ModelContext(container)
-        } catch {
-            fatalError("❌ Не удалось создать контекст для PhotoModel: \(error)")
-        }
+        self.context = modelContext
     }
 
     func getSimilarGroups() -> [PhotoGroupModel] {

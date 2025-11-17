@@ -25,7 +25,7 @@ struct CleanerApp: App {
         WindowGroup {
             AppRootView(container: appContainer)
         }
-        .modelContainer(for: [PhotoModel.self, PhotoGroupModel.self, VideoModel.self, VideoGroupModel.self, SettingsModel.self], inMemory: false)
+        .modelContainer(appContainer.getModelContainer())
     }
     
     // MARK: - Private Methods
@@ -79,7 +79,6 @@ extension EnvironmentValues {
 
 struct AppRootView: View {
     let container: AppDependencyContainer
-    @Environment(\.modelContext) private var modelContext
     @State private var photoViewModel: PhotoViewModel?
     @State private var videoViewModel: VideoViewModel?
     @State private var photoLibrary: PhotoLibrary?
@@ -123,7 +122,7 @@ struct AppRootView: View {
         photoLibrary = container.makePhotoLibrary()
         videoLibrary = container.makeVideoLibrary()
         
-        settings = Settings(modelContext: modelContext)
+        settings = container.makeSettings()
 
         isInitialized = true
     }

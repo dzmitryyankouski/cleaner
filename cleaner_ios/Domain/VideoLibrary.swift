@@ -26,19 +26,14 @@ class VideoLibrary {
         videoAssetRepository: VideoAssetRepository,
         embeddingService: EmbeddingServiceProtocol,
         imageProcessor: ImageProcessingProtocol,
-        clusteringService: ClusteringServiceProtocol
+        clusteringService: ClusteringServiceProtocol,
+        modelContext: ModelContext
     ) {
         self.videoAssetRepository = videoAssetRepository
         self.embeddingService = embeddingService
         self.imageProcessor = imageProcessor
         self.clusteringService = clusteringService
-
-        do {
-            let container = try ModelContainer(for: VideoModel.self, VideoGroupModel.self)
-            self.context = ModelContext(container)
-        } catch {
-            fatalError("❌ Не удалось создать контекст для VideoModel: \(error)")
-        }
+        self.context = modelContext
 
         Task {
             await loadVideos()
@@ -63,8 +58,6 @@ class VideoLibrary {
         similarVideosFileSize = similarVideos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         indexing = false
-
-        print("✅ Видео загружены")
     }
 
     func getAllVideos() async -> [PHAsset] {
@@ -114,15 +107,12 @@ class VideoLibrary {
                     guard let self = self else { return }
                     let videoId = video.id
                     
-                    // Получаем PHAsset
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [videoId], options: nil)
                     guard let asset = assets.firstObject else { return }
                     
-                    // Получаем размер файла
                     let fileSizeResult = await self.videoAssetRepository.getFileSize(for: asset)
                     let fileSize = (try? fileSizeResult.get()) ?? 0
                     
-                    // Генерируем эмбединг
                     let embeddingResult = await self.generateVideoEmbedding(for: asset)
                     
                     if case .success(let embedding) = embeddingResult {
@@ -148,6 +138,10 @@ class VideoLibrary {
         } catch {
             print("❌ Ошибка при сохранении контекста: \(error)")
         }
+    }
+
+    func getAllVideos() -> [VideoModel] {
+        return (try? context.fetch(FetchDescriptor<VideoModel>())) ?? []
     }
 
     func getSimilarGroups() -> [VideoGroupModel] {
@@ -201,12 +195,6 @@ class VideoLibrary {
             
             group.updateLatestDate()
             context.insert(group)
-        }
-        
-        do {
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сохранении групп: \(error)")
         }
     }
 
