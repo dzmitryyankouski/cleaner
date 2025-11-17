@@ -9,7 +9,7 @@ final class PhotoModel {
 
     var embedding: [Float]?
     var creationDate: Date?
-    var fileSize: Int64 = 0
+    var fileSize: Int64?
     var isScreenshot: Bool = false
     var fullScreenFrameWidth: Double = 0
     var fullScreenFrameHeight: Double = 0
