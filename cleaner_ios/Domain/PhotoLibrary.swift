@@ -47,14 +47,14 @@ class PhotoLibrary {
 
         similarGroups = photoService.getSimilarGroups()
         similarPhotos = photoService.getSimilarPhotos()
-        similarPhotosFileSize = similarPhotos.reduce(0) { $0 + $1.fileSize }
+        similarPhotosFileSize = similarPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         duplicatesGroups = photoService.getDuplicatesGroups()
         duplicatesPhotos = photoService.getDuplicatesPhotos()
-        duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + $1.fileSize }
+        duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         screenshots = photoService.getScreenshots()
-        screenshotsFileSize = screenshots.reduce(0) { $0 + $1.fileSize }
+        screenshotsFileSize = screenshots.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         indexing = false
 

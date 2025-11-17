@@ -21,7 +21,7 @@ final class VideoModel {
         self.modificationDate = asset.modificationDate
     }
 
-    static var getFileSize(for asset: PHAsset) -> Int64 {
+    static func getFileSize(for asset: PHAsset, completion: @escaping (Int64) -> Void) {
         let options = PHVideoRequestOptions()
         options.isNetworkAccessAllowed = false
             
@@ -30,13 +30,12 @@ final class VideoModel {
                 do {
                     let resourceValues = try urlAsset.url.resourceValues(forKeys: [.fileSizeKey])
                     let fileSize = Int64(resourceValues.fileSize ?? 0)
-                    
-                    return fileSize
+                    completion(fileSize)
                 } catch {
-                    return 0
+                    completion(0)
                 }
             } else {
-                return 0
+                completion(0)
             }
         }
     }
