@@ -1,0 +1,351 @@
+import Foundation
+import Observation
+import SwiftData
+import Photos
+import AVFoundation
+import CoreVideo
+
+@Observable
+class VideoLibrary {
+    var indexing: Bool = false
+    var indexed: Int = 0
+    var total: Int = 0
+    
+    var similarGroups: [VideoGroupModel] = []
+    var similarVideos: [VideoModel] = []
+    var similarVideosFileSize: Int64 = 0
+
+    private let videoAssetRepository: VideoAssetRepository
+    private let embeddingService: EmbeddingServiceProtocol
+    private let imageProcessor: ImageProcessingProtocol
+    private let clusteringService: ClusteringServiceProtocol
+    private let concurrentTasks = 5
+    private let context: ModelContext
+
+    init(
+        videoAssetRepository: VideoAssetRepository,
+        embeddingService: EmbeddingServiceProtocol,
+        imageProcessor: ImageProcessingProtocol,
+        clusteringService: ClusteringServiceProtocol
+    ) {
+        self.videoAssetRepository = videoAssetRepository
+        self.embeddingService = embeddingService
+        self.imageProcessor = imageProcessor
+        self.clusteringService = clusteringService
+
+        do {
+            let container = try ModelContainer(for: VideoModel.self, VideoGroupModel.self)
+            self.context = ModelContext(container)
+        } catch {
+            fatalError("❌ Не удалось создать контекст для VideoModel: \(error)")
+        }
+
+        Task {
+            await loadVideos()
+        }
+    }
+
+    func loadVideos() async {
+        print("🔍 Загрузка видео")
+        indexing = true
+
+        let assets = await getAllVideos()
+        total = assets.count
+        
+        await indexVideos(assets: assets)
+
+        print("🔍 Группировка видео")
+        
+        await groupSimilar(threshold: 0.85)
+
+        similarGroups = getSimilarGroups()
+        similarVideos = getSimilarVideos()
+        similarVideosFileSize = similarVideos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+
+        indexing = false
+
+        print("✅ Видео загружены")
+    }
+
+    func getAllVideos() async -> [PHAsset] {
+        let assetsResult = await videoAssetRepository.fetchAssets()
+
+        guard case .success(let assets) = assetsResult else {
+            print("❌ Не удалось загрузить видео")
+            return []
+        }
+
+        for asset in assets {
+            let assetId = asset.localIdentifier
+            if let _ = try? context.fetch(FetchDescriptor<VideoModel>(predicate: #Predicate<VideoModel> { $0.id == assetId })).first {
+                continue
+            }
+            
+            let video = VideoModel(asset: asset)
+            context.insert(video)
+        }
+
+        do {
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сохранении видео: \(error)")
+            return []
+        }
+        
+        return assets
+    }
+
+    func indexVideos(assets: [PHAsset]) async {
+        guard let videos = try? context.fetch(FetchDescriptor<VideoModel>(predicate: #Predicate<VideoModel> { $0.embedding == nil })) else {
+            print("❌ Нет видео для индексации")
+            return
+        }
+
+        await withTaskGroup(of: Void.self) { group in
+            var activeTasks = 0
+            
+            for video in videos {
+                while activeTasks >= concurrentTasks {
+                    await group.next()
+                    activeTasks -= 1
+                }
+
+                group.addTask { [weak self] in
+                    guard let self = self else { return }
+                    let videoId = video.id
+                    
+                    // Получаем PHAsset
+                    let assets = PHAsset.fetchAssets(withLocalIdentifiers: [videoId], options: nil)
+                    guard let asset = assets.firstObject else { return }
+                    
+                    // Получаем размер файла
+                    let fileSizeResult = await self.videoAssetRepository.getFileSize(for: asset)
+                    let fileSize = (try? fileSizeResult.get()) ?? 0
+                    
+                    // Генерируем эмбединг
+                    let embeddingResult = await self.generateVideoEmbedding(for: asset)
+                    
+                    if case .success(let embedding) = embeddingResult {
+                        await MainActor.run {
+                            video.fileSize = fileSize
+                            video.embedding = embedding
+                            self.indexed += 1
+                        }
+                    }
+                }
+
+                activeTasks += 1
+            }
+            
+            while activeTasks > 0 {
+                await group.next()
+                activeTasks -= 1
+            }
+        }
+
+        do {
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сохранении контекста: \(error)")
+        }
+    }
+
+    func getSimilarGroups() -> [VideoGroupModel] {
+        return (try? context.fetch(VideoGroupModel.similar)) ?? []
+    }
+
+    func getSimilarVideos() -> [VideoModel] {
+        return (try? context.fetch(VideoModel.similar)) ?? []
+    }
+
+    func groupSimilar(threshold: Float) async {
+        await group(type: "similar", threshold: threshold)
+    }
+    
+    private func group(type: String, threshold: Float) async {
+        guard let videos = try? context.fetch(FetchDescriptor<VideoModel>()) else {
+            print("❌ Нет видео для группировки")
+            return
+        }
+
+        print("🔍 Видео для группировки: \(videos.count)")
+        
+        guard videos.count > 1 else { return }
+
+        print("Начинаем группировку видео")
+        
+        let embeddings = videos.compactMap { $0.embedding }
+        let groupIndices = await clusteringService.groupEmbeddings(embeddings, threshold: threshold)
+
+        print("🔍 Эмбединги: \(embeddings.count)")
+
+        for indices in groupIndices {
+            let groupVideos = indices.compactMap { validIndex -> VideoModel? in
+                guard videos.indices.contains(validIndex) else { return nil }
+                return videos[validIndex]
+            }
+            
+            guard groupVideos.count > 1 else { continue }
+            
+            let groupId = UUID().uuidString
+            let group = VideoGroupModel(id: groupId, type: type)
+            
+            // Устанавливаем связь многие-ко-многим с обеих сторон
+            group.videos = groupVideos
+
+            for video in groupVideos {
+                if !video.groups.contains(where: { $0.id == group.id }) {
+                    video.groups.append(group)
+                }
+            }
+            
+            group.updateLatestDate()
+            context.insert(group)
+        }
+        
+        do {
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сохранении групп: \(error)")
+        }
+    }
+
+    private func generateVideoEmbedding(for asset: PHAsset) async -> Result<[Float], VideoIndexingError> {
+        // Получаем AVAsset
+        guard let avAsset = await videoAssetRepository.getAVAsset(for: asset) else {
+            return .failure(.videoProcessingFailed)
+        }
+        
+        // Извлекаем кадры
+        let framesResult = await extractFrames(from: avAsset, duration: asset.duration)
+        
+        guard case .success(let frames) = framesResult, !frames.isEmpty else {
+            return .failure(.frameExtractionFailed)
+        }
+        
+        // Генерируем эмбединги для каждого кадра
+        var embeddings: [[Float]] = []
+        
+        for frame in frames {
+            let embeddingResult = await embeddingService.generateImageEmbedding(from: frame)
+            if case .success(let embedding) = embeddingResult {
+                embeddings.append(embedding)
+            }
+        }
+        
+        guard !embeddings.isEmpty else {
+            return .failure(.embeddingGenerationFailed)
+        }
+        
+        // Вычисляем средний эмбединг
+        let averageEmbedding = calculateAverageEmbedding(embeddings)
+         
+        return .success(averageEmbedding)
+    }
+
+    private func extractFrames(from avAsset: AVAsset, duration: TimeInterval) async -> Result<[CVPixelBuffer], VideoIndexingError> {
+        let generator = AVAssetImageGenerator(asset: avAsset)
+        generator.appliesPreferredTrackTransform = true
+        generator.requestedTimeToleranceAfter = .zero
+        generator.requestedTimeToleranceBefore = .zero
+        
+        // Извлекаем кадры каждые 4 секунды
+        var times: [CMTime] = []
+        let numberOfSeconds = Int(duration)
+        
+        for i in stride(from: 0, through: numberOfSeconds, by: 4) {
+            let time = CMTime(seconds: Double(i), preferredTimescale: 600)
+            times.append(time)
+        }
+        
+        // Если видео короткое, берем кадр из середины
+        if times.isEmpty {
+            let time = CMTime(seconds: duration / 2.0, preferredTimescale: 600)
+            times.append(time)
+        }
+        
+        // Параллельное извлечение кадров
+        var frames: [CVPixelBuffer] = []
+        
+        await withTaskGroup(of: CVPixelBuffer?.self) { group in
+            for time in times {
+                group.addTask { [weak self] in
+                    await self?.extractFrame(from: generator, at: time)
+                }
+            }
+            
+            for await pixelBuffer in group {
+                if let pixelBuffer = pixelBuffer {
+                    frames.append(pixelBuffer)
+                }
+            }
+        }
+        
+        return frames.isEmpty ? .failure(.frameExtractionFailed) : .success(frames)
+    }
+
+    private func extractFrame(from generator: AVAssetImageGenerator, at time: CMTime) async -> CVPixelBuffer? {
+        return await withCheckedContinuation { continuation in
+            generator.generateCGImagesAsynchronously(forTimes: [NSValue(time: time)]) { [weak self] _, cgImage, _, _, error in
+                guard let self = self, error == nil, let cgImage = cgImage else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let result = self.imageProcessor.convertCGImageToPixelBuffer(
+                    cgImage,
+                    targetSize: CGSize(width: 256, height: 256)
+                )
+                
+                if case .success(let pixelBuffer) = result {
+                    continuation.resume(returning: pixelBuffer)
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
+        }
+    }
+
+    private func calculateAverageEmbedding(_ embeddings: [[Float]]) -> [Float] {
+        guard !embeddings.isEmpty else { return [] }
+        
+        let embeddingSize = embeddings[0].count
+        var averageEmbedding = [Float](repeating: 0, count: embeddingSize)
+        
+        // Суммируем все эмбединги
+        for embedding in embeddings {
+            for i in 0..<embeddingSize {
+                averageEmbedding[i] += embedding[i]
+            }
+        }
+        
+        // Делим на количество эмбедингов
+        let count = Float(embeddings.count)
+        for i in 0..<embeddingSize {
+            averageEmbedding[i] /= count
+        }
+        
+        return averageEmbedding
+    }
+
+    func reset() {
+        do {
+            // Удаляем все группы
+            let groups = try context.fetch(FetchDescriptor<VideoGroupModel>())
+            for group in groups {
+                context.delete(group)
+            }
+            
+            // Удаляем все видео
+            let videos = try context.fetch(FetchDescriptor<VideoModel>())
+            for video in videos {
+                context.delete(video)
+            }
+            
+            // Сохраняем изменения
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сбросе контекста: \(error)")
+        }
+    }
+}
