@@ -25,7 +25,7 @@ struct CleanerApp: App {
         WindowGroup {
             AppRootView(container: appContainer)
         }
-        .modelContainer(for: [PhotoModel.self, PhotoGroupModel.self, SettingsModel.self], inMemory: false)
+        .modelContainer(for: [PhotoModel.self, PhotoGroupModel.self, VideoModel.self, VideoGroupModel.self, SettingsModel.self], inMemory: false)
     }
     
     // MARK: - Private Methods
@@ -45,6 +45,13 @@ struct PhotoLibraryKey: EnvironmentKey {
     static let defaultValue: PhotoLibrary? = nil
 }
 
+// MARK: - Environment Key для VideoLibrary
+
+/// Environment key для хранения VideoLibrary
+struct VideoLibraryKey: EnvironmentKey {
+    static let defaultValue: VideoLibrary? = nil
+}
+
 // MARK: - Environment Key для Settings
 
 struct SettingsKey: EnvironmentKey {
@@ -55,6 +62,11 @@ extension EnvironmentValues {
     var photoLibrary: PhotoLibrary? {
         get { self[PhotoLibraryKey.self] }
         set { self[PhotoLibraryKey.self] = newValue }
+    }
+
+    var videoLibrary: VideoLibrary? {
+        get { self[VideoLibraryKey.self] }
+        set { self[VideoLibraryKey.self] = newValue }
     }
 
     var settings: Settings? {
@@ -71,6 +83,7 @@ struct AppRootView: View {
     @State private var photoViewModel: PhotoViewModel?
     @State private var videoViewModel: VideoViewModel?
     @State private var photoLibrary: PhotoLibrary?
+    @State private var videoLibrary: VideoLibrary?
     @State private var settings: Settings?
     @State private var isInitialized = false
     
@@ -85,6 +98,7 @@ struct AppRootView: View {
                         videoViewModel: videoViewModel
                     )
                     .environment(\.photoLibrary, photoLibrary)
+                    .environment(\.videoLibrary, videoLibrary)
                     .environment(\.settings, settings)
                 } else {
                     ErrorView(
@@ -107,6 +121,7 @@ struct AppRootView: View {
         videoViewModel = container.makeVideoViewModel()
 
         photoLibrary = container.makePhotoLibrary()
+        videoLibrary = container.makeVideoLibrary()
         
         settings = Settings(modelContext: modelContext)
 

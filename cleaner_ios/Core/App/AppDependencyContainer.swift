@@ -61,5 +61,20 @@ final class AppDependencyContainer {
 
         return PhotoLibrary(photoService: photoService)
     }
+
+    @MainActor
+    func makeVideoLibrary() -> VideoLibrary? {
+        guard let embeddingService = serviceFactory.makeEmbeddingService() else {
+            print("❌ Не удалось создать EmbeddingService для VideoLibrary")
+            return nil
+        }
+
+        return VideoLibrary(
+            videoAssetRepository: serviceFactory.makeVideoAssetRepository(),
+            embeddingService: embeddingService,
+            imageProcessor: serviceFactory.makeImageProcessingService(),
+            clusteringService: serviceFactory.makeClusteringService()
+        )
+    }
 }
 
