@@ -35,9 +35,9 @@ class VideoLibrary {
         self.clusteringService = clusteringService
         self.context = modelContext
 
-        // Task {
-        //     await loadVideos()
-        // }
+        Task {
+            await loadVideos()
+        }
     }
 
     func loadVideos() async {
@@ -93,6 +93,11 @@ class VideoLibrary {
             print("❌ Нет видео для индексации")
             return
         }
+
+        // guard let videos = try? context.fetch(FetchDescriptor<VideoModel>()) else {
+        //     print("❌ Нет видео для индексации")
+        //     return
+        // }
 
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
@@ -153,6 +158,12 @@ class VideoLibrary {
     }
 
     func groupSimilar(threshold: Float) async {
+        let groups = getSimilarGroups()
+
+        for group in groups {
+            context.delete(group)
+        }
+
         await group(type: "similar", threshold: threshold)
     }
     
@@ -195,6 +206,12 @@ class VideoLibrary {
             
             group.updateLatestDate()
             context.insert(group)
+        }
+
+        do {
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сохранении контекста: \(error)")
         }
     }
 

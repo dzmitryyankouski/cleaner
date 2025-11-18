@@ -70,35 +70,30 @@ struct AllVideosView: View {
     var namespace: Namespace.ID
 
     var body: some View {
-        if videoLibrary?.indexing ?? false {
-            ProgressLoadingView(
-                title: "Индексация видео",
-                current: videoLibrary?.indexed ?? 0,
-                total: videoLibrary?.total ?? 0
-            )
-            .padding(.horizontal)
-        } else {
-            let allVideos = getAllVideos()
-            if allVideos.isEmpty {
-                EmptyStateView(
-                    icon: "video.slash",
-                    title: "Видео не найдены",
-                    message: "В вашей галерее нет видео"
-                )
-            } else {
-                LazyVStack(spacing: 20) {
-                    ForEach(allVideos, id: \.id) { video in
-                        VideoThumbnailCard(video: video, navigationPath: $navigationPath, namespace: namespace)
-                    }
-                }
-                .padding(.horizontal)
-            }
-        }
-    }
-    
-    private func getAllVideos() -> [VideoModel] {
-        guard let videoLibrary = videoLibrary else { return [] }
-        return videoLibrary.getAllVideos()
+        // if videoLibrary?.indexing ?? false {
+        //     ProgressLoadingView(
+        //         title: "Индексация видео",
+        //         current: videoLibrary?.indexed ?? 0,
+        //         total: videoLibrary?.total ?? 0
+        //     )
+        //     .padding(.horizontal)
+        // } else {
+
+        //     if allVideos.isEmpty {
+        //         EmptyStateView(
+        //             icon: "video.slash",
+        //             title: "Видео не найдены",
+        //             message: "В вашей галерее нет видео"
+        //         )
+        //     } else {
+        //         LazyVStack(spacing: 20) {
+        //             ForEach(allVideos, id: \.id) { video in
+        //                 VideoThumbnailCard(video: video, navigationPath: $navigationPath, namespace: namespace)
+        //             }
+        //         }
+        //         .padding(.horizontal)
+        //     }
+        // }
     }
 }
 

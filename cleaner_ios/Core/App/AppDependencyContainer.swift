@@ -16,7 +16,6 @@ final class AppDependencyContainer {
     private let serviceFactory: ServiceFactory
     private let useCaseFactory: UseCaseFactory
     private let modelContainer: ModelContainer
-    private let modelContext: ModelContext
     
     // MARK: - Initialization
     
@@ -34,7 +33,6 @@ final class AppDependencyContainer {
                 SettingsModel.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: false)
             )
-            self.modelContext = ModelContext(modelContainer)
         } catch {
             fatalError("❌ Не удалось создать ModelContainer: \(error)")
         }
@@ -84,11 +82,14 @@ final class AppDependencyContainer {
             return nil
         }
 
+        // Создаем отдельный контекст для PhotoLibrary
+        let photoContext = ModelContext(modelContainer)
+
         return PhotoLibrary(
             photoAssetRepository: serviceFactory.makePhotoAssetRepository(),
             embeddingService: embeddingService,
             clusteringService: serviceFactory.makeClusteringService(),
-            modelContext: modelContext
+            modelContext: photoContext
         )
     }
 
@@ -99,18 +100,23 @@ final class AppDependencyContainer {
             return nil
         }
 
+        // Создаем отдельный контекст для VideoLibrary
+        let videoContext = ModelContext(modelContainer)
+
         return VideoLibrary(
             videoAssetRepository: serviceFactory.makeVideoAssetRepository(),
             embeddingService: embeddingService,
             imageProcessor: serviceFactory.makeImageProcessingService(),
             clusteringService: serviceFactory.makeClusteringService(),
-            modelContext: modelContext
+            modelContext: videoContext
         )
     }
     
     @MainActor
     func makeSettings() -> Settings {
-        return Settings(modelContext: modelContext)
+        let settingsContext = ModelContext(modelContainer)
+
+        return Settings(modelContext: settingsContext)
     }
 }
 
