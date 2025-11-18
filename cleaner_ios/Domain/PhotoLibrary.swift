@@ -101,15 +101,15 @@ class PhotoLibrary {
     }
 
     func indexPhotos() async {
-        // guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding == nil })) else {
-        //     print("❌ Нет фото для индексации")
-        //     return
-        // }
-
-        guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>()) else {
+        guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding == nil })) else {
             print("❌ Нет фото для индексации")
             return
         }
+
+        // guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>()) else {
+        //     print("❌ Нет фото для индексации")
+        //     return
+        // }
 
         print("🔍 Фото для индексации: \(photos.count)")
         
@@ -184,10 +184,22 @@ class PhotoLibrary {
     }
 
     func groupSimilar(threshold: Float) async {
+        let groups = getSimilarGroups()
+
+        for group in groups {
+            context.delete(group)
+        }
+
         await group(type: "similar", threshold: threshold)
     }
 
     func groupDuplicates(threshold: Float) async {
+        let groups = getDuplicatesGroups()
+
+        for group in groups {
+            context.delete(group)
+        }
+
         await group(type: "duplicates", threshold: threshold)
     }
     
@@ -231,23 +243,26 @@ class PhotoLibrary {
             group.updateLatestDate()
             context.insert(group)
         }
+
+        do {
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сохранении контекста: \(error)")
+        }
     }
 
     func reset() {
         do {
-            // Удаляем все группы
             let groups = try context.fetch(FetchDescriptor<PhotoGroupModel>())
             for group in groups {
                 context.delete(group)
             }
             
-            // Удаляем все фотографии
             let photos = try context.fetch(FetchDescriptor<PhotoModel>())
             for photo in photos {
                 context.delete(photo)
             }
             
-            // Сохраняем изменения
             try context.save()
         } catch {
             print("❌ Ошибка при сбросе контекста: \(error)")
