@@ -1,12 +1,6 @@
 import Photos
 import SwiftUI
 
-enum PhotoQuality {
-    case low
-    case medium
-    case high
-}
-
 struct PhotoView: View {
     let photo: PhotoModel
     let quality: PhotoQuality
@@ -25,26 +19,47 @@ struct PhotoView: View {
 
     var body: some View {
         Group {
-            if let image = image {
-                Image(uiImage: image)
+            if let imageToShow = getImageToShow() {
+                Image(uiImage: imageToShow)
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
+                    .onAppear {
+                        loadImageIfNeeded()
+                    }
             } else {
                 Color.gray.opacity(contentMode == .fill ? 0.3 : 0)
                     .onAppear {
-                        loadImage()
+                        loadImageIfNeeded()
                     }
             }
         }
     }
     
-    private func loadImage() {
-        print("🔍 Загрузка изображения")
-        guard !isLoading && image == nil else { return }
+    private func getImageToShow() -> UIImage? {
+        if let loadedImage = image {
+            return loadedImage
+        }
+        
+        if let cachedResult = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
+            print("💾 Найдено изображение качества \(cachedResult.quality) в кэше \(photo.id)")
+            return cachedResult.image
+        }
+        
+        return nil
+    }
+    
+    private func loadImageIfNeeded() {
+        guard !isLoading else { return }
 
+        if let cachedImage = ImageCache.shared.getImage(for: photo.id, quality: quality) {
+            print("📦 Изображение нужного качества (\(quality)) загружено из кэша \(photo.id)")
+            image = cachedImage
+            return
+        }
+
+        print("🔍 Загрузка изображения качества \(quality) \(photo.id)")
         isLoading = true
 
-        // Загружаем asset асинхронно в фоновом потоке
         Task {
             guard let asset = await loadAsset() else {
                 await MainActor.run {
@@ -52,9 +67,36 @@ struct PhotoView: View {
                 }
                 return
             }
+
+            let options = PHImageRequestOptions()
+            options.isSynchronous = false
+            options.isNetworkAccessAllowed = false
             
-            // После получения asset, загружаем изображение
-            await loadImageFromAsset(asset)
+            switch quality {
+            case .low:
+                options.resizeMode = .fast
+                options.deliveryMode = .fastFormat
+            case .medium:
+                options.resizeMode = .exact
+                options.deliveryMode = .opportunistic
+            case .high:
+                options.resizeMode = .none
+                options.deliveryMode = .highQualityFormat
+            }
+
+            let targetSize = self.getTargetSize(for: quality)
+
+            manager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: options) { image, info in
+                guard let image = image else {
+                    print("❌ Не удалось получить изображение")
+                    return
+                }
+
+                self.image = image
+                
+                ImageCache.shared.setImage(image, for: self.photo.id, quality: quality)
+                print("💾 Изображение качества \(quality) закэшировано \(photo.id)")
+            }
         }
     }
 
@@ -67,37 +109,8 @@ struct PhotoView: View {
             return asset
         }.value
     }
-    
-    private func loadImageFromAsset(_ asset: PHAsset) async {
-        let options = PHImageRequestOptions()
-        
-        options.isSynchronous = false
-        options.isNetworkAccessAllowed = false
-        options.deliveryMode = .opportunistic
-        
-        switch quality {
-        case .low:
-            options.resizeMode = .fast
-        case .medium:
-            options.resizeMode = .exact
-        case .high:
-            options.resizeMode = .none
-            options.deliveryMode = .highQualityFormat
-        }
 
-        let targetSize = self.getTargetSize()
-        
-        manager.requestImage(
-            for: asset,
-            targetSize: targetSize,
-            contentMode: .aspectFill,
-            options: options
-        ) { image, _ in
-            self.image = image
-        }
-    }
-
-    private func getTargetSize() -> CGSize {
+    private func getTargetSize(for quality: PhotoQuality) -> CGSize {
         switch quality {
         case .low:
             return CGSize(width: 150, height: 200)

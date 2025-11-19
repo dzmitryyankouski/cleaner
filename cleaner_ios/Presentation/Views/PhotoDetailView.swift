@@ -20,10 +20,9 @@ struct PhotoDetailView: View {
         .indexViewStyle(.page(backgroundDisplayMode: .always))
         .navigationTitle("Группа (\(photos.count))")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTransition(.zoom(sourceID: currentPhotoId, in: namespace))
+        .navigationTransition(.zoom(sourceID: selectedPhotoId ?? currentPhotoId, in: namespace))
         .onAppear {
             selectedPhotoId = currentPhotoId
         }
     }
 }
-
