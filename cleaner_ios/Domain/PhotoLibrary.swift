@@ -53,7 +53,7 @@ class PhotoLibrary {
 
         print("🔍 Группировка фотографий")
         
-        await groupSimilar(threshold: 0.85)
+        await groupSimilar(threshold: 0.95)
         await groupDuplicates(threshold: 0.99)
 
         similarGroups = getSimilarGroups()

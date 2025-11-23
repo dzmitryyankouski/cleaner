@@ -181,7 +181,7 @@ struct PhotoGroupRowView: View {
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
+                LazyHStack(spacing: 1) {
                     ForEach(group.photos, id: \.id) { photo in
                         PhotoView(photo: photo, quality: .medium, contentMode: .fill)
                             .frame(width: 150, height: 200)
@@ -190,9 +190,9 @@ struct PhotoGroupRowView: View {
                             }
                             .id(photo.id)
                             .matchedTransitionSource(id: photo.id, in: namespace)
+                            .clipped()
                     }
                 }
-                .padding(.horizontal)
             }
             .scrollClipDisabled(true)
         }

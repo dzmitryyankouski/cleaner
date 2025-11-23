@@ -51,7 +51,7 @@ class VideoLibrary {
 
         print("🔍 Группировка видео")
         
-        await groupSimilar(threshold: 0.85)
+        await groupSimilar(threshold: 0.93)
 
         similarGroups = getSimilarGroups()
         similarVideos = getSimilarVideos()

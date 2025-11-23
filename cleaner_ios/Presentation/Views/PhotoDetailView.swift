@@ -19,17 +19,24 @@ struct PhotoDetailView: View {
                     }
                     .id(photo.id)
                     .tag(photo.id)
+                    .ignoresSafeArea()
                 }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .onAppear {
                 selectedPhotoId = currentPhotoId
             }
-            
-            PhotoThumbnailIndicator(photos: photos, selectedPhotoId: $selectedPhotoId)
+            .ignoresSafeArea()
         }
+        .overlay(
+            VStack {
+                Spacer()
+                PhotoThumbnailIndicator(photos: photos, selectedPhotoId: $selectedPhotoId)
+            }
+        )
         .navigationTitle("Группа (\(photos.count))")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .navigationTransition(.zoom(sourceID: selectedPhotoId ?? currentPhotoId, in: namespace))
     }
 }
