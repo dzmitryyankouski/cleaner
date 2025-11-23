@@ -19,13 +19,10 @@ struct PhotoView: View {
 
     var body: some View {
         Group {
-            if let imageToShow = getImageToShow() {
-                Image(uiImage: imageToShow)
+            if let image = image {
+                Image(uiImage: image)
                     .resizable()
                     .aspectRatio(contentMode: contentMode)
-                    .onAppear {
-                        loadImageIfNeeded()
-                    }
             } else {
                 Color.gray.opacity(contentMode == .fill ? 0.3 : 0)
                     .onAppear {
@@ -35,19 +32,6 @@ struct PhotoView: View {
         }
     }
     
-    private func getImageToShow() -> UIImage? {
-        if let loadedImage = image {
-            return loadedImage
-        }
-        
-        if let cachedResult = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
-            print("💾 Найдено изображение качества \(cachedResult.quality) в кэше \(photo.id)")
-            return cachedResult.image
-        }
-        
-        return nil
-    }
-    
     private func loadImageIfNeeded() {
         guard !isLoading else { return }
 
@@ -55,6 +39,11 @@ struct PhotoView: View {
             print("📦 Изображение нужного качества (\(quality)) загружено из кэша \(photo.id)")
             image = cachedImage
             return
+        }
+
+         if let bestAvailableImage = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
+            print("💾 Найдено изображение качества \(bestAvailableImage.quality) в кэше \(photo.id)")
+            image = bestAvailableImage.image
         }
 
         print("🔍 Загрузка изображения качества \(quality) \(photo.id)")
@@ -92,7 +81,15 @@ struct PhotoView: View {
                     return
                 }
 
-                self.image = image
+                if (self.image == nil) {
+                    print("with animation")
+                    withAnimation(.easeInOut(duration: 0.2)) {
+                        self.image = image
+                    }
+                } else {
+                    print("without animation")
+                    self.image = image
+                }
                 
                 ImageCache.shared.setImage(image, for: self.photo.id, quality: quality)
                 print("💾 Изображение качества \(quality) закэшировано \(photo.id)")
