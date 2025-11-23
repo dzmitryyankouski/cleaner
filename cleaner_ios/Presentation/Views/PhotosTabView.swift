@@ -201,28 +201,34 @@ struct PhotoGroupRowView: View {
 
 struct PhotoGridView: View {
     let photos: [PhotoModel]
+
+    @Environment(\.photoLibrary) var photoLibrary
     @Binding var navigationPath: NavigationPath
+
     var namespace: Namespace.ID
 
+    let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 3)
+
     var body: some View {
-        // LazyVGrid(
-        //     columns: [
-        //         GridItem(.flexible()),
-        //         GridItem(.flexible()),
-        //         GridItem(.flexible()),
-        //     ], spacing: 12
-        // ) {
-        //     ForEach(photos, id: \.id) { photo in
-        //         PhotoThumbnailCard(photo: photo)
-        //             .matchedTransitionSource(id: photo.id, in: namespace)
-        //             .onTapGesture {
-        //                 withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) {
-        //                     navigationPath.append(photo)
-        //                 }
-        //             }
-        //             .id(photo.id)
-        //     }
-        // }
-        // .padding(.horizontal)
+        VStack(alignment: .leading, spacing: 12) {
+            StatisticCardView(statistics: [
+                    .init(label: "Всего скриншотов", value: "\(photoLibrary?.screenshots.count ?? 0)", alignment: .leading),
+                    .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.screenshotsFileSize ?? 0).formatted, alignment: .trailing),
+                ])
+                .padding(.horizontal)
+
+            LazyVGrid(columns: columns, spacing: 1) {
+                ForEach(photos, id: \.id) { photo in
+                    PhotoView(photo: photo, quality: .medium, contentMode: .fill)
+                        .frame(width: UIScreen.main.bounds.width / 3 - 1, height: UIScreen.main.bounds.width / 3 - 1)
+                        .clipped()
+                        .onTapGesture {
+                            navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentPhotoId: photo.id))
+                        }
+                        .id(photo.id)
+                        .matchedTransitionSource(id: photo.id, in: namespace)
+                }
+            }
+        }
     }
 }
