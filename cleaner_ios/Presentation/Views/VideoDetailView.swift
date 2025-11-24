@@ -6,29 +6,32 @@ struct VideoDetailView: View {
     let videos: [VideoModel]
     let currentVideoId: String
     var namespace: Namespace.ID
+
     @State private var selectedVideoId: String? = nil
     @State private var players: [String: AVPlayer] = [:]
     @State private var loadedVideoIds: Set<String> = []
 
     var body: some View {
-        TabView(selection: $selectedVideoId) {
-            ForEach(videos, id: \.id) { video in
-                VideoPlayerView(video: video)
+        VStack(spacing: 0) {
+            TabView(selection: $selectedVideoId) {
+                ForEach(videos, id: \.id) { video in
+                    VStack {
+                        VideoPlayerView(video: video)
+                    }
+                    .id(video.id)
+                    .tag(video.id)
+                    .padding(.bottom, 100)
+                }
+            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
+            .onAppear {
+                selectedVideoId = currentVideoId
             }
         }
-        .tabViewStyle(.page)
-        .indexViewStyle(.page(backgroundDisplayMode: .always))
-        .navigationTitle("Группа (\(videos.count))")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .navigationTransition(.zoom(sourceID: selectedVideoId ?? currentVideoId, in: namespace))
-        .onAppear {
-            
-        }
-        .onDisappear {
-            
-        }
-        .onChange(of: selectedVideoId) { oldValue, newValue in
-            
-        }
+        .ignoresSafeArea(.all)
     }
 }

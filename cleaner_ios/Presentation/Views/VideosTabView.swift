@@ -148,98 +148,34 @@ struct VideoGroupRowView: View {
                 .padding(.horizontal)
 
             ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 12) {
+                LazyHStack(spacing: 1) {
                     ForEach(group.videos, id: \.id) { video in
-                        VideoView(video: video, quality: .medium, contentMode: .fill)
+                        VideoThumbnailView(video: video)
+                            .id(video.id)
                             .frame(width: 150, height: 200)
-                            .cornerRadius(8)
                             .clipped()
+                            .matchedTransitionSource(id: video.id, in: namespace)
                             .onTapGesture {
                                 navigationPath.append(VideoGroupNavigationItem(videos: group.videos, currentVideoId: video.id))
                             }
-                            .id(video.id)
-                            .matchedTransitionSource(id: video.id, in: namespace)
                     }
                 }
-                .padding(.horizontal)
             }
             .scrollClipDisabled(true)
         }
     }
 }
 
-struct VideoThumbnailCard: View {
+struct VideoThumbnailView: View {
     let video: VideoModel
-    @Binding var navigationPath: NavigationPath
-    var namespace: Namespace.ID
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            VideoView(video: video, quality: .medium, contentMode: .fill)
-                .frame(height: 200)
-                .cornerRadius(8)
-                .clipped()
-            
-            HStack {
-                if let creationDate = video.creationDate {
-                    Text(formatDate(creationDate))
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                Spacer()
-                
-                Text(formatDuration(video.duration))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-        }
-        .onTapGesture {
-            // Для одиночного видео создаем группу из одного элемента
-            navigationPath.append(VideoGroupNavigationItem(videos: [video], currentVideoId: video.id))
-        }
-    }
-    
-    private func formatDate(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
-    }
-    
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration) / 3600
-        let minutes = Int(duration) % 3600 / 60
-        let seconds = Int(duration) % 60
-        
-        if hours > 0 {
-            return String(format: "%d:%02d:%02d", hours, minutes, seconds)
-        } else {
-            return String(format: "%d:%02d", minutes, seconds)
-        }
-    }
-}
-
-enum VideoQuality {
-    case low
-    case medium
-    case high
-}
-
-struct VideoView: View {
-    let video: VideoModel
-    let quality: VideoQuality
-    let contentMode: ContentMode
 
     @State private var thumbnail: UIImage?
     @State private var isLoading = false
     
     private let manager = PHCachingImageManager()
     
-    init(video: VideoModel, quality: VideoQuality, contentMode: ContentMode) {
+    init(video: VideoModel) {
         self.video = video
-        self.quality = quality
-        self.contentMode = contentMode
     }
 
     var body: some View {
@@ -247,13 +183,9 @@ struct VideoView: View {
             if let thumbnail = thumbnail {
                 Image(uiImage: thumbnail)
                     .resizable()
-                    .aspectRatio(contentMode: contentMode)
+                    .aspectRatio(contentMode: .fill)
             } else {
-                Color.gray.opacity(contentMode == .fill ? 0.3 : 0)
-                    .overlay(
-                        ProgressView()
-                            .scaleEffect(0.8)
-                    )
+                Color.gray.opacity(0.3)
                     .onAppear {
                         loadThumbnail()
                     }
@@ -284,40 +216,15 @@ struct VideoView: View {
         options.isSynchronous = false
         options.isNetworkAccessAllowed = false
         options.deliveryMode = .opportunistic
-        
-        switch quality {
-        case .low:
-            options.resizeMode = .fast
-        case .medium:
-            options.resizeMode = .exact
-        case .high:
-            options.resizeMode = .none
-            options.deliveryMode = .highQualityFormat
-        }
+        options.resizeMode = .exact
 
-        let targetSize = getTargetSize()
+        let targetSize = CGSize(width: 300, height: 400)
         
-        manager.requestImage(
-            for: asset,
-            targetSize: targetSize,
-            contentMode: .aspectFill,
-            options: options
-        ) { image, _ in
+        manager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: options) { image, _ in
             DispatchQueue.main.async {
                 self.thumbnail = image
                 self.isLoading = false
             }
-        }
-    }
-
-    private func getTargetSize() -> CGSize {
-        switch quality {
-        case .low:
-            return CGSize(width: 150, height: 200)
-        case .medium:
-            return CGSize(width: 300, height: 400)
-        case .high:
-            return PHImageManagerMaximumSize
         }
     }
 }

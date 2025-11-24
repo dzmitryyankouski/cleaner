@@ -7,28 +7,26 @@ struct VideoPlayerView: View {
     
     @State private var player: AVPlayer?
     @State private var isLoading = false
+    @State private var videoSize: CGSize?
     
     var body: some View {
         Group {
-            if let player = player {
-                Color.red.opacity(0.3)
-                // VideoPlayer(player: player)
-                //     .ignoresSafeArea()
-                //     .onAppear {
-                //         player.play()
-                //     }
-                //     .onDisappear {
-                //         player.pause()
-                //     }
-            } else {
+           if let player = player {
+                VideoPlayer(player: player)
+                    .aspectRatio(videoSize != nil ? videoSize!.width / videoSize!.height : nil, contentMode: .fit)
+                    .ignoresSafeArea()
+                    .onAppear {
+                        player.play()
+                    }
+                    .onDisappear {
+                        player.pause()
+                    }
+           } else {
                 Color.gray.opacity(0.3)
             }
         }
         .onAppear {
-            // Откладываем загрузку, чтобы не мешать анимации перехода
             Task(priority: .userInitiated) {
-                // Небольшая задержка для завершения анимации перехода
-                try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 секунды
                 await loadPlayer()
             }
         }
@@ -54,29 +52,32 @@ struct VideoPlayerView: View {
         options.isNetworkAccessAllowed = false
         options.deliveryMode = .highQualityFormat
         
-        // Загрузка AVAsset в фоновом потоке
-        let avAsset = await Task.detached(priority: .userInitiated) {
-            await withCheckedContinuation { continuation in
-                PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
-                    continuation.resume(returning: avAsset)
-                }
-            }
-        }.value
+        PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
+            print("🔍 Получен AVAsset: \(avAsset)")
 
-        guard let urlAsset = avAsset as? AVURLAsset else {
-            print("❌ Не удалось получить AVURLAsset")
-            await MainActor.run {
-                isLoading = false
+            guard let urlAsset = avAsset as? AVURLAsset else {
+                print("❌ Не удалось получить AVURLAsset")
+                return
             }
-            return
+
+            print("🔍 Получен URL: \(urlAsset.url)")
+
+            let videoTracks = urlAsset.tracks(withMediaType: .video)
+            if let videoTrack = videoTracks.first {
+                let size = videoTrack.naturalSize
+                let transform = videoTrack.preferredTransform
+                let videoSize = transform.a == 0 && transform.b == 1.0 && transform.c == -1.0 && transform.d == 0
+                    ? CGSize(width: size.height, height: size.width)
+                    : size
+                
+                self.videoSize = videoSize
+            }
+
+            let newPlayer = AVPlayer(url: urlAsset.url)
+
+            self.player = newPlayer
+            self.isLoading = false
         }
-
-        print("🔍 Получен URL: \(urlAsset.url)")
-        
-        let newPlayer = AVPlayer(url: urlAsset.url)
-        self.player = newPlayer
-        self.isLoading = false
-        print("🔍 Получен Player: \(newPlayer)")
     }
 
     private func loadAsset() async -> PHAsset? {
