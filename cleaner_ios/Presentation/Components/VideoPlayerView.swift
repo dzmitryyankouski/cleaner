@@ -50,7 +50,7 @@ struct VideoPlayerView: View {
 
         let options = PHVideoRequestOptions()
         options.isNetworkAccessAllowed = false
-        options.deliveryMode = .highQualityFormat
+        options.deliveryMode = .automatic
         
         PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
             print("🔍 Получен AVAsset: \(avAsset)")

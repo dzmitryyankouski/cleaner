@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import Photos
 import AVKit
+import AVFoundation
 
 struct VideoGroupNavigationItem: Hashable {
     let videos: [VideoModel]
@@ -172,8 +173,6 @@ struct VideoThumbnailView: View {
     @State private var thumbnail: UIImage?
     @State private var isLoading = false
     
-    private let manager = PHCachingImageManager()
-    
     init(video: VideoModel) {
         self.video = video
     }
@@ -211,18 +210,46 @@ struct VideoThumbnailView: View {
     }
     
     private func loadThumbnailFromAsset(_ asset: PHAsset) async {
-        let options = PHImageRequestOptions()
-        
-        options.isSynchronous = false
+        let options = PHVideoRequestOptions()
         options.isNetworkAccessAllowed = false
-        options.deliveryMode = .opportunistic
-        options.resizeMode = .exact
-
-        let targetSize = CGSize(width: 300, height: 400)
         
-        manager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: options) { image, _ in
-            DispatchQueue.main.async {
-                self.thumbnail = image
+        await withCheckedContinuation { continuation in
+            PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
+                guard let avAsset = avAsset else {
+                    Task { @MainActor in
+                        self.isLoading = false
+                    }
+                    continuation.resume()
+                    return
+                }
+                
+                Task {
+                    await self.generateThumbnail(from: avAsset)
+                    continuation.resume()
+                }
+            }
+        }
+    }
+    
+    private func generateThumbnail(from avAsset: AVAsset) async {
+        let imageGenerator = AVAssetImageGenerator(asset: avAsset)
+        imageGenerator.appliesPreferredTrackTransform = true
+        imageGenerator.requestedTimeToleranceAfter = .zero
+        imageGenerator.requestedTimeToleranceBefore = .zero
+        
+        let targetSize = CGSize(width: 300, height: 400)
+        imageGenerator.maximumSize = targetSize
+        
+        do {
+            let time = CMTime(seconds: 0.0, preferredTimescale: 600)
+            let cgImage = try await imageGenerator.image(at: time).image
+            
+            await MainActor.run {
+                self.thumbnail = UIImage(cgImage: cgImage)
+                self.isLoading = false
+            }
+        } catch {
+            await MainActor.run {
                 self.isLoading = false
             }
         }
