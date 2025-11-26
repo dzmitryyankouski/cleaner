@@ -1,13 +1,16 @@
 import SwiftUI
 import AVKit
+import AVFoundation
 import Photos
 
 struct VideoPlayerView: View {
     let video: VideoModel
+    let isSelected: Bool
     
     @State private var player: AVPlayer?
     @State private var isLoading = false
     @State private var videoSize: CGSize?
+    @State private var playerItemObserver: NSObjectProtocol?
     
     var body: some View {
         Group {
@@ -15,12 +18,6 @@ struct VideoPlayerView: View {
                 VideoPlayer(player: player)
                     .aspectRatio(videoSize != nil ? videoSize!.width / videoSize!.height : nil, contentMode: .fit)
                     .ignoresSafeArea()
-                    .onAppear {
-                        player.play()
-                    }
-                    .onDisappear {
-                        player.pause()
-                    }
            } else {
                 Color.gray.opacity(0.3)
             }
@@ -30,15 +27,33 @@ struct VideoPlayerView: View {
                 await loadPlayer()
             }
         }
+        .onDisappear {
+            print("🔍 Удаление observer")
+            if let observer = playerItemObserver {
+                NotificationCenter.default.removeObserver(observer)
+                playerItemObserver = nil
+            }
+        }
+        .onChange(of: isSelected) { oldValue, newValue in
+            guard let player = player else { return }
+            if newValue {
+                player.play()
+            } else {
+                player.pause()
+                player.seek(to: .zero)
+            }
+        }
     }
 
     private func loadPlayer() async {
-        guard !isLoading && player == nil else { return }
+        guard !isLoading && player == nil else { 
+            self.playerItemObserver = self.setupPlayerLoop(for: player)
+            return
+         }
         
         isLoading = true
         print("🔍 Загрузка видео")
 
-        // loadAsset уже выполняется в фоновом потоке
         guard let asset = await loadAsset() else {
             await MainActor.run {
                 isLoading = false
@@ -75,11 +90,53 @@ struct VideoPlayerView: View {
 
             let newPlayer = AVPlayer(url: urlAsset.url)
 
-            self.player = newPlayer
-            self.isLoading = false
+            Task { @MainActor in
+                self.player = newPlayer
+                self.isLoading = false
+                
+                if self.isSelected {
+                    newPlayer.seek(to: .zero)
+                    newPlayer.play()
+
+                    self.playerItemObserver = self.setupPlayerLoop(for: newPlayer)
+                }
+            }
         }
     }
 
+    private func setupPlayerLoop(for player: AVPlayer?) -> NSObjectProtocol? {
+        print("🔍 Установка observer")
+        if let observer = playerItemObserver {
+            NotificationCenter.default.removeObserver(observer)
+            playerItemObserver = nil
+        }
+        
+        if let playerItem = player?.currentItem {
+            let observer = NotificationCenter.default.addObserver(
+                forName: .AVPlayerItemDidPlayToEndTime,
+                object: playerItem,
+                queue: .main
+            ) { [weak player] _ in
+                guard let player = player else { return }
+
+                print("🔍 Автоповтор видео")
+                player.seek(to: .zero)
+                player.play()
+            }
+            self.playerItemObserver = observer
+            return observer
+        }
+        
+        return nil
+    }
+
+    private func removePlayerItemObserver() {
+        if let observer = playerItemObserver {
+            NotificationCenter.default.removeObserver(observer)
+            playerItemObserver = nil
+        }
+    }
+    
     private func loadAsset() async -> PHAsset? {
         let videoId = video.id
         return await Task.detached(priority: .userInitiated) { () -> PHAsset? in
