@@ -36,17 +36,14 @@ struct PhotoView: View {
         guard !isLoading else { return }
 
         if let cachedImage = ImageCache.shared.getImage(for: photo.id, quality: quality) {
-            print("📦 Изображение нужного качества (\(quality)) загружено из кэша \(photo.id)")
             image = cachedImage
             return
         }
 
          if let bestAvailableImage = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
-            print("💾 Найдено изображение качества \(bestAvailableImage.quality) в кэше \(photo.id)")
             image = bestAvailableImage.image
         }
 
-        print("🔍 Загрузка изображения качества \(quality) \(photo.id)")
         isLoading = true
 
         Task {
@@ -82,17 +79,14 @@ struct PhotoView: View {
                 }
 
                 if (self.image == nil) {
-                    print("with animation")
                     withAnimation(.easeInOut(duration: 0.2)) {
                         self.image = image
                     }
                 } else {
-                    print("without animation")
                     self.image = image
                 }
                 
                 ImageCache.shared.setImage(image, for: self.photo.id, quality: quality)
-                print("💾 Изображение качества \(quality) закэшировано \(photo.id)")
             }
         }
     }

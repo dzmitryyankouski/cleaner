@@ -110,8 +110,6 @@ class PhotoLibrary {
         //     print("❌ Нет фото для индексации")
         //     return
         // }
-
-        print("🔍 Фото для индексации: \(photos.count)")
         
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
@@ -126,9 +124,9 @@ class PhotoLibrary {
                     guard let self = self else { return }
                     let photoId = photo.id
 
-                    print("Task started")
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
                     guard let asset = assets.firstObject else { return }
+
 
                     async let fileSizeAsync = self.photoAssetRepository.getFileSize(for: asset)
                     async let embeddingAsync = self.embeddingService.generateEmbeddingFromAsset(asset)
@@ -141,7 +139,6 @@ class PhotoLibrary {
                             photo.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
                             photo.fileSize = fileSize
                             self.indexed += 1
-                            print("Indexed: \(self.indexed)")
                         }
                     }
                 }
@@ -278,5 +275,8 @@ class PhotoLibrary {
 
         screenshots = []
         screenshotsFileSize = 0
+
+        total = 0
+        indexed = 0
     }
 }

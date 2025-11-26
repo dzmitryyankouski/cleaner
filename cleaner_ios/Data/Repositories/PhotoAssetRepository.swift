@@ -35,17 +35,44 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
         
         return .success(assets)
     }
-    
+
+    /// Получает размер файла для фото
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
         return await withCheckedContinuation { continuation in
             let resources = PHAssetResource.assetResources(for: asset)
-            
-            if let resource = resources.first,
-               let fileSize = resource.value(forKey: "fileSize") as? Int64,
-               fileSize > 0 {
-                continuation.resume(returning: .success(fileSize))
-            } else {
-                continuation.resume(returning: .failure(.fileSizeUnavailable))
+            var totalSize: Int64 = 0
+            var hasError = false
+
+            let options = PHAssetResourceRequestOptions()
+            options.isNetworkAccessAllowed = true
+
+            let dispatch = DispatchGroup()
+
+            // Если нет ресурсов, возвращаем 0
+            if resources.isEmpty {
+                continuation.resume(returning: .success(0))
+                return
+            }
+
+            for resource in resources {
+                dispatch.enter()
+
+                PHAssetResourceManager.default().requestData(for: resource, options: options) { data in
+                    totalSize += Int64(data.count)
+                } completionHandler: { error in
+                    if error != nil {
+                        hasError = true
+                    }
+                    dispatch.leave()
+                }
+            }
+
+            dispatch.notify(queue: .main) {
+                if hasError {
+                    continuation.resume(returning: .failure(.fileSizeUnavailable))
+                } else {
+                    continuation.resume(returning: .success(totalSize))
+                }
             }
         }
     }
