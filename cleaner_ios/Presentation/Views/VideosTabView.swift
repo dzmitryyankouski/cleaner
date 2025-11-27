@@ -245,12 +245,16 @@ struct VideoThumbnailView: View {
             let cgImage = try await imageGenerator.image(at: time).image
             
             await MainActor.run {
-                self.thumbnail = UIImage(cgImage: cgImage)
-                self.isLoading = false
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    self.thumbnail = UIImage(cgImage: cgImage)
+                    self.isLoading = false
+                }
             }
         } catch {
             await MainActor.run {
-                self.isLoading = false
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    self.isLoading = false
+                }
             }
         }
     }

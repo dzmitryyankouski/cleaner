@@ -23,7 +23,7 @@ struct PhotosTabView: View {
     @State private var navigationPath = NavigationPath()
     @Namespace private var navigationTransitionNamespace
 
-    private let tabs = ["Серии", "Копии", "Скриншоты"]
+    private let tabs = ["Все", "Серии", "Копии", "Скриншоты"]
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -33,10 +33,12 @@ struct PhotosTabView: View {
                         Section {
                             switch selectedTab {
                             case 0:
-                                SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                AllPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             case 1:
-                                DuplicatesView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             case 2:
+                                DuplicatesView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            case 3:
                                 ScreenshotsView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             default:
                                 SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
@@ -169,6 +171,24 @@ struct ScreenshotsView: View {
     }
 }
 
+struct AllPhotosView: View {
+    @Environment(\.photoLibrary) var photoLibrary
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
+
+    var body: some View {
+        if photoLibrary?.photos.isEmpty ?? true {
+            EmptyStateView(
+                icon: "photo.slash",
+                title: "Фотографии не найдены",
+                message: "В вашей галерее нет фотографий"
+            )
+        } else {
+            PhotoGridView(photos: photoLibrary?.photos ?? [], navigationPath: $navigationPath, namespace: namespace)
+        }
+    }
+}
+
 struct PhotoGroupRowView: View {
     let group: PhotoGroupModel
     @Binding var navigationPath: NavigationPath
@@ -220,7 +240,7 @@ struct PhotoGridView: View {
             LazyVGrid(columns: columns, spacing: 1) {
                 ForEach(photos, id: \.id) { photo in
                     PhotoView(photo: photo, quality: .medium, contentMode: .fill)
-                        .frame(width: UIScreen.main.bounds.width / 3 - 1, height: UIScreen.main.bounds.width / 3 - 1)
+                        .frame(width: UIScreen.main.bounds.width / 3 - 1, height: UIScreen.main.bounds.width / 2)
                         .clipped()
                         .onTapGesture {
                             navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentPhotoId: photo.id))

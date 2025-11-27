@@ -11,9 +11,9 @@ struct PhotoThumbnailIndicator: View {
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: spacing) {
+                LazyHStack(spacing: spacing) {
                     ForEach(photos, id: \.id) { photo in
-                        ThumbnailView(photo: photo)
+                        PhotoView(photo: photo, quality: .low, contentMode: .fill)
                             .frame(width: photo.id == selectedPhotoId ? 50 : 30, height: 50)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
                             .id(photo.id)
@@ -25,6 +25,7 @@ struct PhotoThumbnailIndicator: View {
                 }
                 .padding(.horizontal, spacing)
             }
+            .frame(height: 50)
             .onChange(of: selectedPhotoId) { newValue in
                 if let newValue = newValue {
                     withAnimation {

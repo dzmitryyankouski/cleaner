@@ -20,6 +20,9 @@ class PhotoLibrary {
     var screenshots: [PhotoModel] = []
     var screenshotsFileSize: Int64 = 0
 
+    var photos: [PhotoModel] = []
+    var photosFileSize: Int64 = 0
+
     private let photoAssetRepository: AssetRepositoryProtocol
     private let embeddingService: EmbeddingServiceProtocol
     private let clusteringService: ClusteringServiceProtocol
@@ -46,7 +49,7 @@ class PhotoLibrary {
         print("🔍 Загрузка фотографий")
         indexing = true
 
-        let photos = await getAllPhotos()
+        photos = await getAllPhotos()
         total = photos.count
         
         await indexPhotos()
@@ -55,6 +58,8 @@ class PhotoLibrary {
         
         await groupSimilar(threshold: 0.95)
         await groupDuplicates(threshold: 0.99)
+
+        photosFileSize = photos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         similarGroups = getSimilarGroups()
         similarPhotos = getSimilarPhotos()
@@ -72,7 +77,41 @@ class PhotoLibrary {
         print("✅ Фотографии загружены")
     }
 
-    func getAllPhotos() async -> [PhotoModel] {
+    func reset() {
+        do {
+            let groups = try context.fetch(FetchDescriptor<PhotoGroupModel>())
+            for group in groups {
+                context.delete(group)
+            }
+            
+            let photos = try context.fetch(FetchDescriptor<PhotoModel>())
+            for photo in photos {
+                context.delete(photo)
+            }
+            
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сбросе контекста: \(error)")
+        }
+
+        similarGroups = []
+        similarPhotos = []
+        similarPhotosFileSize = 0
+
+        duplicatesGroups = []
+        duplicatesPhotos = []
+        duplicatesPhotosFileSize = 0
+
+        screenshots = []
+        screenshotsFileSize = 0
+
+        photos = []
+
+        total = 0
+        indexed = 0
+    }
+
+    private func getAllPhotos() async -> [PhotoModel] {
         let assets = await photoAssetRepository.fetchAssets()
 
         guard case .success(let assets) = assets else {
@@ -100,7 +139,7 @@ class PhotoLibrary {
         return (try? context.fetch(FetchDescriptor<PhotoModel>())) ?? []
     }
 
-    func indexPhotos() async {
+    private func indexPhotos() async {
         guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding == nil })) else {
             print("❌ Нет фото для индексации")
             return
@@ -160,27 +199,27 @@ class PhotoLibrary {
         }
     }
 
-    func getSimilarGroups() -> [PhotoGroupModel] {
+    private func getSimilarGroups() -> [PhotoGroupModel] {
         return (try? context.fetch(PhotoGroupModel.similar)) ?? []
     }
 
-    func getSimilarPhotos() -> [PhotoModel] {
+    private func getSimilarPhotos() -> [PhotoModel] {
         return (try? context.fetch(PhotoModel.similar)) ?? []
     }
 
-    func getDuplicatesGroups() -> [PhotoGroupModel] {
+    private func getDuplicatesGroups() -> [PhotoGroupModel] {
         return (try? context.fetch(PhotoGroupModel.duplicates)) ?? []
     }
 
-    func getDuplicatesPhotos() -> [PhotoModel] {
+    private func getDuplicatesPhotos() -> [PhotoModel] {
         return (try? context.fetch(PhotoModel.duplicates)) ?? []
     }
 
-    func getScreenshots() -> [PhotoModel] {
+    private func getScreenshots() -> [PhotoModel] {
         return (try? context.fetch(PhotoModel.screenshots)) ?? []
     }
 
-    func groupSimilar(threshold: Float) async {
+    private func groupSimilar(threshold: Float) async {
         let groups = getSimilarGroups()
 
         for group in groups {
@@ -190,7 +229,7 @@ class PhotoLibrary {
         await group(type: "similar", threshold: threshold)
     }
 
-    func groupDuplicates(threshold: Float) async {
+    private func groupDuplicates(threshold: Float) async {
         let groups = getDuplicatesGroups()
 
         for group in groups {
@@ -246,37 +285,5 @@ class PhotoLibrary {
         } catch {
             print("❌ Ошибка при сохранении контекста: \(error)")
         }
-    }
-
-    func reset() {
-        do {
-            let groups = try context.fetch(FetchDescriptor<PhotoGroupModel>())
-            for group in groups {
-                context.delete(group)
-            }
-            
-            let photos = try context.fetch(FetchDescriptor<PhotoModel>())
-            for photo in photos {
-                context.delete(photo)
-            }
-            
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сбросе контекста: \(error)")
-        }
-
-        similarGroups = []
-        similarPhotos = []
-        similarPhotosFileSize = 0
-
-        duplicatesGroups = []
-        duplicatesPhotos = []
-        duplicatesPhotosFileSize = 0
-
-        screenshots = []
-        screenshotsFileSize = 0
-
-        total = 0
-        indexed = 0
     }
 }
