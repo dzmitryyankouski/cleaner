@@ -18,18 +18,22 @@ struct SearchTabView: View {
     
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            ScrollView {
-                Section {
-                    switch selectedTab {
-                    case 0:
-                        PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
-                    case 1:
-                        VideoGridView(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
-                    default:
-                        PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+            ZStack(alignment: .top) {
+                ScrollView {
+                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                        Section {
+                            switch selectedTab {
+                            case 0:
+                                PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            case 1:
+                                VideoGridView(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            default:
+                                PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            }
+                        } header: {
+                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                        }
                     }
-                } header: {
-                    PickerHeader(selectedTab: $selectedTab, tabs: tabs)
                 }
             }
             .searchable(text: $searchText, prompt: "Поиск фотографий и видео")
