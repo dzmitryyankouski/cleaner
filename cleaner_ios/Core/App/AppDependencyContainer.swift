@@ -89,6 +89,7 @@ final class AppDependencyContainer {
             photoAssetRepository: serviceFactory.makePhotoAssetRepository(),
             embeddingService: embeddingService,
             clusteringService: serviceFactory.makeClusteringService(),
+            translationService: serviceFactory.makeTranslationService(),
             modelContext: photoContext
         )
     }

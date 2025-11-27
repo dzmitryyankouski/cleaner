@@ -18,17 +18,3 @@ struct MediaGroup<T: Identifiable> {
         self.items = items
     }
 }
-
-// MARK: - Search Result
-
-/// Результат поиска с оценкой релевантности
-struct SearchResult<T> {
-    let item: T
-    let similarity: Float
-    
-    init(item: T, similarity: Float) {
-        self.item = item
-        self.similarity = similarity
-    }
-}
-

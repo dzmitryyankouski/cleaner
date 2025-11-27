@@ -65,23 +65,3 @@ final class SearchPhotosUseCase {
         return .success(results)
     }
 }
-
-// MARK: - Search Error
-
-enum SearchError: LocalizedError {
-    case embeddingGenerationFailed(EmbeddingError)
-    case translationFailed
-    case unknown
-    
-    var errorDescription: String? {
-        switch self {
-        case .embeddingGenerationFailed(let error):
-            return "Не удалось сгенерировать эмбединг: \(error.localizedDescription)"
-        case .translationFailed:
-            return "Не удалось перевести запрос"
-        case .unknown:
-            return "Неизвестная ошибка"
-        }
-    }
-}
-

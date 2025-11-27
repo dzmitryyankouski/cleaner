@@ -26,6 +26,7 @@ class PhotoLibrary {
     private let photoAssetRepository: AssetRepositoryProtocol
     private let embeddingService: EmbeddingServiceProtocol
     private let clusteringService: ClusteringServiceProtocol
+    private let translationService: TranslationServiceProtocol?
     private let concurrentTasks = 10
     private let context: ModelContext
 
@@ -33,11 +34,13 @@ class PhotoLibrary {
         photoAssetRepository: AssetRepositoryProtocol,
         embeddingService: EmbeddingServiceProtocol,
         clusteringService: ClusteringServiceProtocol,
+        translationService: TranslationServiceProtocol? = nil,
         modelContext: ModelContext
     ) {
         self.photoAssetRepository = photoAssetRepository
         self.embeddingService = embeddingService
         self.clusteringService = clusteringService
+        self.translationService = translationService
         self.context = modelContext
 
         Task {
@@ -109,6 +112,45 @@ class PhotoLibrary {
 
         total = 0
         indexed = 0
+    }
+
+    func search(query: String) async -> Result<[SearchResult<PhotoModel>], SearchError> {
+        var searchQuery = query
+        if let translationService = translationService {
+            if case .success(let translated) = await translationService.translate(query, to: "en") {
+                searchQuery = translated
+            }
+        }
+
+        let queryEmbeddingResult = await embeddingService.generateTextEmbedding(from: searchQuery)
+
+        guard case .success(let queryEmbedding) = queryEmbeddingResult else {
+            if case .failure(let error) = queryEmbeddingResult {
+                return .failure(.embeddingGenerationFailed(error))
+            }
+            return .failure(.unknown)
+        }
+
+        var results: [SearchResult<PhotoModel>] = []
+        
+        for photo in photos {
+            guard let photoEmbedding = photo.embedding else {
+                continue
+            }
+            
+            let similarity = embeddingService.calculateSimilarity(
+                queryEmbedding,
+                photoEmbedding
+            )
+            
+            if similarity >= 0.188 {
+                results.append(SearchResult(item: photo, similarity: similarity))
+            }
+        }
+        
+        results.sort { $0.similarity > $1.similarity }
+        
+        return .success(results)
     }
 
     private func getAllPhotos() async -> [PhotoModel] {
@@ -284,6 +326,33 @@ class PhotoLibrary {
             try context.save()
         } catch {
             print("❌ Ошибка при сохранении контекста: \(error)")
+        }
+    }
+}
+
+struct SearchResult<T> {
+    let item: T
+    let similarity: Float
+    
+    init(item: T, similarity: Float) {
+        self.item = item
+        self.similarity = similarity
+    }
+}
+
+enum SearchError: LocalizedError {
+    case embeddingGenerationFailed(EmbeddingError)
+    case translationFailed
+    case unknown
+    
+    var errorDescription: String? {
+        switch self {
+        case .embeddingGenerationFailed(let error):
+            return "Не удалось сгенерировать эмбединг: \(error.localizedDescription)"
+        case .translationFailed:
+            return "Не удалось перевести запрос"
+        case .unknown:
+            return "Неизвестная ошибка"
         }
     }
 }
