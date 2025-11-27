@@ -166,7 +166,24 @@ struct ScreenshotsView: View {
                 message: "В вашей галерее нет скриншотов"
             )
         } else {
-            PhotoGridView(photos: photoLibrary?.screenshots ?? [], navigationPath: $navigationPath, namespace: namespace)
+            VStack(spacing: 12) {
+                if photoLibrary?.indexing ?? false {
+                    ProgressLoadingView(
+                        title: "Индексация фотографий",
+                        current: photoLibrary?.indexed ?? 0,
+                        total: photoLibrary?.total ?? 0
+                    )
+                    .padding(.horizontal)
+                } else {
+                    StatisticCardView(statistics: [
+                        .init(label: "Всего скриншотов", value: "\(photoLibrary?.screenshots.count ?? 0)", alignment: .leading),
+                        .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.screenshotsFileSize ?? 0).formatted, alignment: .trailing),
+                    ])
+                    .padding(.horizontal)
+                }
+
+                PhotoGridView(photos: photoLibrary?.screenshots ?? [], navigationPath: $navigationPath, namespace: namespace)
+            }
         }
     }
 }
@@ -177,14 +194,31 @@ struct AllPhotosView: View {
     var namespace: Namespace.ID
 
     var body: some View {
-        if photoLibrary?.photos.isEmpty ?? true {
+        if photoLibrary?.photos.isEmpty ?? true && !(photoLibrary?.indexing ?? false) {
             EmptyStateView(
                 icon: "photo.slash",
                 title: "Фотографии не найдены",
                 message: "В вашей галерее нет фотографий"
             )
         } else {
-            PhotoGridView(photos: photoLibrary?.photos ?? [], navigationPath: $navigationPath, namespace: namespace)
+            VStack(spacing: 12) {
+                if photoLibrary?.indexing ?? false {
+                    ProgressLoadingView(
+                        title: "Индексация фотографий",
+                        current: photoLibrary?.indexed ?? 0,
+                        total: photoLibrary?.total ?? 0
+                    )
+                    .padding(.horizontal)
+                } else {
+                    StatisticCardView(statistics: [
+                        .init(label: "Всего фотографий", value: "\(photoLibrary?.photos.count ?? 0)", alignment: .leading),
+                        .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.photosFileSize ?? 0).formatted, alignment: .trailing),
+                    ])
+                    .padding(.horizontal)
+                }
+
+                PhotoGridView(photos: photoLibrary?.photos ?? [], navigationPath: $navigationPath, namespace: namespace)
+            }
         }
     }
 }
@@ -230,24 +264,16 @@ struct PhotoGridView: View {
     let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 3)
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            StatisticCardView(statistics: [
-                    .init(label: "Всего скриншотов", value: "\(photoLibrary?.screenshots.count ?? 0)", alignment: .leading),
-                    .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.screenshotsFileSize ?? 0).formatted, alignment: .trailing),
-                ])
-                .padding(.horizontal)
-
-            LazyVGrid(columns: columns, spacing: 1) {
-                ForEach(photos, id: \.id) { photo in
-                    PhotoView(photo: photo, quality: .medium, contentMode: .fill)
-                        .frame(width: UIScreen.main.bounds.width / 3 - 1, height: UIScreen.main.bounds.width / 2)
-                        .clipped()
-                        .onTapGesture {
-                            navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentPhotoId: photo.id))
-                        }
-                        .id(photo.id)
-                        .matchedTransitionSource(id: photo.id, in: namespace)
-                }
+        LazyVGrid(columns: columns, spacing: 1) {
+            ForEach(photos, id: \.id) { photo in
+                PhotoView(photo: photo, quality: .medium, contentMode: .fill)
+                    .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
+                    .clipped()
+                    .onTapGesture {
+                        navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentPhotoId: photo.id))
+                    }
+                    .id(photo.id)
+                    .matchedTransitionSource(id: photo.id, in: namespace)
             }
         }
     }
