@@ -109,6 +109,7 @@ final class AppDependencyContainer {
             embeddingService: embeddingService,
             imageProcessor: serviceFactory.makeImageProcessingService(),
             clusteringService: serviceFactory.makeClusteringService(),
+            translationService: serviceFactory.makeTranslationService(),
             modelContext: videoContext
         )
     }

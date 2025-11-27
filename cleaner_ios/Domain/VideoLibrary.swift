@@ -22,6 +22,7 @@ class VideoLibrary {
     private let embeddingService: EmbeddingServiceProtocol
     private let imageProcessor: ImageProcessingProtocol
     private let clusteringService: ClusteringServiceProtocol
+    private let translationService: TranslationServiceProtocol?
     private let concurrentTasks = 5
     private let context: ModelContext
 
@@ -30,12 +31,14 @@ class VideoLibrary {
         embeddingService: EmbeddingServiceProtocol,
         imageProcessor: ImageProcessingProtocol,
         clusteringService: ClusteringServiceProtocol,
+        translationService: TranslationServiceProtocol? = nil,
         modelContext: ModelContext
     ) {
         self.videoAssetRepository = videoAssetRepository
         self.embeddingService = embeddingService
         self.imageProcessor = imageProcessor
         self.clusteringService = clusteringService
+        self.translationService = translationService
         self.context = modelContext
 
         Task {
@@ -335,6 +338,45 @@ class VideoLibrary {
         }
         
         return averageEmbedding
+    }
+
+    func search(query: String) async -> Result<[SearchResult<VideoModel>], SearchError> {
+        var searchQuery = query
+        if let translationService = translationService {
+            if case .success(let translated) = await translationService.translate(query, to: "en") {
+                searchQuery = translated
+            }
+        }
+
+        let queryEmbeddingResult = await embeddingService.generateTextEmbedding(from: searchQuery)
+
+        guard case .success(let queryEmbedding) = queryEmbeddingResult else {
+            if case .failure(let error) = queryEmbeddingResult {
+                return .failure(.embeddingGenerationFailed(error))
+            }
+            return .failure(.unknown)
+        }
+
+        var results: [SearchResult<VideoModel>] = []
+        
+        for video in videos {
+            guard let videoEmbedding = video.embedding else {
+                continue
+            }
+            
+            let similarity = embeddingService.calculateSimilarity(
+                queryEmbedding,
+                videoEmbedding
+            )
+            
+            if similarity >= 0.188 {
+                results.append(SearchResult(item: video, similarity: similarity))
+            }
+        }
+        
+        results.sort { $0.similarity > $1.similarity }
+        
+        return .success(results)
     }
 
     func reset() {
