@@ -33,7 +33,14 @@ struct VideosTabView: View {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
                         Section {
-                            SimilarVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            switch selectedTab {
+                            case 0:
+                                AllVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            case 1:
+                                SimilarVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            default:
+                                AllVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            }
                         } header: {
                             PickerHeader(selectedTab: $selectedTab, tabs: tabs)
                         }
@@ -71,30 +78,30 @@ struct AllVideosView: View {
     var namespace: Namespace.ID
 
     var body: some View {
-        // if videoLibrary?.indexing ?? false {
-        //     ProgressLoadingView(
-        //         title: "Индексация видео",
-        //         current: videoLibrary?.indexed ?? 0,
-        //         total: videoLibrary?.total ?? 0
-        //     )
-        //     .padding(.horizontal)
-        // } else {
+        if videoLibrary?.indexing ?? false {
+            ProgressLoadingView(
+                title: "Индексация видео",
+                current: videoLibrary?.indexed ?? 0,
+                total: videoLibrary?.total ?? 0
+            )
+            .padding(.horizontal)
+        } else if videoLibrary?.similarGroups.isEmpty ?? true {
+            EmptyStateView(
+                icon: "video.slash",
+                title: "Видео не найдены",
+                message: "В вашей галерее нет видео"
+            )
+        } else {
+            VStack(spacing: 12) {
+                StatisticCardView(statistics: [
+                    .init(label: "Всего видео", value: "\(videoLibrary?.videos.count ?? 0)", alignment: .leading),
+                    .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.videosFileSize ?? 0).formatted, alignment: .trailing),
+                ])
+                .padding(.horizontal)
 
-        //     if allVideos.isEmpty {
-        //         EmptyStateView(
-        //             icon: "video.slash",
-        //             title: "Видео не найдены",
-        //             message: "В вашей галерее нет видео"
-        //         )
-        //     } else {
-        //         LazyVStack(spacing: 20) {
-        //             ForEach(allVideos, id: \.id) { video in
-        //                 VideoThumbnailCard(video: video, navigationPath: $navigationPath, namespace: namespace)
-        //             }
-        //         }
-        //         .padding(.horizontal)
-        //     }
-        // }
+                VideoGridView(videos: videoLibrary?.videos ?? [], navigationPath: $navigationPath, namespace: namespace)
+            }
+        }
     }
 }
 
@@ -163,6 +170,29 @@ struct VideoGroupRowView: View {
                 }
             }
             .scrollClipDisabled(true)
+        }
+    }
+}
+
+struct VideoGridView: View {
+    let videos: [VideoModel]
+    @Binding var navigationPath: NavigationPath
+    var namespace: Namespace.ID
+
+    let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 3)
+
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 1) {
+            ForEach(videos, id: \.id) { video in
+                VideoThumbnailView(video: video)
+                    .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
+                    .clipped()
+                    .onTapGesture {
+                        navigationPath.append(VideoGroupNavigationItem(videos: videos, currentVideoId: video.id))
+                    }
+                    .id(video.id)
+                    .matchedTransitionSource(id: video.id, in: namespace)
+            }
         }
     }
 }

@@ -10,6 +10,9 @@ class VideoLibrary {
     var indexing: Bool = false
     var indexed: Int = 0
     var total: Int = 0
+
+    var videos: [VideoModel] = []
+    var videosFileSize: Int64 = 0
     
     var similarGroups: [VideoGroupModel] = []
     var similarVideos: [VideoModel] = []
@@ -44,10 +47,10 @@ class VideoLibrary {
         print("🔍 Загрузка видео")
         indexing = true
 
-        let assets = await getAllVideos()
-        total = assets.count
+        videos = await getAllVideos()
+        total = videos.count
         
-        await indexVideos(assets: assets)
+        await indexVideos()
 
         print("🔍 Группировка видео")
         
@@ -56,11 +59,12 @@ class VideoLibrary {
         similarGroups = getSimilarGroups()
         similarVideos = getSimilarVideos()
         similarVideosFileSize = similarVideos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+        videosFileSize = videos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         indexing = false
     }
 
-    func getAllVideos() async -> [PHAsset] {
+    func getAllVideos() async -> [VideoModel] {
         let assetsResult = await videoAssetRepository.fetchAssets()
 
         guard case .success(let assets) = assetsResult else {
@@ -85,10 +89,10 @@ class VideoLibrary {
             return []
         }
         
-        return assets
+        return (try? context.fetch(FetchDescriptor<VideoModel>())) ?? []
     }
 
-    func indexVideos(assets: [PHAsset]) async {
+    func indexVideos() async {
         guard let videos = try? context.fetch(FetchDescriptor<VideoModel>(predicate: #Predicate<VideoModel> { $0.embedding == nil })) else {
             print("❌ Нет видео для индексации")
             return
