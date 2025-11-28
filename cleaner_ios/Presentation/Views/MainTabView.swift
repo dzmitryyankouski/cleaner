@@ -2,9 +2,6 @@ import SwiftUI
 
 
 struct MainTabView: View {
-    @StateObject var photoViewModel: PhotoViewModel
-    @StateObject var videoViewModel: VideoViewModel
-    
     var body: some View {
         ZStack {
             TabView {

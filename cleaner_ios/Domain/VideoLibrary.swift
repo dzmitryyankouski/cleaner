@@ -5,6 +5,25 @@ import Photos
 import AVFoundation
 import CoreVideo
 
+// MARK: - Video Indexing Error
+
+enum VideoIndexingError: LocalizedError {
+    case videoProcessingFailed
+    case frameExtractionFailed
+    case embeddingGenerationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .videoProcessingFailed:
+            return "Не удалось обработать видео"
+        case .frameExtractionFailed:
+            return "Не удалось извлечь кадры из видео"
+        case .embeddingGenerationFailed:
+            return "Не удалось сгенерировать эмбединги для видео"
+        }
+    }
+}
+
 @Observable
 class VideoLibrary {
     var indexing: Bool = false

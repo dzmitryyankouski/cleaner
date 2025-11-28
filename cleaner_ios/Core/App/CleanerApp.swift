@@ -79,8 +79,6 @@ extension EnvironmentValues {
 
 struct AppRootView: View {
     let container: AppDependencyContainer
-    @State private var photoViewModel: PhotoViewModel?
-    @State private var videoViewModel: VideoViewModel?
     @State private var photoLibrary: PhotoLibrary?
     @State private var videoLibrary: VideoLibrary?
     @State private var settings: Settings?
@@ -89,16 +87,11 @@ struct AppRootView: View {
     var body: some View {
         Group {
             if isInitialized {
-                if let photoViewModel = photoViewModel,
-                   let videoViewModel = videoViewModel,
-                   let settings = settings {
-                    MainTabView(
-                        photoViewModel: photoViewModel,
-                        videoViewModel: videoViewModel
-                    )
-                    .environment(\.photoLibrary, photoLibrary)
-                    .environment(\.videoLibrary, videoLibrary)
-                    .environment(\.settings, settings)
+                if let settings = settings {
+                    MainTabView()
+                        .environment(\.photoLibrary, photoLibrary)
+                        .environment(\.videoLibrary, videoLibrary)
+                        .environment(\.settings, settings)
                 } else {
                     ErrorView(
                         message: "Не удалось инициализировать приложение. Пожалуйста, перезапустите приложение."
@@ -115,10 +108,6 @@ struct AppRootView: View {
     
     @MainActor
     private func initializeViewModels() {
-        // Создаём все ViewModels независимо
-        photoViewModel = container.makePhotoViewModel()
-        videoViewModel = container.makeVideoViewModel()
-
         photoLibrary = container.makePhotoLibrary()
         videoLibrary = container.makeVideoLibrary()
         
