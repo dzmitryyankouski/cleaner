@@ -4,8 +4,6 @@ import AppCenter
 import AppCenterAnalytics
 import AppCenterCrashes
 
-// MARK: - Cleaner App
-
 @main
 struct CleanerApp: App {
     private let appContainer = AppDependencyContainer.shared
@@ -13,18 +11,14 @@ struct CleanerApp: App {
     init() {
         setupAppCenter()
     }
-    
-    // MARK: - Body
-    
+        
     var body: some Scene {
         WindowGroup {
             AppRootView(container: appContainer)
         }
         .modelContainer(appContainer.getModelContainer())
     }
-    
-    // MARK: - Private Methods
-    
+        
     private func setupAppCenter() {
         AppCenter.start(
             withAppSecret: "6acbaba5-f2ac-484e-87fd-5fc59675eeda",
@@ -33,21 +27,13 @@ struct CleanerApp: App {
     }
 }
 
-// MARK: - Environment Key для PhotoLibrary
-
-/// Environment key для хранения PhotoLibrary
 struct PhotoLibraryKey: EnvironmentKey {
     static let defaultValue: PhotoLibrary? = nil
 }
 
-// MARK: - Environment Key для VideoLibrary
-
-/// Environment key для хранения VideoLibrary
 struct VideoLibraryKey: EnvironmentKey {
     static let defaultValue: VideoLibrary? = nil
 }
-
-// MARK: - Environment Key для Settings
 
 struct SettingsKey: EnvironmentKey {
     static let defaultValue: Settings? = nil
@@ -70,8 +56,6 @@ extension EnvironmentValues {
     }
 }
 
-// MARK: - App Root View
-
 struct AppRootView: View {
     let container: AppDependencyContainer
     @State private var photoLibrary: PhotoLibrary?
@@ -93,7 +77,7 @@ struct AppRootView: View {
                     )
                 }
             } else {
-                ProgressView("Инициализация...")
+                InitialView()
             }
         }
         .task {
@@ -111,29 +95,3 @@ struct AppRootView: View {
         isInitialized = true
     }
 }
-
-// MARK: - Error View
-
-struct ErrorView: View {
-    let message: String
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 60))
-                .foregroundColor(.red)
-            
-            Text("Ошибка")
-                .font(.title)
-                .fontWeight(.bold)
-            
-            Text(message)
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .padding()
-    }
-}
-
