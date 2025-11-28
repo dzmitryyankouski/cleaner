@@ -2,16 +2,9 @@ import Foundation
 import Photos
 import AVFoundation
 
-// MARK: - Video Asset Repository
-
-/// Репозиторий для работы с видео ассетами из библиотеки
 final class VideoAssetRepository: AssetRepositoryProtocol {
     
-    // MARK: - Public Methods
-    
-    /// Загружает все видео из библиотеки
     func fetchAssets() async -> Result<[PHAsset], AssetError> {
-        // Проверяем права доступа
         let authStatus = PHPhotoLibrary.authorizationStatus()
         
         if authStatus == .denied || authStatus == .restricted {
@@ -25,7 +18,6 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
             }
         }
         
-        // Загружаем видео
         let fetchOptions = PHFetchOptions()
         fetchOptions.sortDescriptors = [NSSortDescriptor(key: "creationDate", ascending: false)]
         let videos = PHAsset.fetchAssets(with: .video, options: fetchOptions)
@@ -38,7 +30,6 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
         return .success(assets)
     }
     
-    /// Получает размер файла для видео
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
         return await withCheckedContinuation { continuation in
             let options = PHVideoRequestOptions()
@@ -60,7 +51,6 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
         }
     }
     
-    /// Получает AVAsset из PHAsset
     func getAVAsset(for asset: PHAsset) async -> AVAsset? {
         return await withCheckedContinuation { continuation in
             let options = PHVideoRequestOptions()
@@ -72,4 +62,3 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
         }
     }
 }
-

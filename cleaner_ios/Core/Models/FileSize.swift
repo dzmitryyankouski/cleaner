@@ -1,5 +1,4 @@
 import Foundation
-import Photos
 
 struct FileSize {
     let bytes: Int64

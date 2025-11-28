@@ -2,49 +2,36 @@ import Foundation
 import CoreML
 import CoreVideo
 
-// MARK: - Embedding Generator
-
-/// Генератор эмбедингов для изображений и текста
 final class EmbeddingGenerator {
-    
-    // MARK: - Properties
-    
-    private let imageModel: Any
-    private let textModel: Any
+    private let imageModel: mobileclip_s2_image
+    private let textModel: mobileclip_s2_text
     private let tokenizer: CLIPTokenizer
     
-    // MARK: - Initialization
-    
-    init(imageModel: Any, textModel: Any, tokenizer: CLIPTokenizer) {
-        self.imageModel = imageModel
-        self.textModel = textModel
+    init(tokenizer: CLIPTokenizer) throws {
         self.tokenizer = tokenizer
+        
+        do {
+            self.imageModel = try mobileclip_s2_image()
+        } catch {
+            throw EmbeddingError.modelNotLoaded("image model: \(error.localizedDescription)")
+        }
+        
+        do {
+            self.textModel = try mobileclip_s2_text()
+        } catch {
+            throw EmbeddingError.modelNotLoaded("text model: \(error.localizedDescription)")
+        }
     }
     
-    // MARK: - Public Methods
-    
-    /// Генерирует эмбединг из изображения
     func generateImageEmbedding(from pixelBuffer: CVPixelBuffer) async -> Result<[Float], EmbeddingError> {
         do {
-            // Проверяем тип модели и вызываем соответствующий метод
-            if let s0Model = imageModel as? mobileclip_s0_image {
-                let output = try await s0Model.prediction(image: pixelBuffer)
-                return .success(convertMultiArrayToFloatArray(output.final_emb_1))
-            } else if let s1Model = imageModel as? mobileclip_s1_image {
-                let output = try await s1Model.prediction(image: pixelBuffer)
-                return .success(convertMultiArrayToFloatArray(output.final_emb_1))
-            } else if let s2Model = imageModel as? mobileclip_s2_image {
-                let output = try await s2Model.prediction(image: pixelBuffer)
-                return .success(convertMultiArrayToFloatArray(output.final_emb_1))
-            } else {
-                return .failure(.modelNotLoaded("unknown image model type"))
-            }
+            let output = try await imageModel.prediction(image: pixelBuffer)
+            return .success(convertMultiArrayToFloatArray(output.final_emb_1))
         } catch {
             return .failure(.predictionFailed(error))
         }
     }
     
-    /// Генерирует эмбединг из текста
     func generateTextEmbedding(from text: String) async -> Result<[Float], EmbeddingError> {
         do {
             let inputIds = tokenizer.encode_full(text: text)
@@ -54,25 +41,12 @@ final class EmbeddingGenerator {
                 inputArray[index] = NSNumber(value: element)
             }
             
-            // Проверяем тип модели и вызываем соответствующий метод
-            if let s0Model = textModel as? mobileclip_s0_text {
-                let output = try s0Model.prediction(text: inputArray)
-                return .success(convertMultiArrayToFloatArray(output.final_emb_1))
-            } else if let s1Model = textModel as? mobileclip_s1_text {
-                let output = try s1Model.prediction(text: inputArray)
-                return .success(convertMultiArrayToFloatArray(output.final_emb_1))
-            } else if let s2Model = textModel as? mobileclip_s2_text {
-                let output = try s2Model.prediction(text: inputArray)
-                return .success(convertMultiArrayToFloatArray(output.final_emb_1))
-            } else {
-                return .failure(.modelNotLoaded("unknown text model type"))
-            }
+            let output = try textModel.prediction(text: inputArray)
+            return .success(convertMultiArrayToFloatArray(output.final_emb_1))
         } catch {
             return .failure(.predictionFailed(error))
         }
     }
-    
-    // MARK: - Private Methods
     
     private func convertMultiArrayToFloatArray(_ multiArray: MLMultiArray) -> [Float] {
         let count = multiArray.count
@@ -85,4 +59,3 @@ final class EmbeddingGenerator {
         return result
     }
 }
-

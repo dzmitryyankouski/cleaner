@@ -1,21 +1,11 @@
 import Foundation
 import SwiftData
 
-// MARK: - Service Factory
-
-/// Фабрика для создания сервисов с правильными зависимостями
 final class ServiceFactory {
-    
-    // MARK: - Singleton
-    
     static let shared = ServiceFactory()
     
     private init() {}
-    
-    // MARK: - Lazy Properties
-    
-    private lazy var modelLoader = MLModelLoader()
-    
+        
     private lazy var tokenizer: CLIPTokenizer? = {
         try? CLIPTokenizer()
     }()
@@ -23,24 +13,14 @@ final class ServiceFactory {
     private lazy var embeddingGenerator: EmbeddingGenerator? = {
         guard let tokenizer = tokenizer else { return nil }
         
-        let imageModelResult = modelLoader.loadImageModel()
-        let textModelResult = modelLoader.loadTextModel()
-        
-        guard case .success(let imageModel) = imageModelResult,
-              case .success(let textModel) = textModelResult else {
+        do {
+            return try EmbeddingGenerator(tokenizer: tokenizer)
+        } catch {
+            print("❌ Не удалось загрузить модели: \(error)")
             return nil
         }
-        
-        return EmbeddingGenerator(
-            imageModel: imageModel,
-            textModel: textModel,
-            tokenizer: tokenizer
-        )
     }()
     
-    // MARK: - Public Methods
-    
-    /// Создает сервис для работы с эмбедингами
     func makeEmbeddingService() -> EmbeddingServiceProtocol? {
         guard let generator = embeddingGenerator else {
             print("❌ Не удалось создать embedding generator")
@@ -54,22 +34,18 @@ final class ServiceFactory {
         )
     }
     
-    /// Создает репозиторий для работы с фото
     func makePhotoAssetRepository() -> AssetRepositoryProtocol {
         PhotoAssetRepository()
     }
     
-    /// Создает репозиторий для работы с видео
     func makeVideoAssetRepository() -> VideoAssetRepository {
         VideoAssetRepository()
     }
     
-    /// Создает сервис кластеризации
     func makeClusteringService() -> ClusteringServiceProtocol {
         LSHClusteringService()
     }
     
-    /// Создает сервис перевода
     func makeTranslationService() -> TranslationServiceProtocol? {
         guard let apiKey = ConfigService.shared.getValue(for: "GOOGLE_TRANSLATE_API_KEY"),
               !apiKey.isEmpty else {
@@ -80,7 +56,6 @@ final class ServiceFactory {
         return GoogleTranslationService(apiKey: apiKey)
     }
     
-    /// Создает сервис обработки изображений
     func makeImageProcessingService() -> ImageProcessingProtocol {
         ImageProcessingService()
     }

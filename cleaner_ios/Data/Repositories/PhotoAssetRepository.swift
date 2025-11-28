@@ -1,16 +1,9 @@
 import Foundation
 import Photos
 
-// MARK: - Photo Asset Repository
-
-/// Репозиторий для работы с фото ассетами из библиотеки
 final class PhotoAssetRepository: AssetRepositoryProtocol {
     
-    // MARK: - Public Methods
-    
-    /// Загружает все фото из библиотеки
     func fetchAssets() async -> Result<[PHAsset], AssetError> {
-        // Проверяем права доступа
         let authStatus = PHPhotoLibrary.authorizationStatus()
         
         if authStatus == .denied || authStatus == .restricted {
@@ -24,7 +17,6 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
             }
         }
         
-        // Загружаем фото
         let fetchOptions = PHFetchOptions()
         let photos = PHAsset.fetchAssets(with: .image, options: fetchOptions)
         
@@ -36,7 +28,6 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
         return .success(assets)
     }
 
-    /// Получает размер файла для фото
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
         return await withCheckedContinuation { continuation in
             let start = Date()
@@ -50,7 +41,6 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
 
             let dispatch = DispatchGroup()
 
-            // Если нет ресурсов, возвращаем 0
             if resources.isEmpty {
                 continuation.resume(returning: .success(0))
                 return
@@ -82,4 +72,3 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
         }
     }
 }
-

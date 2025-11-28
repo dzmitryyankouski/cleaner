@@ -1,24 +1,12 @@
 import Foundation
 
-// MARK: - Google Translation Service
-
-/// Сервис перевода текста через Google Translate API
 final class GoogleTranslationService: TranslationServiceProtocol {
-    
-    // MARK: - Properties
-    
     private let apiKey: String
-    private let session: URLSession
     private let baseURL = "https://translation.googleapis.com/language/translate/v2"
     
-    // MARK: - Initialization
-    
-    init(apiKey: String, session: URLSession = .shared) {
+    init(apiKey: String) {
         self.apiKey = apiKey
-        self.session = session
     }
-    
-    // MARK: - Public Methods
     
     func translate(_ text: String, to language: String) async -> Result<String, TranslationError> {
         guard !apiKey.isEmpty else {
@@ -44,7 +32,7 @@ final class GoogleTranslationService: TranslationServiceProtocol {
         request.httpBody = httpBody
         
         do {
-            let (data, response) = try await session.data(for: request)
+            let (data, response) = try await URLSession.shared.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse,
                   httpResponse.statusCode == 200 else {
@@ -60,8 +48,6 @@ final class GoogleTranslationService: TranslationServiceProtocol {
         }
     }
     
-    // MARK: - Private Methods
-    
     private func parseTranslationResponse(_ data: Data) throws -> String {
         guard let json = try? JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
               let dataDict = json["data"] as? [String: Any],
@@ -73,4 +59,3 @@ final class GoogleTranslationService: TranslationServiceProtocol {
         return translatedText
     }
 }
-

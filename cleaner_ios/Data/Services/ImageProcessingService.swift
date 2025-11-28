@@ -4,20 +4,12 @@ import CoreVideo
 import Photos
 import UIKit
 
-// MARK: - Image Processing Service
-
-/// Сервис для обработки изображений
 final class ImageProcessingService: ImageProcessingProtocol {
-    
-    // MARK: - Constants
-    
     private enum Constants {
         static let defaultTargetSize = CGSize(width: 256, height: 256)
         static let pixelFormatType = kCVPixelFormatType_32ARGB
         static let bitsPerComponent = 8
     }
-    
-    // MARK: - Public Methods
     
     func convertAssetToPixelBuffer(_ asset: PHAsset, targetSize: CGSize) async -> Result<CVPixelBuffer, ImageProcessingError> {
         return await withCheckedContinuation { continuation in

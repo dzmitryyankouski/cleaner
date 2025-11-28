@@ -2,18 +2,10 @@ import Foundation
 import CoreVideo
 import Photos
 
-// MARK: - MobileCLIP Embedding Service
-
-/// Сервис для генерации эмбедингов с использованием MobileCLIP
 final class MobileCLIPEmbeddingService: EmbeddingServiceProtocol {
-    
-    // MARK: - Properties
-    
     private let embeddingGenerator: EmbeddingGenerator
     private let similarityCalculator: SimilarityCalculator
     private let imageProcessor: ImageProcessingProtocol
-    
-    // MARK: - Initialization
     
     init(
         embeddingGenerator: EmbeddingGenerator,
@@ -24,8 +16,6 @@ final class MobileCLIPEmbeddingService: EmbeddingServiceProtocol {
         self.similarityCalculator = similarityCalculator
         self.imageProcessor = imageProcessor
     }
-    
-    // MARK: - Public Methods
     
     func generateImageEmbedding(from pixelBuffer: CVPixelBuffer) async -> Result<[Float], EmbeddingError> {
         await embeddingGenerator.generateImageEmbedding(from: pixelBuffer)
@@ -39,7 +29,6 @@ final class MobileCLIPEmbeddingService: EmbeddingServiceProtocol {
         similarityCalculator.cosineSimilarity(embedding1, embedding2)
     }
     
-    /// Генерирует эмбединг из PHAsset
     func generateEmbeddingFromAsset(_ asset: PHAsset) async -> Result<[Float], EmbeddingError> {
         let pixelBufferResult = await imageProcessor.convertAssetToPixelBuffer(
             asset,
@@ -54,4 +43,3 @@ final class MobileCLIPEmbeddingService: EmbeddingServiceProtocol {
         }
     }
 }
-

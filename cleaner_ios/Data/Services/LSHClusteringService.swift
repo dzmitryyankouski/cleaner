@@ -1,13 +1,7 @@
 import Foundation
 import Accelerate
 
-// MARK: - LSH Clustering Service
-
-/// Сервис кластеризации на основе LSH (Locality-Sensitive Hashing)
 final class LSHClusteringService: ClusteringServiceProtocol {
-    
-    // MARK: - Configuration
-    
     struct Configuration {
         let numTables: Int
         let planesPerTable: Int
@@ -20,17 +14,11 @@ final class LSHClusteringService: ClusteringServiceProtocol {
         )
     }
     
-    // MARK: - Properties
-    
     private let configuration: Configuration
-    
-    // MARK: - Initialization
     
     init(configuration: Configuration = .default) {
         self.configuration = configuration
     }
-    
-    // MARK: - Public Methods
     
     func groupEmbeddings(_ embeddings: [[Float]], threshold: Float) async -> [[Int]] {
         guard !embeddings.isEmpty else { return [] }
@@ -40,17 +28,15 @@ final class LSHClusteringService: ClusteringServiceProtocol {
         
         let dim = embeddings[0].count
         guard embeddings.allSatisfy({ $0.count == dim }) else {
-            print("⚠️ Размерности векторов отличаются")
+            print("⚠️ Embeddings dimensions mismatch")
             return []
         }
         
-        // 1) Нормализация
         var normalizedEmbeddings = embeddings
         for i in 0..<n {
             l2Normalize(&normalizedEmbeddings[i])
         }
         
-        // 2) LSH
         let lsh = LSH(
             numTables: configuration.numTables,
             planesPerTable: configuration.planesPerTable,
@@ -59,7 +45,6 @@ final class LSHClusteringService: ClusteringServiceProtocol {
         )
         let hashesPerVector = lsh.hashAll(normalizedEmbeddings)
         
-        // 3) Создание бакетов
         var bucketsByTable: [Int: [UInt64: [Int]]] = [:]
         for t in 0..<configuration.numTables {
             var buckets: [UInt64: [Int]] = [:]
@@ -70,7 +55,6 @@ final class LSHClusteringService: ClusteringServiceProtocol {
             bucketsByTable[t] = buckets
         }
         
-        // 4) DSU для объединения похожих
         let dsu = UnionFind(n)
         var seenPairs = Set<UInt64>()
         seenPairs.reserveCapacity(n * 4)
@@ -112,8 +96,6 @@ final class LSHClusteringService: ClusteringServiceProtocol {
         return dsu.groups()
     }
     
-    // MARK: - Private Methods
-    
     @inline(__always)
     private func l2Normalize(_ x: inout [Float]) {
         #if canImport(Accelerate)
@@ -142,9 +124,6 @@ final class LSHClusteringService: ClusteringServiceProtocol {
     }
 }
 
-// MARK: - LSH (Locality-Sensitive Hashing)
-
-/// Реализация LSH для быстрого поиска похожих векторов
 private final class LSH {
     let numTables: Int
     let planesPerTable: Int
@@ -211,9 +190,6 @@ private final class LSH {
     }
 }
 
-// MARK: - Union Find (Disjoint Set Union)
-
-/// Структура данных для объединения множеств
 private final class UnionFind {
     var parent: [Int]
     var rank: [Int]
@@ -255,9 +231,6 @@ private final class UnionFind {
     }
 }
 
-// MARK: - Random Number Generator
-
-/// Генератор случайных чисел Xoshiro256**
 private struct Xoshiro256StarStar {
     private var state: (UInt64, UInt64, UInt64, UInt64)
     
@@ -288,4 +261,3 @@ private struct Xoshiro256StarStar {
         return (x << k) | (x >> (64 - k))
     }
 }
-

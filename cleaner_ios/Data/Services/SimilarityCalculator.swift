@@ -1,15 +1,7 @@
 import Foundation
 import Accelerate
 
-// MARK: - Similarity Calculator
-
-/// Калькулятор схожести между эмбедингами
 final class SimilarityCalculator {
-    
-    // MARK: - Public Methods
-    
-    /// Вычисляет косинусное сходство между двумя эмбедингами
-    /// - Returns: Значение от -1 до 1, где 1 означает полное сходство
     func cosineSimilarity(_ embedding1: [Float], _ embedding2: [Float]) -> Float {
         guard embedding1.count == embedding2.count else {
             return 0.0
@@ -21,9 +13,7 @@ final class SimilarityCalculator {
         return cosineSimilarityManual(embedding1, embedding2)
         #endif
     }
-    
-    // MARK: - Private Methods
-    
+
     #if canImport(Accelerate)
     private func cosineSimilarityAccelerate(_ a: [Float], _ b: [Float]) -> Float {
         var dotProduct: Float = 0
@@ -59,4 +49,3 @@ final class SimilarityCalculator {
         return dotProduct / magnitude
     }
 }
-

@@ -5,25 +5,6 @@ import Photos
 import AVFoundation
 import CoreVideo
 
-// MARK: - Video Indexing Error
-
-enum VideoIndexingError: LocalizedError {
-    case videoProcessingFailed
-    case frameExtractionFailed
-    case embeddingGenerationFailed
-    
-    var errorDescription: String? {
-        switch self {
-        case .videoProcessingFailed:
-            return "Не удалось обработать видео"
-        case .frameExtractionFailed:
-            return "Не удалось извлечь кадры из видео"
-        case .embeddingGenerationFailed:
-            return "Не удалось сгенерировать эмбединги для видео"
-        }
-    }
-}
-
 @Observable
 class VideoLibrary {
     var indexing: Bool = false
@@ -66,15 +47,12 @@ class VideoLibrary {
     }
 
     func loadVideos() async {
-        print("🔍 Загрузка видео")
         indexing = true
 
         videos = await getAllVideos()
         total = videos.count
         
         await indexVideos()
-
-        print("🔍 Группировка видео")
         
         await groupSimilar(threshold: 0.93)
 
@@ -171,10 +149,6 @@ class VideoLibrary {
         }
     }
 
-    func getAllVideos() -> [VideoModel] {
-        return (try? context.fetch(FetchDescriptor<VideoModel>())) ?? []
-    }
-
     func getSimilarGroups() -> [VideoGroupModel] {
         return (try? context.fetch(VideoGroupModel.similar)) ?? []
     }
@@ -221,7 +195,6 @@ class VideoLibrary {
             let groupId = UUID().uuidString
             let group = VideoGroupModel(id: groupId, type: type)
             
-            // Устанавливаем связь многие-ко-многим с обеих сторон
             group.videos = groupVideos
 
             for video in groupVideos {
@@ -242,19 +215,16 @@ class VideoLibrary {
     }
 
     private func generateVideoEmbedding(for asset: PHAsset) async -> Result<[Float], VideoIndexingError> {
-        // Получаем AVAsset
         guard let avAsset = await videoAssetRepository.getAVAsset(for: asset) else {
             return .failure(.videoProcessingFailed)
         }
         
-        // Извлекаем кадры
         let framesResult = await extractFrames(from: avAsset, duration: asset.duration)
         
         guard case .success(let frames) = framesResult, !frames.isEmpty else {
             return .failure(.frameExtractionFailed)
         }
         
-        // Генерируем эмбединги для каждого кадра
         var embeddings: [[Float]] = []
         
         for frame in frames {
@@ -268,7 +238,6 @@ class VideoLibrary {
             return .failure(.embeddingGenerationFailed)
         }
         
-        // Вычисляем средний эмбединг
         let averageEmbedding = calculateAverageEmbedding(embeddings)
          
         return .success(averageEmbedding)
@@ -280,7 +249,6 @@ class VideoLibrary {
         generator.requestedTimeToleranceAfter = .zero
         generator.requestedTimeToleranceBefore = .zero
         
-        // Извлекаем кадры каждые 4 секунды
         var times: [CMTime] = []
         let numberOfSeconds = Int(duration)
         
@@ -289,13 +257,11 @@ class VideoLibrary {
             times.append(time)
         }
         
-        // Если видео короткое, берем кадр из середины
         if times.isEmpty {
             let time = CMTime(seconds: duration / 2.0, preferredTimescale: 600)
             times.append(time)
         }
         
-        // Параллельное извлечение кадров
         var frames: [CVPixelBuffer] = []
         
         await withTaskGroup(of: CVPixelBuffer?.self) { group in
@@ -343,14 +309,12 @@ class VideoLibrary {
         let embeddingSize = embeddings[0].count
         var averageEmbedding = [Float](repeating: 0, count: embeddingSize)
         
-        // Суммируем все эмбединги
         for embedding in embeddings {
             for i in 0..<embeddingSize {
                 averageEmbedding[i] += embedding[i]
             }
         }
         
-        // Делим на количество эмбедингов
         let count = Float(embeddings.count)
         for i in 0..<embeddingSize {
             averageEmbedding[i] /= count
@@ -400,22 +364,36 @@ class VideoLibrary {
 
     func reset() {
         do {
-            // Удаляем все группы
             let groups = try context.fetch(FetchDescriptor<VideoGroupModel>())
             for group in groups {
                 context.delete(group)
             }
             
-            // Удаляем все видео
             let videos = try context.fetch(FetchDescriptor<VideoModel>())
             for video in videos {
                 context.delete(video)
             }
             
-            // Сохраняем изменения
             try context.save()
         } catch {
             print("❌ Ошибка при сбросе контекста: \(error)")
+        }
+    }
+}
+
+enum VideoIndexingError: LocalizedError {
+    case videoProcessingFailed
+    case frameExtractionFailed
+    case embeddingGenerationFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .videoProcessingFailed:
+            return "Не удалось обработать видео"
+        case .frameExtractionFailed:
+            return "Не удалось извлечь кадры из видео"
+        case .embeddingGenerationFailed:
+            return "Не удалось сгенерировать эмбединги для видео"
         }
     }
 }
