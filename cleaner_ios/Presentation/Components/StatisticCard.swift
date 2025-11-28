@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Statistic Card View
 
 /// Компонент для отображения статистики
-struct StatisticCardView: View {
+struct StatisticCard: View {
     let statistics: [Statistic]
     
     struct Statistic {
@@ -40,18 +40,3 @@ struct StatisticCardView: View {
         .cornerRadius(12)
     }
 }
-
-// MARK: - Preview
-
-#if DEBUG
-struct StatisticCardView_Previews: PreviewProvider {
-    static var previews: some View {
-        StatisticCardView(statistics: [
-            .init(label: "Всего фото", value: "1,234", alignment: .leading),
-            .init(label: "Размер", value: "2.5 GB", alignment: .trailing)
-        ])
-        .padding()
-    }
-}
-#endif
-
