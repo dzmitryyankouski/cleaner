@@ -1,14 +1,8 @@
 import Foundation
 
-// MARK: - Translation Service Protocol
-
-/// Протокол для перевода текста
 protocol TranslationServiceProtocol {
-    /// Переводит текст на указанный язык
     func translate(_ text: String, to language: String) async -> Result<String, TranslationError>
 }
-
-// MARK: - Translation Error
 
 enum TranslationError: LocalizedError {
     case apiKeyMissing
@@ -29,4 +23,3 @@ enum TranslationError: LocalizedError {
         }
     }
 }
-

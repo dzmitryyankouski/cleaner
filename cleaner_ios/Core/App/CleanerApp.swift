@@ -66,16 +66,10 @@ struct AppRootView: View {
     var body: some View {
         Group {
             if isInitialized {
-                if let settings = settings {
-                    MainView()
-                        .environment(\.photoLibrary, photoLibrary)
-                        .environment(\.videoLibrary, videoLibrary)
-                        .environment(\.settings, settings)
-                } else {
-                    ErrorView(
-                        message: "Не удалось инициализировать приложение. Пожалуйста, перезапустите приложение."
-                    )
-                }
+                MainView()
+                    .environment(\.photoLibrary, photoLibrary)
+                    .environment(\.videoLibrary, videoLibrary)
+                    .environment(\.settings, settings)
             } else {
                 InitialView()
             }

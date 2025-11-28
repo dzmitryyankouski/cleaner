@@ -2,24 +2,12 @@ import Foundation
 import CoreVideo
 import Photos
 
-// MARK: - Embedding Service Protocol
-
-/// Протокол для работы с генерацией эмбедингов изображений и текста
 protocol EmbeddingServiceProtocol {
-    /// Генерирует эмбединг из изображения
     func generateImageEmbedding(from pixelBuffer: CVPixelBuffer) async -> Result<[Float], EmbeddingError>
-    
-    /// Генерирует эмбединг из текста
     func generateTextEmbedding(from text: String) async -> Result<[Float], EmbeddingError>
-    
-    /// Генерирует эмбединг из PHAsset
     func generateEmbeddingFromAsset(_ asset: PHAsset) async -> Result<[Float], EmbeddingError>
-    
-    /// Вычисляет косинусное сходство между двумя эмбедингами
     func calculateSimilarity(_ embedding1: [Float], _ embedding2: [Float]) -> Float
 }
-
-// MARK: - Embedding Error
 
 enum EmbeddingError: LocalizedError {
     case modelNotLoaded(String)

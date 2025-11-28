@@ -3,18 +3,10 @@ import CoreGraphics
 import CoreVideo
 import Photos
 
-// MARK: - Image Processing Protocol
-
-/// Протокол для обработки изображений
 protocol ImageProcessingProtocol {
-    /// Конвертирует PHAsset в CVPixelBuffer
     func convertAssetToPixelBuffer(_ asset: PHAsset, targetSize: CGSize) async -> Result<CVPixelBuffer, ImageProcessingError>
-    
-    /// Конвертирует CGImage в CVPixelBuffer
     func convertCGImageToPixelBuffer(_ cgImage: CGImage, targetSize: CGSize) -> Result<CVPixelBuffer, ImageProcessingError>
 }
-
-// MARK: - Image Processing Error
 
 enum ImageProcessingError: LocalizedError {
     case conversionFailed
@@ -38,4 +30,3 @@ enum ImageProcessingError: LocalizedError {
         }
     }
 }
-

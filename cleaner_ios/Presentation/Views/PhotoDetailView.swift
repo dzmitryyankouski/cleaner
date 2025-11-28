@@ -5,6 +5,7 @@ struct PhotoDetailView: View {
     let photos: [PhotoModel]
     let currentPhotoId: String
     var namespace: Namespace.ID
+    
     @State private var selectedPhotoId: String? = nil
     @State private var assets: [String: PHAsset] = [:]
 

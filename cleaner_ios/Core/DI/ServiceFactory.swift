@@ -84,14 +84,4 @@ final class ServiceFactory {
     func makeImageProcessingService() -> ImageProcessingProtocol {
         ImageProcessingService()
     }
-    
-    /// Создает хранилище настроек
-    func makeSettingsStorage() -> SettingsStorageProtocol {
-        return UserDefaultsSettingsStorage()
-    }
-    
-    /// Создает провайдер настроек
-    func makeSettingsProvider() -> SettingsProviderProtocol {
-        return UserDefaultsSettingsStorage()
-    }
 }
