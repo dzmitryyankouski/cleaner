@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct PhotoGridView: View {
+struct PhotoGrid: View {
     let photos: [PhotoModel]
 
     @Environment(\.photoLibrary) var photoLibrary

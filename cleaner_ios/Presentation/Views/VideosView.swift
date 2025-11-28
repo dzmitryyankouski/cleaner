@@ -93,13 +93,13 @@ struct AllVideosView: View {
             )
         } else {
             VStack(spacing: 12) {
-                StatisticCardView(statistics: [
+                StatisticCard(statistics: [
                     .init(label: "Всего видео", value: "\(videoLibrary?.videos.count ?? 0)", alignment: .leading),
                     .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.videosFileSize ?? 0).formatted, alignment: .trailing),
                 ])
                 .padding(.horizontal)
 
-                VideoGridView(videos: videoLibrary?.videos ?? [], navigationPath: $navigationPath, namespace: namespace)
+                VideoGrid(videos: videoLibrary?.videos ?? [], navigationPath: $navigationPath, namespace: namespace)
             }
         }
     }
@@ -126,7 +126,7 @@ struct SimilarVideosView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCardView(statistics: [
+                StatisticCard(statistics: [
                     .init(label: "Найдено групп", value: "\(videoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
                     .init(label: "Видео в группах", value: "\(videoLibrary?.similarVideos.count ?? 0)", alignment: .center),
                     .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.similarVideosFileSize ?? 0).formatted, alignment: .trailing),
@@ -158,7 +158,7 @@ struct VideoGroupRowView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 1) {
                     ForEach(group.videos, id: \.id) { video in
-                        VideoThumbnailView(video: video)
+                        VideoThumbnail(video: video)
                             .id(video.id)
                             .frame(width: 150, height: 200)
                             .clipped()

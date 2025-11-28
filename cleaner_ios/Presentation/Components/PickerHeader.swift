@@ -17,6 +17,6 @@ struct PickerHeader: View {
             .frame(maxWidth: 300)
             .glassEffect()
         }
-        .id(selectedTab) // Оптимизация: SwiftUI не будет пересоздавать view при изменении binding
+        .id(selectedTab)
     }
 }

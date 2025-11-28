@@ -23,7 +23,7 @@ struct SearchView: View {
                 case 0:
                     if !searchResultsPhotos.isEmpty {
                         ScrollView {
-                            PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            PhotoGrid(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                         }
                     } else {
                         EmptyState(
@@ -35,7 +35,7 @@ struct SearchView: View {
                 case 1:
                     if !searchResultsVideos.isEmpty {
                         ScrollView {
-                            VideoGridView(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            VideoGrid(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                         }
                     } else {
                         EmptyState(

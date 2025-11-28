@@ -97,7 +97,7 @@ struct SimilarPhotosView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCardView(statistics: [
+                StatisticCard(statistics: [
                     .init(label: "Найдено групп", value: "\(photoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
                     .init(label: "Фото в группах", value: "\(photoLibrary?.similarPhotos.count ?? 0)", alignment: .center),
                     .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.similarPhotosFileSize ?? 0).formatted, alignment: .trailing),
@@ -136,7 +136,7 @@ struct DuplicatesView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCardView(statistics: [
+                StatisticCard(statistics: [
                     .init(label: "Найдено групп", value: "\(photoLibrary?.duplicatesGroups.count ?? 0)", alignment: .leading),
                     .init(label: "Фото в группах", value: "\(photoLibrary?.duplicatesPhotos.count ?? 0)", alignment: .center),
                     .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.duplicatesPhotosFileSize ?? 0).formatted, alignment: .trailing),
@@ -176,14 +176,14 @@ struct ScreenshotsView: View {
                     )
                     .padding(.horizontal)
                 } else {
-                    StatisticCardView(statistics: [
+                    StatisticCard(statistics: [
                         .init(label: "Всего скриншотов", value: "\(photoLibrary?.screenshots.count ?? 0)", alignment: .leading),
                         .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.screenshotsFileSize ?? 0).formatted, alignment: .trailing),
                     ])
                     .padding(.horizontal)
                 }
 
-                PhotoGridView(photos: photoLibrary?.screenshots ?? [], navigationPath: $navigationPath, namespace: namespace)
+                PhotoGrid(photos: photoLibrary?.screenshots ?? [], navigationPath: $navigationPath, namespace: namespace)
             }
         }
     }
@@ -211,14 +211,14 @@ struct AllPhotosView: View {
                     )
                     .padding(.horizontal)
                 } else {
-                    StatisticCardView(statistics: [
+                    StatisticCard(statistics: [
                         .init(label: "Всего фотографий", value: "\(photoLibrary?.photos.count ?? 0)", alignment: .leading),
                         .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.photosFileSize ?? 0).formatted, alignment: .trailing),
                     ])
                     .padding(.horizontal)
                 }
 
-                PhotoGridView(photos: photoLibrary?.photos ?? [], navigationPath: $navigationPath, namespace: namespace)
+                PhotoGrid(photos: photoLibrary?.photos ?? [], navigationPath: $navigationPath, namespace: namespace)
             }
         }
     }
