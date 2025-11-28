@@ -3,7 +3,7 @@ import AVKit
 import AVFoundation
 import Photos
 
-struct VideoPlayerView: View {
+struct VideoPlayerCard: View {
     let video: VideoModel
     let isSelected: Bool
     
