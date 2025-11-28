@@ -1,7 +1,7 @@
 import Photos
 import SwiftUI
 
-struct PhotoView: View {
+struct Photo: View {
     let photo: PhotoModel
     let quality: PhotoQuality
     let contentMode: ContentMode

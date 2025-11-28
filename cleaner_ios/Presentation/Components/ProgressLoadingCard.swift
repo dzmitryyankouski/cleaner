@@ -1,44 +1,6 @@
 import SwiftUI
 
-// MARK: - Loading View
-
-/// Компонент для отображения загрузки
-struct LoadingView: View {
-    let title: String
-    let message: String?
-    
-    init(title: String, message: String? = nil) {
-        self.title = title
-        self.message = message
-    }
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            ProgressView()
-                .scaleEffect(1.2)
-            
-            Text(title)
-                .font(.headline)
-                .foregroundColor(.primary)
-            
-            if let message = message {
-                Text(message)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-            }
-        }
-        .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
-        .padding(.horizontal)
-    }
-}
-
-// MARK: - Progress Loading View
-
-/// Компонент для отображения прогресса загрузки
-struct ProgressLoadingView: View {
+struct ProgressLoadingCard: View {
     let title: String
     let current: Int
     let total: Int
@@ -83,4 +45,3 @@ struct ProgressLoadingView: View {
         .padding(.horizontal)
     }
 }
-
