@@ -79,7 +79,7 @@ struct AllVideosView: View {
 
     var body: some View {
         if videoLibrary?.indexing ?? false {
-            ProgressLoadingView(
+            ProgressLoadingCard(
                 title: "Индексация видео",
                 current: videoLibrary?.indexed ?? 0,
                 total: videoLibrary?.total ?? 0
@@ -112,7 +112,7 @@ struct SimilarVideosView: View {
 
     var body: some View {
         if videoLibrary?.indexing ?? false {
-            ProgressLoadingView(
+            ProgressLoadingCard(
                 title: "Индексация видео",
                 current: videoLibrary?.indexed ?? 0,
                 total: videoLibrary?.total ?? 0

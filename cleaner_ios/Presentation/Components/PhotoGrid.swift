@@ -13,7 +13,7 @@ struct PhotoGridView: View {
     var body: some View {
         LazyVGrid(columns: columns, spacing: 1) {
             ForEach(photos, id: \.id) { photo in
-                PhotoView(photo: photo, quality: .medium, contentMode: .fill)
+                Photo(photo: photo, quality: .medium, contentMode: .fill)
                     .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
                     .clipped()
                     .onTapGesture {

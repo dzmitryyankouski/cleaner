@@ -5,7 +5,7 @@ struct PhotoDetailView: View {
     let photos: [PhotoModel]
     let currentPhotoId: String
     var namespace: Namespace.ID
-    
+
     @State private var selectedPhotoId: String? = nil
     @State private var assets: [String: PHAsset] = [:]
 
@@ -14,7 +14,7 @@ struct PhotoDetailView: View {
             TabView(selection: $selectedPhotoId) {
                 ForEach(photos, id: \.id) { photo in
                     GeometryReader { geometry in
-                        PhotoView(photo: photo, quality: .high, contentMode: .fit)
+                        Photo(photo: photo, quality: .high, contentMode: .fit)
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .clipped()
                     }

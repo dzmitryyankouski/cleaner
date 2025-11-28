@@ -83,7 +83,7 @@ struct SimilarPhotosView: View {
 
     var body: some View {
         if photoLibrary?.indexing ?? false {
-            ProgressLoadingView(
+            ProgressLoadingCard(
                 title: "Индексация фотографий",
                 current: photoLibrary?.indexed ?? 0,
                 total: photoLibrary?.total ?? 0
@@ -122,7 +122,7 @@ struct DuplicatesView: View {
 
     var body: some View {
         if photoLibrary?.indexing ?? false {
-            ProgressLoadingView(
+            ProgressLoadingCard(
                 title: "Индексация фотографий",
                 current: photoLibrary?.indexed ?? 0,
                 total: photoLibrary?.total ?? 0
@@ -169,7 +169,7 @@ struct ScreenshotsView: View {
         } else {
             VStack(spacing: 12) {
                 if photoLibrary?.indexing ?? false {
-                    ProgressLoadingView(
+                    ProgressLoadingCard(
                         title: "Индексация фотографий",
                         current: photoLibrary?.indexed ?? 0,
                         total: photoLibrary?.total ?? 0
@@ -204,7 +204,7 @@ struct AllPhotosView: View {
         } else {
             VStack(spacing: 12) {
                 if photoLibrary?.indexing ?? false {
-                    ProgressLoadingView(
+                    ProgressLoadingCard(
                         title: "Индексация фотографий",
                         current: photoLibrary?.indexed ?? 0,
                         total: photoLibrary?.total ?? 0
@@ -238,7 +238,7 @@ struct PhotoGroupRowView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: 1) {
                     ForEach(group.photos, id: \.id) { photo in
-                        PhotoView(photo: photo, quality: .medium, contentMode: .fill)
+                        Photo(photo: photo, quality: .medium, contentMode: .fill)
                             .frame(width: 150, height: 200)
                             .onTapGesture {
                                 navigationPath.append(PhotoGroupNavigationItem(photos: group.photos, currentPhotoId: photo.id))

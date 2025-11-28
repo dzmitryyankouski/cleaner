@@ -13,7 +13,7 @@ struct PhotoThumbnailIndicator: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: spacing) {
                     ForEach(photos, id: \.id) { photo in
-                        PhotoView(photo: photo, quality: .low, contentMode: .fill)
+                        Photo(photo: photo, quality: .low, contentMode: .fill)
                             .frame(width: photo.id == selectedPhotoId ? 50 : 30, height: 50)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
                             .id(photo.id)
