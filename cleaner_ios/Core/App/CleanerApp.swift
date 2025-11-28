@@ -8,13 +8,8 @@ import AppCenterCrashes
 
 @main
 struct CleanerApp: App {
-    
-    // MARK: - Properties
-    
     private let appContainer = AppDependencyContainer.shared
-    
-    // MARK: - Initialization
-    
+        
     init() {
         setupAppCenter()
     }
@@ -88,7 +83,7 @@ struct AppRootView: View {
         Group {
             if isInitialized {
                 if let settings = settings {
-                    MainTabView()
+                    MainView()
                         .environment(\.photoLibrary, photoLibrary)
                         .environment(\.videoLibrary, videoLibrary)
                         .environment(\.settings, settings)

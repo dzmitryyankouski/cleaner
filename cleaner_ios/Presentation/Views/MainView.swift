@@ -1,24 +1,24 @@
 import SwiftUI
 
 
-struct MainTabView: View {
+struct MainView: View {
     var body: some View {
         ZStack {
             TabView {
                 Tab {
-                    PhotosTabView()
+                    PhotosView()
                 } label: {
                     Label("Фотографии", systemImage: "photo.stack")
                 }
 
                 Tab {
-                    VideosTabView()
+                    VideosView()
                 } label: {
                     Label("Видео", systemImage: "video")
                 }
                 
                 Tab(role: .search) {
-                    SearchTabView()
+                    SearchView()
                 } label: {
                     Label("Поиск", systemImage: "magnifyingglass")
                 }

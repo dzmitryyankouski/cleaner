@@ -1,16 +1,8 @@
 import SwiftUI
 
-// MARK: - Settings Tab View
-
-struct SettingsTabView: View {
-    
-    // MARK: - Properties
-    
+struct SettingsView: View {  
     @Environment(\.settings) private var settings
-
     @Binding var isPresented: Bool
-    
-    // MARK: - Body
     
     var body: some View {
         NavigationStack {
@@ -38,8 +30,6 @@ struct SettingsTabView: View {
     }
 }
 
-// MARK: - Settings Content View
-
 private struct SettingsContentView: View {
     let settings: Settings
     @Bindable var values: SettingsModel
@@ -51,7 +41,6 @@ private struct SettingsContentView: View {
     
     var body: some View {
         VStack(spacing: 20) {
-            // Photo Similarity Settings
             SettingSliderCard(
                 title: "Процент похожести фотографий",
                 description: "Настройте порог схожести для группировки фотографий",
@@ -66,7 +55,6 @@ private struct SettingsContentView: View {
                 settings.save()
             }
             
-            // Search Similarity Settings
             SettingSliderCard(
                 title: "Процент похожести поиска",
                 description: "Настройте порог схожести для поиска фотографий",
@@ -81,7 +69,6 @@ private struct SettingsContentView: View {
                 settings.save()
             }
             
-            // Video Similarity Settings
             SettingSliderCard(
                 title: "Процент похожести видео",
                 description: "Настройте порог схожести для группировки видео",
@@ -96,7 +83,6 @@ private struct SettingsContentView: View {
                 settings.save()
             }
                         
-            // Reset Button
             Button(action: {
                 withAnimation {
                     settings.resetToDefaults()
@@ -119,8 +105,6 @@ private struct SettingsContentView: View {
         .padding(.top)
     }
 }
-
-// MARK: - Setting Slider Card
 
 struct SettingSliderCard: View {
     let title: String

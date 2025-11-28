@@ -18,7 +18,7 @@ struct VideoGroupNavigationItem: Hashable {
     }
 }
 
-struct VideosTabView: View {
+struct VideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
@@ -57,7 +57,7 @@ struct VideosTabView: View {
                         Image(systemName: "gearshape")
                     }
                     .popover(isPresented: $showSettings) {
-                        SettingsTabView(isPresented: $showSettings)
+                        SettingsView(isPresented: $showSettings)
                     }
                 }
             }

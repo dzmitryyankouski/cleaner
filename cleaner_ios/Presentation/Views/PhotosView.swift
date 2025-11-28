@@ -15,13 +15,13 @@ struct PhotoGroupNavigationItem: Hashable {
     }
 }
 
-struct PhotosTabView: View {
-
+struct PhotosView: View {
+    @Namespace private var navigationTransitionNamespace
     @Environment(\.photoLibrary) var photoLibrary
+
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
     @State private var navigationPath = NavigationPath()
-    @Namespace private var navigationTransitionNamespace
 
     private let tabs = ["Все", "Серии", "Копии", "Скриншоты"]
 
@@ -59,7 +59,7 @@ struct PhotosTabView: View {
                         Image(systemName: "gearshape")
                     }
                     .popover(isPresented: $showSettings) {
-                        SettingsTabView(isPresented: $showSettings)
+                        SettingsView(isPresented: $showSettings)
                     }
                 }
             }
@@ -77,6 +77,7 @@ struct PhotosTabView: View {
 
 struct SimilarPhotosView: View {
     @Environment(\.photoLibrary) var photoLibrary
+
     @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 

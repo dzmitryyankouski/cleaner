@@ -2,7 +2,7 @@ import SwiftUI
 import Photos
 
 
-struct SearchTabView: View {
+struct SearchView: View {
     @Environment(\.photoLibrary) var photoLibrary
     @Environment(\.videoLibrary) var videoLibrary
 
