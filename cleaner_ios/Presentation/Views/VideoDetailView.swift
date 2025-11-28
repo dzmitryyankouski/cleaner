@@ -16,7 +16,7 @@ struct VideoDetailView: View {
             TabView(selection: $selectedVideoId) {
                 ForEach(videos, id: \.id) { video in
                     VStack {
-                        VideoPlayerView(video: video, isSelected: selectedVideoId == video.id)
+                        VideoPlayerCard(video: video, isSelected: selectedVideoId == video.id)
                     }
                     .id(video.id)
                     .tag(video.id)
