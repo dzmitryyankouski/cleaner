@@ -2,26 +2,14 @@ import Foundation
 import SwiftUI
 import SwiftData
 
-// MARK: - App Dependency Container
-
-/// Контейнер зависимостей приложения
 final class AppDependencyContainer {
-    
-    // MARK: - Singleton
-    
     static let shared = AppDependencyContainer()
-    
-    // MARK: - Properties
     
     private let serviceFactory: ServiceFactory
     private let modelContainer: ModelContainer
     
-    // MARK: - Initialization
-    
     private init() {
         self.serviceFactory = ServiceFactory.shared
-        
-        // Создаем ModelContainer
         do {
             self.modelContainer = try ModelContainer(
                 for: PhotoModel.self,
@@ -36,9 +24,6 @@ final class AppDependencyContainer {
         }
     }
     
-    // MARK: - Model Container Access
-    
-    /// Возвращает ModelContainer для использования в SwiftUI
     func getModelContainer() -> ModelContainer {
         return modelContainer
     }
@@ -50,7 +35,6 @@ final class AppDependencyContainer {
             return nil
         }
 
-        // Создаем отдельный контекст для PhotoLibrary
         let photoContext = ModelContext(modelContainer)
 
         return PhotoLibrary(
@@ -69,7 +53,6 @@ final class AppDependencyContainer {
             return nil
         }
 
-        // Создаем отдельный контекст для VideoLibrary
         let videoContext = ModelContext(modelContainer)
 
         return VideoLibrary(

@@ -86,7 +86,7 @@ struct AllVideosView: View {
             )
             .padding(.horizontal)
         } else if videoLibrary?.similarGroups.isEmpty ?? true {
-            EmptyStateView(
+            EmptyState(
                 icon: "video",
                 title: "Видео не найдены",
                 message: "В вашей галерее нет видео"
@@ -119,7 +119,7 @@ struct SimilarVideosView: View {
             )
             .padding(.horizontal)
         } else if videoLibrary?.similarGroups.isEmpty ?? true {
-            EmptyStateView(
+            EmptyState(
                 icon: "video.badge.checkmark",
                 title: "Похожие видео не найдены",
                 message: "Попробуйте выбрать другие видео"

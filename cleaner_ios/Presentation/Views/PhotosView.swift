@@ -90,7 +90,7 @@ struct SimilarPhotosView: View {
             )
             .padding(.horizontal)
         } else if photoLibrary?.similarGroups.isEmpty ?? true {
-            EmptyStateView(
+            EmptyState(
                 icon: "photo.on.rectangle.angled",
                 title: "Похожие фотографии не найдены",
                 message: "Попробуйте выбрать другие изображения"
@@ -129,7 +129,7 @@ struct DuplicatesView: View {
             )
             .padding(.horizontal)
         } else if photoLibrary?.duplicatesGroups.isEmpty ?? true {
-            EmptyStateView(
+            EmptyState(
                 icon: "doc.on.doc",
                 title: "Дубликаты не найдены",
                 message: "В вашей галерее нет точных копий фотографий"
@@ -161,7 +161,7 @@ struct ScreenshotsView: View {
 
     var body: some View {
         if photoLibrary?.screenshots.isEmpty ?? true {
-            EmptyStateView(
+            EmptyState(
                 icon: "camera.viewfinder",
                 title: "Скриншоты не найдены",
                 message: "В вашей галерее нет скриншотов"
@@ -196,7 +196,7 @@ struct AllPhotosView: View {
 
     var body: some View {
         if photoLibrary?.photos.isEmpty ?? true && !(photoLibrary?.indexing ?? false) {
-            EmptyStateView(
+            EmptyState(
                 icon: "photo",
                 title: "Фотографии не найдены",
                 message: "В вашей галерее нет фотографий"

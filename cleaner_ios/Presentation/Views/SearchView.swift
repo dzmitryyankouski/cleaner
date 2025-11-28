@@ -26,7 +26,7 @@ struct SearchView: View {
                             PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                         }
                     } else {
-                        EmptyStateView(
+                        EmptyState(
                             icon: "photo",
                             title: "Фотографии не найдены",
                             message: "В вашей галерее нет фотографий"
@@ -38,7 +38,7 @@ struct SearchView: View {
                             VideoGridView(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                         }
                     } else {
-                        EmptyStateView(
+                        EmptyState(
                             icon: "video",
                             title: "Видео не найдены",
                             message: "В вашей галерее нет видео"

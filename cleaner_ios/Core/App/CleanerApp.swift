@@ -83,7 +83,6 @@ struct AppRootView: View {
     private func initializeViewModels() {
         photoLibrary = container.makePhotoLibrary()
         videoLibrary = container.makeVideoLibrary()
-        
         settings = container.makeSettings()
 
         isInitialized = true
