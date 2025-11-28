@@ -1,8 +1,5 @@
 import SwiftUI
 
-// MARK: - Empty State View
-
-/// Компонент для отображения пустого состояния
 struct EmptyStateView: View {
     let icon: String
     let title: String
@@ -32,4 +29,3 @@ struct EmptyStateView: View {
         .padding()
     }
 }
-

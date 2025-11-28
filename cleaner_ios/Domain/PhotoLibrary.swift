@@ -182,7 +182,7 @@ class PhotoLibrary {
     }
 
     private func indexPhotos() async {
-        guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding == nil })) else {
+        guard let photosToIndex = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding == nil })) else {
             print("❌ Нет фото для индексации")
             return
         }
@@ -195,7 +195,7 @@ class PhotoLibrary {
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
             
-            for photo in photos {
+            for photo in photosToIndex {
                 while activeTasks >= concurrentTasks {
                     await group.next()
                     activeTasks -= 1
@@ -207,7 +207,6 @@ class PhotoLibrary {
 
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
                     guard let asset = assets.firstObject else { return }
-
 
                     async let fileSizeAsync = self.photoAssetRepository.getFileSize(for: asset)
                     async let embeddingAsync = self.embeddingService.generateEmbeddingFromAsset(asset)

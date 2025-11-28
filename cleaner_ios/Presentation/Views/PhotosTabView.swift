@@ -196,7 +196,7 @@ struct AllPhotosView: View {
     var body: some View {
         if photoLibrary?.photos.isEmpty ?? true && !(photoLibrary?.indexing ?? false) {
             EmptyStateView(
-                icon: "photo.slash",
+                icon: "photo",
                 title: "Фотографии не найдены",
                 message: "В вашей галерее нет фотографий"
             )

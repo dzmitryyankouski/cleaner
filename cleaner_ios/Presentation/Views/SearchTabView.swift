@@ -19,34 +19,54 @@ struct SearchTabView: View {
     var body: some View {
         NavigationStack(path: $navigationPath) {
             ZStack(alignment: .top) {
-                ScrollView {
-                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                        Section {
-                            switch selectedTab {
-                            case 0:
-                                PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
-                            case 1:
-                                VideoGridView(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
-                            default:
-                                PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
-                            }
-                        } header: {
-                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                switch selectedTab {
+                case 0:
+                    if !searchResultsPhotos.isEmpty {
+                        ScrollView {
+                            PhotoGridView(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                         }
+                    } else {
+                        EmptyStateView(
+                            icon: "photo",
+                            title: "Фотографии не найдены",
+                            message: "В вашей галерее нет фотографий"
+                        )
                     }
+                case 1:
+                    if !searchResultsVideos.isEmpty {
+                        ScrollView {
+                            VideoGridView(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                        }
+                    } else {
+                        EmptyStateView(
+                            icon: "video",
+                            title: "Видео не найдены",
+                            message: "В вашей галерее нет видео"
+                        )
+                    }
+                default:
+                    EmptyView()
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .searchable(text: $searchText, prompt: "Поиск фотографий и видео")
-            .onSubmit(of: .search) {
-                searchPhotos()
-                searchVideos()
-            }
-            .navigationTitle("Поиск")
+            .searchPresentationToolbarBehavior(.avoidHidingContent)
+            .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
                 PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
             }
             .navigationDestination(for: VideoGroupNavigationItem.self) { item in
                 VideoDetailView(videos: item.videos, currentVideoId: item.currentVideoId, namespace: navigationTransitionNamespace)
+            }
+            .onSubmit(of: .search) {
+                searchPhotos()
+                searchVideos()
+            }
+            .overlay(alignment: .top) {
+                VStack {
+                    PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                        .padding(.top)
+                }
             }
         }
     }

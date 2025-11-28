@@ -87,7 +87,7 @@ struct AllVideosView: View {
             .padding(.horizontal)
         } else if videoLibrary?.similarGroups.isEmpty ?? true {
             EmptyStateView(
-                icon: "video.slash",
+                icon: "video",
                 title: "Видео не найдены",
                 message: "В вашей галерее нет видео"
             )
