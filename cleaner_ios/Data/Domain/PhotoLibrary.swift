@@ -120,6 +120,29 @@ class PhotoLibrary {
         duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
+    func filter(filters: Set<Filter>) async {
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+            guard var photosToFilter = try? self.context.fetch(FetchDescriptor<PhotoModel>()) else {
+                print("❌ Нет фото для фильтрации")
+                return
+            }
+            
+            for filter in filters {
+                switch filter {
+                    case .screenshots:
+                        photosToFilter = photosToFilter.filter { $0.isScreenshot }
+                    default:
+                        break
+                }
+            }
+
+            await MainActor.run {
+                self.photos = photosToFilter
+            }
+        }
+    }
+
     func search(query: String) async -> Result<[SearchResult<PhotoModel>], SearchError> {
         var searchQuery = query
         if let translationService = translationService {

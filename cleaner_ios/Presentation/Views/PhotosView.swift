@@ -53,7 +53,7 @@ struct PhotosView: View {
     @State private var selectedFilter: Set<Filter> = []
     @State private var selectedSort = Sort.date
 
-    private let tabs = ["Все", "Серии", "Копии", "Скриншоты"]
+    private let tabs = ["Все", "Серии", "Копии"]
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -68,8 +68,6 @@ struct PhotosView: View {
                                 SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             case 2:
                                 DuplicatesView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
-                            case 3:
-                                ScreenshotsView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             default:
                                 SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
                             }
@@ -84,7 +82,7 @@ struct PhotosView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
-                        Section("Filter") {
+                        Section {
                             ForEach(Filter.allCases, id: \.self) { filter in
                                 Toggle(isOn: Binding(get: { selectedFilter.contains(filter) }, set: { value in
                                     if value {
@@ -97,8 +95,8 @@ struct PhotosView: View {
                                 }
                             }
                         }
-                        Section("Sort") {
-                            Picker("Сортировка", selection: $selectedSort) {
+                        Section {
+                            Picker("Sort", selection: $selectedSort) {
                                 ForEach(Sort.allCases, id: \.self) { sort in
                                     Label(sort.rawValue, systemImage: sort.icon)
                                         .tag(sort)
@@ -108,7 +106,6 @@ struct PhotosView: View {
                     } label: {
                         Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
-                    .menuActionDismissBehavior(.disabled)
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
@@ -129,6 +126,11 @@ struct PhotosView: View {
             }
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
                 PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
+            }
+            .onChange(of: selectedFilter) { _, _ in
+                Task {
+                    await photoLibrary?.filter(filters: selectedFilter)
+                }
             }
         }
     }
@@ -208,41 +210,6 @@ struct DuplicatesView: View {
                     }
                 }
                 .padding(.top)
-            }
-        }
-    }
-}
-
-struct ScreenshotsView: View {
-    @Environment(\.photoLibrary) var photoLibrary
-    @Binding var navigationPath: NavigationPath
-    var namespace: Namespace.ID
-
-    var body: some View {
-        if photoLibrary?.screenshots.isEmpty ?? true {
-            EmptyState(
-                icon: "camera.viewfinder",
-                title: "Скриншоты не найдены",
-                message: "В вашей галерее нет скриншотов"
-            )
-        } else {
-            VStack(spacing: 12) {
-                if photoLibrary?.indexing ?? false {
-                    ProgressLoadingCard(
-                        title: "Индексация фотографий",
-                        current: photoLibrary?.indexed ?? 0,
-                        total: photoLibrary?.total ?? 0
-                    )
-                    .padding(.horizontal)
-                } else {
-                    StatisticCard(statistics: [
-                        .init(label: "Всего скриншотов", value: "\(photoLibrary?.screenshots.count ?? 0)", alignment: .leading),
-                        .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.screenshotsFileSize ?? 0).formatted, alignment: .trailing),
-                    ])
-                    .padding(.horizontal)
-                }
-
-                PhotoGrid(photos: photoLibrary?.screenshots ?? [], navigationPath: $navigationPath, namespace: namespace)
             }
         }
     }
