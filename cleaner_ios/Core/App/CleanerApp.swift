@@ -67,9 +67,9 @@ struct AppRootView: View {
     
     @MainActor
     private func initializeViewModels() {
+        settings = container.makeSettings()
         photoLibrary = container.makePhotoLibrary()
         videoLibrary = container.makeVideoLibrary()
-        settings = container.makeSettings()
 
         isInitialized = true
     }

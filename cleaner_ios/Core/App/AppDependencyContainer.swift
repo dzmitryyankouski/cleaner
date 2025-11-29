@@ -7,6 +7,7 @@ final class AppDependencyContainer {
     
     private let serviceFactory: ServiceFactory
     private let modelContainer: ModelContainer
+    private var settingsInstance: Settings?
     
     private init() {
         self.serviceFactory = ServiceFactory.shared
@@ -42,6 +43,7 @@ final class AppDependencyContainer {
             embeddingService: embeddingService,
             clusteringService: serviceFactory.makeClusteringService(),
             translationService: serviceFactory.makeTranslationService(),
+            settings: makeSettings(),
             modelContext: photoContext
         )
     }
@@ -67,9 +69,15 @@ final class AppDependencyContainer {
     
     @MainActor
     func makeSettings() -> Settings {
+        if let existingSettings = settingsInstance {
+            return existingSettings
+        }
+        
         let settingsContext = ModelContext(modelContainer)
-
-        return Settings(modelContext: settingsContext)
+        let settings = Settings(modelContext: settingsContext)
+        settingsInstance = settings
+        
+        return settings
     }
 }
 

@@ -1,108 +1,139 @@
 import SwiftUI
 
-struct SettingsView: View {  
+struct SettingsView: View {
     @Environment(\.settings) private var settings
+    @Environment(\.photoLibrary) private var photoLibrary
+    @Environment(\.videoLibrary) private var videoLibrary
+
+    @Namespace private var namespace
+
+    @State private var photoSimilarityThreshold: Float = 0.95
+    @State private var searchSimilarityThreshold: Float = 0.188
+    @State private var videoSimilarityThreshold: Float = 0.93
+    @State private var hasChanged: Bool = false
+
     @Binding var isPresented: Bool
-    
+
+    func reset() {
+        photoSimilarityThreshold = 0.95
+        searchSimilarityThreshold = 0.188
+        videoSimilarityThreshold = 0.93
+    }
+
+    func save() {
+        guard let settings = settings else { return }
+
+        settings.values.photoSimilarityThreshold = photoSimilarityThreshold
+        settings.values.searchSimilarityThreshold = searchSimilarityThreshold
+        settings.values.videoSimilarityThreshold = videoSimilarityThreshold
+        settings.save()
+
+        Task {
+            await photoLibrary?.regroup()
+        }
+
+        isPresented = false
+    }
+
+    private func checkHasChanged() -> Bool {
+        return settings?.values.photoSimilarityThreshold != photoSimilarityThreshold
+            || settings?.values.searchSimilarityThreshold != searchSimilarityThreshold
+            || settings?.values.videoSimilarityThreshold != videoSimilarityThreshold
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
-                if let settings = settings {
-                    SettingsContentView(settings: settings)
-                } else {
-                    VStack {
-                        Text("Настройки недоступны")
-                            .foregroundColor(.secondary)
+                VStack(spacing: 20) {
+                    SettingSliderCard(
+                        title: "Процент похожести фотографий",
+                        description: "Настройте порог схожести для группировки фотографий",
+                        value: $photoSimilarityThreshold,
+                        range: 0.0...1.0,
+                        step: 0.01,
+                        minLabel: "0%",
+                        maxLabel: "100%",
+                        currentValueText:
+                            "Текущее значение: \(Int(photoSimilarityThreshold * 100))%"
+                    )
+                    .onChange(of: photoSimilarityThreshold) { _, _ in
+                        hasChanged = checkHasChanged()
                     }
-                    .padding()
+
+                    SettingSliderCard(
+                        title: "Процент похожести поиска",
+                        description: "Настройте порог схожести для поиска фотографий",
+                        value: $searchSimilarityThreshold,
+                        range: 0.15...0.20,
+                        step: 0.001,
+                        minLabel: "15%",
+                        maxLabel: "20%",
+                        currentValueText:
+                            "Текущее значение: \(String(format: "%.1f", searchSimilarityThreshold * 100))%"
+                    )
+                    .onChange(of: searchSimilarityThreshold) { _, _ in
+                        hasChanged = checkHasChanged()
+                    }
+
+                    SettingSliderCard(
+                        title: "Процент похожести видео",
+                        description: "Настройте порог схожести для группировки видео",
+                        value: $videoSimilarityThreshold,
+                        range: 0.0...1.0,
+                        step: 0.01,
+                        minLabel: "0%",
+                        maxLabel: "100%",
+                        currentValueText:
+                            "Текущее значение: \(Int(videoSimilarityThreshold * 100))%"
+                    )
+                    .onChange(of: videoSimilarityThreshold) { _, _ in
+                        hasChanged = checkHasChanged()
+                    }
+
+                    Button(action: {
+                        withAnimation {
+                            reset()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "arrow.counterclockwise")
+                            Text("Сбросить к значениям по умолчанию")
+                        }
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 10)
+                }
+                .padding(.top)
+                .onAppear {
+                    photoSimilarityThreshold = settings?.values.photoSimilarityThreshold ?? 0.95
+                    searchSimilarityThreshold = settings?.values.searchSimilarityThreshold ?? 0.188
+                    videoSimilarityThreshold = settings?.values.videoSimilarityThreshold ?? 0.93
                 }
             }
             .navigationTitle("Настройки")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
+                if hasChanged {
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done", systemImage: "checkmark") {
+                            save()
+                        }
+                    }
+                }
+
+                ToolbarItem(placement: .cancellationAction) {
                     Button("Close", systemImage: "xmark") {
                         isPresented = false
                     }
                 }
             }
         }
-    }
-}
-
-private struct SettingsContentView: View {
-    let settings: Settings
-    @Bindable var values: SettingsModel
-    
-    init(settings: Settings) {
-        self.settings = settings
-        self.values = settings.values
-    }
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            SettingSliderCard(
-                title: "Процент похожести фотографий",
-                description: "Настройте порог схожести для группировки фотографий",
-                value: $values.photoSimilarityThreshold,
-                range: 0.0...1.0,
-                step: 0.01,
-                minLabel: "0%",
-                maxLabel: "100%",
-                currentValueText: "Текущее значение: \(Int(values.photoSimilarityThreshold * 100))%"
-            )
-            .onChange(of: values.photoSimilarityThreshold) { _, _ in
-                settings.save()
-            }
-            
-            SettingSliderCard(
-                title: "Процент похожести поиска",
-                description: "Настройте порог схожести для поиска фотографий",
-                value: $values.searchSimilarityThreshold,
-                range: 0.15...0.20,
-                step: 0.001,
-                minLabel: "15%",
-                maxLabel: "20%",
-                currentValueText: "Текущее значение: \(String(format: "%.1f", values.searchSimilarityThreshold * 100))%"
-            )
-            .onChange(of: values.searchSimilarityThreshold) { _, _ in
-                settings.save()
-            }
-            
-            SettingSliderCard(
-                title: "Процент похожести видео",
-                description: "Настройте порог схожести для группировки видео",
-                value: $values.videoSimilarityThreshold,
-                range: 0.0...1.0,
-                step: 0.01,
-                minLabel: "0%",
-                maxLabel: "100%",
-                currentValueText: "Текущее значение: \(Int(values.videoSimilarityThreshold * 100))%"
-            )
-            .onChange(of: values.videoSimilarityThreshold) { _, _ in
-                settings.save()
-            }
-                        
-            Button(action: {
-                withAnimation {
-                    settings.resetToDefaults()
-                }
-            }) {
-                HStack {
-                    Image(systemName: "arrow.counterclockwise")
-                    Text("Сбросить к значениям по умолчанию")
-                }
-                .font(.headline)
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.blue)
-                .cornerRadius(12)
-            }
-            .padding(.horizontal)
-            .padding(.top, 10)
-        }
-        .padding(.top)
     }
 }
 
@@ -115,34 +146,34 @@ struct SettingSliderCard: View {
     let minLabel: String
     let maxLabel: String
     let currentValueText: String
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
                 .font(.headline)
                 .foregroundColor(.primary)
-            
+
             Text(description)
                 .font(.caption)
                 .foregroundColor(.secondary)
-            
+
             HStack {
                 Text(minLabel)
                     .font(.caption)
                     .foregroundColor(.secondary)
-                
+
                 Slider(
                     value: $value,
                     in: range,
                     step: step
                 )
                 .accentColor(.blue)
-                
+
                 Text(maxLabel)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Text(currentValueText)
                 .font(.caption)
                 .foregroundColor(.blue)

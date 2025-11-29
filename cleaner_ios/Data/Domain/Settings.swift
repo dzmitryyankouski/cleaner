@@ -11,12 +11,13 @@ class Settings {
         self.modelContext = modelContext
 
         let items = try? modelContext.fetch(SettingsModel.default)
-
-        if let item = items?.first {
-            self.values = item
+        
+        if let items = items, !items.isEmpty {
+            self.values = items.first!
         } else {
             let newSettings = SettingsModel()
             modelContext.insert(newSettings)
+            try? modelContext.save()
             self.values = newSettings
         }
     }
@@ -27,13 +28,5 @@ class Settings {
         } catch {
             print("❌ Не удалось сохранить настройки: \(error)")
         }
-    }
-
-    func resetToDefaults() {
-        values.photoSimilarityThreshold = 0.95
-        values.searchSimilarityThreshold = 0.188
-        values.videoSimilarityThreshold = 0.93
-
-        save()
     }
 }

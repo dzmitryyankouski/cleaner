@@ -29,12 +29,14 @@ class PhotoLibrary {
     private let translationService: TranslationServiceProtocol?
     private let concurrentTasks = 10
     private let context: ModelContext
+    private let settings: Settings
 
     init(
         photoAssetRepository: AssetRepositoryProtocol,
         embeddingService: EmbeddingServiceProtocol,
         clusteringService: ClusteringServiceProtocol,
         translationService: TranslationServiceProtocol? = nil,
+        settings: Settings,
         modelContext: ModelContext
     ) {
         self.photoAssetRepository = photoAssetRepository
@@ -42,6 +44,7 @@ class PhotoLibrary {
         self.clusteringService = clusteringService
         self.translationService = translationService
         self.context = modelContext
+        self.settings = settings
 
         Task {
             await loadPhotos()
@@ -57,23 +60,12 @@ class PhotoLibrary {
         
         await indexPhotos()
 
-        print("🔍 Группировка фотографий")
-        
-        await groupSimilar(threshold: 0.95)
-        await groupDuplicates(threshold: 0.99)
-
         photosFileSize = photos.reduce(0) { $0 + ($1.fileSize ?? 0) }
-
-        similarGroups = getSimilarGroups()
-        similarPhotos = getSimilarPhotos()
-        similarPhotosFileSize = similarPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
-
-        duplicatesGroups = getDuplicatesGroups()
-        duplicatesPhotos = getDuplicatesPhotos()
-        duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         screenshots = getScreenshots()
         screenshotsFileSize = screenshots.reduce(0) { $0 + ($1.fileSize ?? 0) }
+
+        await regroup()
 
         indexing = false
 
@@ -114,6 +106,20 @@ class PhotoLibrary {
         indexed = 0
     }
 
+    func regroup() async {
+        let threshold = settings.values.photoSimilarityThreshold
+        await groupSimilar(threshold: threshold)
+        await groupDuplicates(threshold: 0.99)
+
+        similarGroups = getSimilarGroups()
+        similarPhotos = getSimilarPhotos()
+        similarPhotosFileSize = similarPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+
+        duplicatesGroups = getDuplicatesGroups()
+        duplicatesPhotos = getDuplicatesPhotos()
+        duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+    }
+
     func search(query: String) async -> Result<[SearchResult<PhotoModel>], SearchError> {
         var searchQuery = query
         if let translationService = translationService {
@@ -143,7 +149,7 @@ class PhotoLibrary {
                 photoEmbedding
             )
             
-            if similarity >= 0.188 {
+            if similarity >= settings.values.searchSimilarityThreshold {
                 results.append(SearchResult(item: photo, similarity: similarity))
             }
         }
