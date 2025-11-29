@@ -47,16 +47,22 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CDFE914F2E6C8A440017D2B6 /* cleaner_ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = cleaner_ios;
 			sourceTree = "<group>";
 		};
 		CDFE915D2E6C8A460017D2B6 /* cleaner_iosTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = cleaner_iosTests;
 			sourceTree = "<group>";
 		};
 		CDFE91672E6C8A460017D2B6 /* cleaner_iosUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = cleaner_iosUITests;
 			sourceTree = "<group>";
 		};
@@ -146,7 +152,6 @@
 				CDFE91492E6C8A440017D2B6 /* Sources */,
 				CDFE914A2E6C8A440017D2B6 /* Frameworks */,
 				CDFE914B2E6C8A440017D2B6 /* Resources */,
-				1AE30A7B0817113646F23929 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -190,7 +195,6 @@
 				CDFE91602E6C8A460017D2B6 /* Sources */,
 				CDFE91612E6C8A460017D2B6 /* Frameworks */,
 				CDFE91622E6C8A460017D2B6 /* Resources */,
-				594C2BA1B580B14CB4631AAB /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -296,27 +300,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		1AE30A7B0817113646F23929 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios/Pods-cleaner_ios-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		56B21AA4BC840B6C176D4E4A /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -337,27 +320,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
-			showEnvVarsInLog = 0;
-		};
-		594C2BA1B580B14CB4631AAB /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			inputPaths = (
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-cleaner_ios-cleaner_iosUITests/Pods-cleaner_ios-cleaner_iosUITests-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		6CBBAF0CD38BCF23388C8F4A /* [CP] Check Pods Manifest.lock */ = {

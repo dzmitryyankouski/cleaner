@@ -6,7 +6,6 @@ target 'cleaner_ios' do
   use_frameworks!
 
   # Pods for cleaner_ios
-  pod 'AppCenter'
 
   target 'cleaner_iosTests' do
     inherit! :search_paths

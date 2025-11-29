@@ -1,29 +1,15 @@
 import SwiftUI
 import SwiftData
-import AppCenter
-import AppCenterAnalytics
-import AppCenterCrashes
 
 @main
 struct CleanerApp: App {
     private let appContainer = AppDependencyContainer.shared
-        
-    init() {
-        setupAppCenter()
-    }
         
     var body: some Scene {
         WindowGroup {
             AppRootView(container: appContainer)
         }
         .modelContainer(appContainer.getModelContainer())
-    }
-        
-    private func setupAppCenter() {
-        AppCenter.start(
-            withAppSecret: "6acbaba5-f2ac-484e-87fd-5fc59675eeda",
-            services: [Analytics.self, Crashes.self]
-        )
     }
 }
 
