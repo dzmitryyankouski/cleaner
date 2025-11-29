@@ -108,6 +108,7 @@ struct PhotosView: View {
                     } label: {
                         Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
+                    .menuActionDismissBehavior(.disabled)
                 }
                 ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
