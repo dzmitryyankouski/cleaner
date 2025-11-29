@@ -15,6 +15,36 @@ struct PhotoGroupNavigationItem: Hashable {
     }
 }
 
+enum Filter: String, CaseIterable {
+    case all = "All"
+    case screenshots = "Screenshots"
+    case livePhotos = "Live Photos"
+    case modified = "Modified"
+    case favorites = "Favorites"
+    
+    var icon: String {
+        switch self {
+            case .all: return "tray"
+            case .screenshots: return "camera.viewfinder"
+            case .livePhotos: return "livephoto"
+            case .modified: return "pencil.and.scribble"
+            case .favorites: return "star"
+        }
+    }
+}
+
+enum Sort: String, CaseIterable {
+    case date = "Date"
+    case size = "Size"
+    
+    var icon: String {
+        switch self {
+            case .date: return "clock"
+            case .size: return "arrow.up.arrow.down"
+        }
+    }
+}
+
 struct PhotosView: View {
     @Namespace private var navigationTransitionNamespace
     @Environment(\.photoLibrary) var photoLibrary
@@ -22,6 +52,8 @@ struct PhotosView: View {
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
     @State private var navigationPath = NavigationPath()
+    @State private var selectedFilter = Filter.all
+    @State private var selectedSort = Sort.date
 
     private let tabs = ["Все", "Серии", "Копии", "Скриншоты"]
 
@@ -52,6 +84,29 @@ struct PhotosView: View {
             }
             .navigationTitle("Фотографии")
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Section("Filter") {
+                            Picker("Фильтры", selection: $selectedFilter) {
+                                ForEach(Filter.allCases, id: \.self) { filter in
+                                    Label(filter.rawValue, systemImage: filter.icon)
+                                        .tag(filter)
+                                }
+                            }
+                        }
+                        Section("Sort") {
+                            Picker("Сортировка", selection: $selectedSort) {
+                                ForEach(Sort.allCases, id: \.self) { sort in
+                                    Label(sort.rawValue, systemImage: sort.icon)
+                                        .tag(sort)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Фильтры", systemImage: "line.3.horizontal.decrease")
+                    }
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
                 ToolbarItem(placement: .topBarTrailing) {
                     Button(action: {
                         showSettings.toggle()
