@@ -11,6 +11,7 @@ final class PhotoModel {
     var creationDate: Date?
     var fileSize: Int64?
     var isScreenshot: Bool = false
+    var isLivePhoto: Bool = false
     var fullScreenFrameWidth: Double = 0
     var fullScreenFrameHeight: Double = 0
     
@@ -21,7 +22,7 @@ final class PhotoModel {
         self.id = asset.localIdentifier
         self.creationDate = asset.creationDate
         self.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
-    
+        self.isLivePhoto = asset.mediaSubtypes.contains(.photoLive)
     }
 
     static var similar: FetchDescriptor<PhotoModel> {

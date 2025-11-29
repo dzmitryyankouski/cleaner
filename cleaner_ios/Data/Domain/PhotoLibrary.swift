@@ -132,6 +132,8 @@ class PhotoLibrary {
                 switch filter {
                     case .screenshots:
                         photosToFilter = photosToFilter.filter { $0.isScreenshot }
+                    case .livePhotos:
+                        photosToFilter = photosToFilter.filter { $0.isLivePhoto }
                     default:
                         break
                 }
