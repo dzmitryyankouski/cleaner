@@ -16,7 +16,6 @@ struct PhotoGroupNavigationItem: Hashable {
 }
 
 enum Filter: String, CaseIterable {
-    case all = "All"
     case screenshots = "Screenshots"
     case livePhotos = "Live Photos"
     case modified = "Modified"
@@ -24,7 +23,6 @@ enum Filter: String, CaseIterable {
     
     var icon: String {
         switch self {
-            case .all: return "tray"
             case .screenshots: return "camera.viewfinder"
             case .livePhotos: return "livephoto"
             case .modified: return "pencil.and.scribble"
@@ -52,7 +50,7 @@ struct PhotosView: View {
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
     @State private var navigationPath = NavigationPath()
-    @State private var selectedFilter = Filter.all
+    @State private var selectedFilter: Set<Filter> = []
     @State private var selectedSort = Sort.date
 
     private let tabs = ["Все", "Серии", "Копии", "Скриншоты"]
@@ -87,10 +85,15 @@ struct PhotosView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Section("Filter") {
-                            Picker("Фильтры", selection: $selectedFilter) {
-                                ForEach(Filter.allCases, id: \.self) { filter in
+                            ForEach(Filter.allCases, id: \.self) { filter in
+                                Toggle(isOn: Binding(get: { selectedFilter.contains(filter) }, set: { value in
+                                    if value {
+                                        selectedFilter.insert(filter)
+                                    } else {
+                                        selectedFilter.remove(filter)
+                                    }
+                                })) {
                                     Label(filter.rawValue, systemImage: filter.icon)
-                                        .tag(filter)
                                 }
                             }
                         }
