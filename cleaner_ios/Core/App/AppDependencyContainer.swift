@@ -63,6 +63,7 @@ final class AppDependencyContainer {
             imageProcessor: serviceFactory.makeImageProcessingService(),
             clusteringService: serviceFactory.makeClusteringService(),
             translationService: serviceFactory.makeTranslationService(),
+            settings: makeSettings(),
             modelContext: videoContext
         )
     }

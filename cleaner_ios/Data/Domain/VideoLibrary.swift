@@ -25,6 +25,7 @@ class VideoLibrary {
     private let translationService: TranslationServiceProtocol?
     private let concurrentTasks = 5
     private let context: ModelContext
+    private let settings: Settings
 
     init(
         videoAssetRepository: VideoAssetRepository,
@@ -32,6 +33,7 @@ class VideoLibrary {
         imageProcessor: ImageProcessingProtocol,
         clusteringService: ClusteringServiceProtocol,
         translationService: TranslationServiceProtocol? = nil,
+        settings: Settings,
         modelContext: ModelContext
     ) {
         self.videoAssetRepository = videoAssetRepository
@@ -40,6 +42,7 @@ class VideoLibrary {
         self.clusteringService = clusteringService
         self.translationService = translationService
         self.context = modelContext
+        self.settings = settings
 
         Task {
             await loadVideos()
@@ -54,14 +57,20 @@ class VideoLibrary {
         
         await indexVideos()
         
-        await groupSimilar(threshold: 0.93)
+        await regroup()
+
+        videosFileSize = videos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+
+        indexing = false
+    }
+
+    func regroup() async {
+        let threshold = settings.values.videoSimilarityThreshold
+        await groupSimilar(threshold: threshold)
 
         similarGroups = getSimilarGroups()
         similarVideos = getSimilarVideos()
         similarVideosFileSize = similarVideos.reduce(0) { $0 + ($1.fileSize ?? 0) }
-        videosFileSize = videos.reduce(0) { $0 + ($1.fileSize ?? 0) }
-
-        indexing = false
     }
 
     func getAllVideos() async -> [VideoModel] {
@@ -352,7 +361,7 @@ class VideoLibrary {
                 videoEmbedding
             )
             
-            if similarity >= 0.188 {
+            if similarity >= settings.values.searchSimilarityThreshold {
                 results.append(SearchResult(item: video, similarity: similarity))
             }
         }

@@ -30,6 +30,7 @@ struct SettingsView: View {
 
         Task {
             await photoLibrary?.regroup()
+            await videoLibrary?.regroup()
         }
 
         isPresented = false
