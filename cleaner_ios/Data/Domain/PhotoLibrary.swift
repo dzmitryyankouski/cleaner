@@ -149,6 +149,25 @@ class PhotoLibrary {
         }
     }
 
+    func sort(sort: Sort) async {
+        Task.detached { [weak self] in
+            guard let self = self else { return }
+            
+            let sortedPhotos = photos.sorted {
+                switch sort {
+                    case .date:
+                        return ($0.creationDate ?? Date.distantPast) > ($1.creationDate ?? Date.distantPast)
+                    case .size:
+                        return ($0.fileSize ?? 0) > ($1.fileSize ?? 0)
+                }
+            }
+
+            await MainActor.run {
+                self.photos = sortedPhotos
+            }
+        }
+    }
+
     func search(query: String) async -> Result<[SearchResult<PhotoModel>], SearchError> {
         var searchQuery = query
         if let translationService = translationService {
