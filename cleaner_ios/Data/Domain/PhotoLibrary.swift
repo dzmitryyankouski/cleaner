@@ -70,7 +70,7 @@ class PhotoLibrary {
         print("✅ Фотографии загружены")
     }
 
-    func reset() {
+    func reset() async {
         do {
             let groups = try context.fetch(FetchDescriptor<PhotoGroupModel>())
             for group in groups {
@@ -99,6 +99,8 @@ class PhotoLibrary {
 
         total = 0
         indexed = 0
+
+        await loadPhotos()
     }
 
     func regroup() async {
@@ -259,7 +261,6 @@ class PhotoLibrary {
 
     private func indexPhotos() async {
         if let indexedPhotos = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding != nil })) {
-            print("🔍 Индексированные фотографии: \(indexedPhotos.count)")
             await MainActor.run {
                 indexed = indexedPhotos.count
             }

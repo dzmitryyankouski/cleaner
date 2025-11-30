@@ -120,9 +120,9 @@ struct PhotosView: View {
                 }
             }
             .refreshable {
-                photoLibrary?.reset()
-
-                await photoLibrary?.loadPhotos()
+                Task {
+                    await photoLibrary?.reset()
+                }
             }
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
                 PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
