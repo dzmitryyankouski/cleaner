@@ -15,7 +15,7 @@ struct PhotoGroupNavigationItem: Hashable {
     }
 }
 
-enum Filter: String, CaseIterable {
+enum FilterPhoto: String, CaseIterable {
     case screenshots = "Screenshots"
     case livePhotos = "Live Photos"
     case modified = "Modified"
@@ -31,7 +31,7 @@ enum Filter: String, CaseIterable {
     }
 }
 
-enum Sort: String, CaseIterable {
+enum SortPhoto: String, CaseIterable {
     case date = "Date"
     case size = "Size"
     
@@ -50,8 +50,6 @@ struct PhotosView: View {
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
     @State private var navigationPath = NavigationPath()
-    @State private var selectedFilter: Set<Filter> = []
-    @State private var selectedSort = Sort.date
 
     private let tabs = ["Все", "Серии", "Копии"]
 
@@ -83,12 +81,12 @@ struct PhotosView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Section {
-                            ForEach(Filter.allCases, id: \.self) { filter in
-                                Toggle(isOn: Binding(get: { selectedFilter.contains(filter) }, set: { value in
+                            ForEach(FilterPhoto.allCases, id: \.self) { filter in
+                                Toggle(isOn: Binding(get: { photoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
                                     if value {
-                                        selectedFilter.insert(filter)
+                                        photoLibrary?.selectedFilter.insert(filter)
                                     } else {
-                                        selectedFilter.remove(filter)
+                                        photoLibrary?.selectedFilter.remove(filter)
                                     }
                                 })) {
                                     Label(filter.rawValue, systemImage: filter.icon)
@@ -96,8 +94,10 @@ struct PhotosView: View {
                             }
                         }
                         Section {
-                            Picker("Sort", selection: $selectedSort) {
-                                ForEach(Sort.allCases, id: \.self) { sort in
+                            Picker("Sort", selection: Binding(get: { photoLibrary?.selectedSort ?? .date }, set: { value in
+                                photoLibrary?.selectedSort = value
+                            })) {
+                                ForEach(SortPhoto.allCases, id: \.self) { sort in
                                     Label(sort.rawValue, systemImage: sort.icon)
                                         .tag(sort)
                                 }
@@ -127,14 +127,14 @@ struct PhotosView: View {
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
                 PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
             }
-            .onChange(of: selectedFilter) { _, _ in
+            .onChange(of: photoLibrary?.selectedFilter) { _, _ in
                 Task {
-                    await photoLibrary?.filter(filters: selectedFilter)
+                    await photoLibrary?.filter()
                 }
             }
-            .onChange(of: selectedSort) { _, _ in
+            .onChange(of: photoLibrary?.selectedSort) { _, _ in
                 Task {
-                    await photoLibrary?.sort(sort: selectedSort)
+                    await photoLibrary?.sort()
                 }
             }
         }

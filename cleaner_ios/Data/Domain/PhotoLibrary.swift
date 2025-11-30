@@ -23,6 +23,9 @@ class PhotoLibrary {
     var photos: [PhotoModel] = []
     var photosFileSize: Int64 = 0
 
+    var selectedSort: SortPhoto = .date
+    var selectedFilter: Set<FilterPhoto> = []
+
     private let photoAssetRepository: AssetRepositoryProtocol
     private let embeddingService: EmbeddingServiceProtocol
     private let clusteringService: ClusteringServiceProtocol
@@ -59,12 +62,7 @@ class PhotoLibrary {
         total = photos.count
         
         await indexPhotos()
-
-        photosFileSize = photos.reduce(0) { $0 + ($1.fileSize ?? 0) }
-
-        screenshots = getScreenshots()
-        screenshotsFileSize = screenshots.reduce(0) { $0 + ($1.fileSize ?? 0) }
-
+        await filter()
         await regroup()
 
         indexing = false
@@ -97,9 +95,6 @@ class PhotoLibrary {
         duplicatesPhotos = []
         duplicatesPhotosFileSize = 0
 
-        screenshots = []
-        screenshotsFileSize = 0
-
         photos = []
 
         total = 0
@@ -120,50 +115,77 @@ class PhotoLibrary {
         duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
-    func filter(filters: Set<Filter>) async {
-        Task.detached { [weak self] in
-            guard let self = self else { return }
-            guard var photosToFilter = try? self.context.fetch(FetchDescriptor<PhotoModel>()) else {
-                print("❌ Нет фото для фильтрации")
-                return
-            }
-            
-            for filter in filters {
-                switch filter {
-                    case .screenshots:
-                        photosToFilter = photosToFilter.filter { $0.isScreenshot }
-                    case .livePhotos:
-                        photosToFilter = photosToFilter.filter { $0.isLivePhoto }
-                    case .modified:
-                        photosToFilter = photosToFilter.filter { $0.isModified }
-                    case .favorites:
-                        photosToFilter = photosToFilter.filter { $0.isFavorite }
-                    default:
-                        break
+    func filter() async {
+        var photosToFilter: [PhotoModel]?
+        
+        guard let fetched = try? context.fetch(FetchDescriptor<PhotoModel>()) else {
+               print("❌ Нет фото для фильтрации")
+            return
+        }
+        photosToFilter = fetched
+        
+        guard let photosToFilter = photosToFilter, !photosToFilter.isEmpty else { return }
+        
+        await withCheckedContinuation { continuation in
+            Task.detached { [weak self] in
+                guard let self = self else {
+                    continuation.resume()
+                    return
                 }
-            }
+                var filtered = photosToFilter
+                
+                for filter in self.selectedFilter {
+                    switch filter {
+                        case .screenshots:
+                            filtered = filtered.filter { $0.isScreenshot }
+                        case .livePhotos:
+                            filtered = filtered.filter { $0.isLivePhoto }
+                        case .modified:
+                            filtered = filtered.filter { $0.isModified }
+                        case .favorites:
+                            filtered = filtered.filter { $0.isFavorite }
+                        default:
+                            break
+                    }
+                }
 
-            await MainActor.run {
-                self.photos = photosToFilter
+                let fileSize = filtered.reduce(0) { $0 + ($1.fileSize ?? 0) }
+
+                await MainActor.run {
+                    self.photos = filtered
+                    self.photosFileSize = fileSize
+                }
+                
+                continuation.resume()
             }
         }
+
+        await sort()
     }
 
-    func sort(sort: Sort) async {
-        Task.detached { [weak self] in
-            guard let self = self else { return }
-            
-            let sortedPhotos = photos.sorted {
-                switch sort {
-                    case .date:
-                        return ($0.creationDate ?? Date.distantPast) > ($1.creationDate ?? Date.distantPast)
-                    case .size:
-                        return ($0.fileSize ?? 0) > ($1.fileSize ?? 0)
+    func sort() async {
+        await withCheckedContinuation { continuation in
+            Task.detached { [weak self] in
+                guard let self = self else {
+                    continuation.resume()
+                    return
                 }
-            }
+                
+                let sortedPhotos = photos.sorted {
+                    switch self.selectedSort {
+                        case .date:
+                            return ($0.creationDate ?? Date.distantPast) > ($1.creationDate ?? Date.distantPast)
+                        case .size:
+                            return ($0.fileSize ?? 0) > ($1.fileSize ?? 0)
+                    }
+                }
 
-            await MainActor.run {
-                self.photos = sortedPhotos
+                await MainActor.run {
+                    print("🔍 Фотографии после сортировки: \(sortedPhotos.count)")
+                    self.photos = sortedPhotos
+                }
+                
+                continuation.resume()
             }
         }
     }
@@ -313,10 +335,6 @@ class PhotoLibrary {
 
     private func getDuplicatesPhotos() -> [PhotoModel] {
         return (try? context.fetch(PhotoModel.duplicates)) ?? []
-    }
-
-    private func getScreenshots() -> [PhotoModel] {
-        return (try? context.fetch(PhotoModel.screenshots)) ?? []
     }
 
     private func groupSimilar(threshold: Float) async {
