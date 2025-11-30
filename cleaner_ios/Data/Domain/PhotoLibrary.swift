@@ -258,15 +258,17 @@ class PhotoLibrary {
     }
 
     private func indexPhotos() async {
+        if let indexedPhotos = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding != nil })) {
+            print("🔍 Индексированные фотографии: \(indexedPhotos.count)")
+            await MainActor.run {
+                indexed = indexedPhotos.count
+            }
+        }
+
         guard let photosToIndex = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.embedding == nil })) else {
             print("❌ Нет фото для индексации")
             return
         }
-
-        // guard let photos = try? context.fetch(FetchDescriptor<PhotoModel>()) else {
-        //     print("❌ Нет фото для индексации")
-        //     return
-        // }
         
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
@@ -300,6 +302,12 @@ class PhotoLibrary {
                             photo.fileSize = fileSize
                             photo.isFavorite = isFavorite
                             self.indexed += 1
+
+                            do {
+                                try self.context.save()
+                            } catch {
+                                print("❌ Ошибка при сохранении контекста: \(error)")
+                            }
                         }
                     }
                 }
@@ -311,13 +319,6 @@ class PhotoLibrary {
                 await group.next()
                 activeTasks -= 1
             }
-        }
-
-        do {
-            print("Saving context")
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сохранении контекста: \(error)")
         }
     }
 
