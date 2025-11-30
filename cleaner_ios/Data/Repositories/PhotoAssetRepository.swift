@@ -30,7 +30,6 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
 
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
         return await withCheckedContinuation { continuation in
-            let start = Date()
 
             let resources = PHAssetResource.assetResources(for: asset)
             var totalSize: Int64 = 0
@@ -63,12 +62,17 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
                 if hasError {
                     continuation.resume(returning: .failure(.fileSizeUnavailable))
                 } else {
-                    let end = Date()
-                    let duration = end.timeIntervalSince(start)
-                    print("getFileSize duration: \(duration) seconds")
                     continuation.resume(returning: .success(totalSize))
                 }
             }
         }
+    }
+
+    func isModified(for asset: PHAsset) -> Bool {
+        let resources = PHAssetResource.assetResources(for: asset)
+        return resources.contains(where: { resource in
+            resource.type == .adjustmentData ||
+            resource.type == .adjustmentBasePhoto
+        })
     }
 }

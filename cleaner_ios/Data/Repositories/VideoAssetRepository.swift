@@ -50,6 +50,10 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
             }
         }
     }
+
+    func isModified(for asset: PHAsset) -> Bool {
+        return false
+    }
     
     func getAVAsset(for asset: PHAsset) async -> AVAsset? {
         return await withCheckedContinuation { continuation in

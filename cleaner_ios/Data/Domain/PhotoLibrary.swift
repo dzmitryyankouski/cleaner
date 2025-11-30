@@ -134,6 +134,8 @@ class PhotoLibrary {
                         photosToFilter = photosToFilter.filter { $0.isScreenshot }
                     case .livePhotos:
                         photosToFilter = photosToFilter.filter { $0.isLivePhoto }
+                    case .modified:
+                        photosToFilter = photosToFilter.filter { $0.isModified }
                     default:
                         break
                 }
@@ -244,10 +246,13 @@ class PhotoLibrary {
 
                     let (fileSize, embedding) = await (fileSizeAsync, embeddingAsync)
 
+                    let isModified = self.photoAssetRepository.isModified(for: asset)
+
                     if case .success(let fileSize) = fileSize, case .success(let embedding) = embedding {
                         await MainActor.run {
                             photo.embedding = embedding
                             photo.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
+                            photo.isModified = isModified
                             photo.fileSize = fileSize
                             self.indexed += 1
                         }

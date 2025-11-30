@@ -12,6 +12,7 @@ final class PhotoModel {
     var fileSize: Int64?
     var isScreenshot: Bool = false
     var isLivePhoto: Bool = false
+    var isModified: Bool = false
     var fullScreenFrameWidth: Double = 0
     var fullScreenFrameHeight: Double = 0
     
