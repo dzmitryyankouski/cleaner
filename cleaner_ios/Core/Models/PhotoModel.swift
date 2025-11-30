@@ -13,6 +13,7 @@ final class PhotoModel {
     var isScreenshot: Bool = false
     var isLivePhoto: Bool = false
     var isModified: Bool = false
+    var isFavorite: Bool = false
     var fullScreenFrameWidth: Double = 0
     var fullScreenFrameHeight: Double = 0
     

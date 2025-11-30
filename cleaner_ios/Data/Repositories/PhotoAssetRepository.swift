@@ -75,4 +75,19 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
             resource.type == .adjustmentBasePhoto
         })
     }
+
+    func isFavorite(for asset: PHAsset) -> Bool {
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "localIdentifier == %@", asset.localIdentifier)
+
+        let favCollection = PHAssetCollection.fetchAssetCollections(
+            with: .smartAlbum,
+            subtype: .smartAlbumFavorites,
+            options: nil
+        ).firstObject
+
+        guard let favCollection = favCollection else { return false }
+
+        return PHAsset.fetchAssets(in: favCollection, options: options).count > 0
+    }
 }
