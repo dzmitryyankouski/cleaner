@@ -62,7 +62,6 @@ class PhotoLibrary {
         total = photos.count
         
         await indexPhotos()
-        await filter()
         await regroup()
 
         indexing = false
@@ -118,78 +117,8 @@ class PhotoLibrary {
     }
 
     func filter() async {
-        var photosToFilter: [PhotoModel]?
-        
-        guard let fetched = try? context.fetch(FetchDescriptor<PhotoModel>()) else {
-               print("❌ Нет фото для фильтрации")
-            return
-        }
-        photosToFilter = fetched
-        
-        guard let photosToFilter = photosToFilter, !photosToFilter.isEmpty else { return }
-        
-        await withCheckedContinuation { continuation in
-            Task.detached { [weak self] in
-                guard let self = self else {
-                    continuation.resume()
-                    return
-                }
-                var filtered = photosToFilter
-                
-                for filter in self.selectedFilter {
-                    switch filter {
-                        case .screenshots:
-                            filtered = filtered.filter { $0.isScreenshot }
-                        case .livePhotos:
-                            filtered = filtered.filter { $0.isLivePhoto }
-                        case .modified:
-                            filtered = filtered.filter { $0.isModified }
-                        case .favorites:
-                            filtered = filtered.filter { $0.isFavorite }
-                        default:
-                            break
-                    }
-                }
-
-                let fileSize = filtered.reduce(0) { $0 + ($1.fileSize ?? 0) }
-
-                await MainActor.run {
-                    self.photos = filtered
-                    self.photosFileSize = fileSize
-                }
-                
-                continuation.resume()
-            }
-        }
-
-        await sort()
-    }
-
-    func sort() async {
-        await withCheckedContinuation { continuation in
-            Task.detached { [weak self] in
-                guard let self = self else {
-                    continuation.resume()
-                    return
-                }
-                
-                let sortedPhotos = photos.sorted {
-                    switch self.selectedSort {
-                        case .date:
-                            return ($0.creationDate ?? Date.distantPast) > ($1.creationDate ?? Date.distantPast)
-                        case .size:
-                            return ($0.fileSize ?? 0) > ($1.fileSize ?? 0)
-                    }
-                }
-
-                await MainActor.run {
-                    print("🔍 Фотографии после сортировки: \(sortedPhotos.count)")
-                    self.photos = sortedPhotos
-                }
-                
-                continuation.resume()
-            }
-        }
+        photos = (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
+        photosFileSize = photos.reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
     func search(query: String) async -> Result<[SearchResult<PhotoModel>], SearchError> {
@@ -256,7 +185,7 @@ class PhotoLibrary {
             return []
         }
         
-        return (try? context.fetch(FetchDescriptor<PhotoModel>())) ?? []
+        return (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
     }
 
     private func indexPhotos() async {
@@ -321,6 +250,9 @@ class PhotoLibrary {
                 activeTasks -= 1
             }
         }
+
+        let photos = try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))
+        photosFileSize = (photos ?? []).reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
     private func getSimilarGroups() -> [PhotoGroupModel] {
@@ -328,7 +260,7 @@ class PhotoLibrary {
     }
 
     private func getSimilarPhotos() -> [PhotoModel] {
-        return (try? context.fetch(PhotoModel.similar)) ?? []
+        return (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort, type: "similar"))) ?? []
     }
 
     private func getDuplicatesGroups() -> [PhotoGroupModel] {
@@ -336,7 +268,7 @@ class PhotoLibrary {
     }
 
     private func getDuplicatesPhotos() -> [PhotoModel] {
-        return (try? context.fetch(PhotoModel.duplicates)) ?? []
+        return (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort, type: "duplicates"))) ?? []
     }
 
     private func groupSimilar(threshold: Float) async {

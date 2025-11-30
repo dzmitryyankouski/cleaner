@@ -134,7 +134,7 @@ struct PhotosView: View {
             }
             .onChange(of: photoLibrary?.selectedSort) { _, _ in
                 Task {
-                    await photoLibrary?.sort()
+                    await photoLibrary?.filter()
                 }
             }
         }
