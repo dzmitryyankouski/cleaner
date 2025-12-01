@@ -36,7 +36,7 @@ struct StatisticCard: View {
             }
         }
         .padding()
-        .background(Color(.systemGray6))
-        .cornerRadius(12)
+        .background(Color.gray.opacity(0.1))
+        .cornerRadius(25)
     }
 }
