@@ -151,20 +151,21 @@ class VideoLibrary {
     }
 
     func indexVideos() async {
-        guard let videos = try? context.fetch(FetchDescriptor<VideoModel>(predicate: #Predicate<VideoModel> { $0.embedding == nil })) else {
+        if let indexedVideos = try? context.fetch(FetchDescriptor<VideoModel>(predicate: #Predicate<VideoModel> { $0.embedding != nil })) {
+            await MainActor.run {
+                indexed = indexedVideos.count
+            }
+        }
+
+        guard let videosToIndex = try? context.fetch(FetchDescriptor<VideoModel>(predicate: #Predicate<VideoModel> { $0.embedding == nil })) else {
             print("❌ Нет видео для индексации")
             return
         }
 
-        // guard let videos = try? context.fetch(FetchDescriptor<VideoModel>()) else {
-        //     print("❌ Нет видео для индексации")
-        //     return
-        // }
-
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
             
-            for video in videos {
+            for video in videosToIndex {
                 while activeTasks >= concurrentTasks {
                     await group.next()
                     activeTasks -= 1
@@ -211,8 +212,8 @@ class VideoLibrary {
             }
         }
 
-        let filteredVideos = try? context.fetch(VideoModel.apply(filter: selectedFilter, sort: selectedSort))
-        videosFileSize = (filteredVideos ?? []).reduce(0) { $0 + ($1.fileSize ?? 0) }
+        videos = (try? context.fetch(VideoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
+        videosFileSize = videos.reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
     func getSimilarGroups() -> [VideoGroupModel] {
