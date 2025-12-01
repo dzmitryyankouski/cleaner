@@ -165,7 +165,7 @@ struct SimilarPhotosView: View {
             LazyVStack(alignment: .leading, spacing: 16) {
                 StatisticCard(statistics: [
                     .init(label: "Найдено групп", value: "\(photoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(photoLibrary?.similarPhotos.count ?? 0)", alignment: .center),
+                    .init(label: "Фото в группах", value: "\(photoLibrary?.similarPhotosCount ?? 0)", alignment: .center),
                     .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.similarPhotosFileSize ?? 0).formatted, alignment: .trailing),
                 ])
                 .padding(.horizontal)
@@ -204,7 +204,7 @@ struct DuplicatesView: View {
             LazyVStack(alignment: .leading, spacing: 16) {
                 StatisticCard(statistics: [
                     .init(label: "Найдено групп", value: "\(photoLibrary?.duplicatesGroups.count ?? 0)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(photoLibrary?.duplicatesPhotos.count ?? 0)", alignment: .center),
+                    .init(label: "Фото в группах", value: "\(photoLibrary?.duplicatesPhotosCount ?? 0)", alignment: .center),
                     .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.duplicatesPhotosFileSize ?? 0).formatted, alignment: .trailing),
                 ])
                 .padding(.horizontal)

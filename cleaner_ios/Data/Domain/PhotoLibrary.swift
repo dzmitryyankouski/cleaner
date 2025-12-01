@@ -10,15 +10,12 @@ class PhotoLibrary {
     var total: Int = 0
     
     var similarGroups: [PhotoGroupModel] = []
-    var similarPhotos: [PhotoModel] = []
     var similarPhotosFileSize: Int64 = 0
+    var similarPhotosCount: Int = 0
 
     var duplicatesGroups: [PhotoGroupModel] = []
-    var duplicatesPhotos: [PhotoModel] = []
     var duplicatesPhotosFileSize: Int64 = 0
-
-    var screenshots: [PhotoModel] = []
-    var screenshotsFileSize: Int64 = 0
+    var duplicatesPhotosCount: Int = 0
 
     var photos: [PhotoModel] = []
     var photosFileSize: Int64 = 0
@@ -87,11 +84,9 @@ class PhotoLibrary {
         }
 
         similarGroups = []
-        similarPhotos = []
         similarPhotosFileSize = 0
 
         duplicatesGroups = []
-        duplicatesPhotos = []
         duplicatesPhotosFileSize = 0
 
         photos = []
@@ -108,17 +103,25 @@ class PhotoLibrary {
         await groupDuplicates(threshold: 0.99)
 
         similarGroups = getSimilarGroups()
-        similarPhotos = getSimilarPhotos()
-        similarPhotosFileSize = similarPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+        similarPhotosFileSize = similarGroups.reduce(0) { $0 + ($1.totalSize ?? 0) }
+        similarPhotosCount = similarGroups.reduce(0) { $0 + ($1.photos.count ?? 0) }
 
         duplicatesGroups = getDuplicatesGroups()
-        duplicatesPhotos = getDuplicatesPhotos()
-        duplicatesPhotosFileSize = duplicatesPhotos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+        duplicatesPhotosFileSize = duplicatesGroups.reduce(0) { $0 + ($1.totalSize ?? 0) }
+        duplicatesPhotosCount = duplicatesGroups.reduce(0) { $0 + ($1.photos.count ?? 0) }
     }
 
     func filter() async {
         photos = (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
         photosFileSize = photos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+
+        similarGroups = getSimilarGroups()
+        similarPhotosFileSize = similarGroups.reduce(0) { $0 + ($1.totalSize ?? 0) }
+        similarPhotosCount = similarGroups.reduce(0) { $0 + ($1.photos.count ?? 0) }
+
+        duplicatesGroups = getDuplicatesGroups()
+        duplicatesPhotosFileSize = duplicatesGroups.reduce(0) { $0 + ($1.totalSize ?? 0) }
+        duplicatesPhotosCount = duplicatesGroups.reduce(0) { $0 + ($1.photos.count ?? 0) }
     }
 
     func search(query: String) async -> Result<[SearchResult<PhotoModel>], SearchError> {
@@ -256,19 +259,11 @@ class PhotoLibrary {
     }
 
     private func getSimilarGroups() -> [PhotoGroupModel] {
-        return (try? context.fetch(PhotoGroupModel.similar)) ?? []
-    }
-
-    private func getSimilarPhotos() -> [PhotoModel] {
-        return (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort, type: "similar"))) ?? []
+        return (try? context.fetch(PhotoGroupModel.apply(filter: selectedFilter, sort: selectedSort, type: "similar"))) ?? []
     }
 
     private func getDuplicatesGroups() -> [PhotoGroupModel] {
-        return (try? context.fetch(PhotoGroupModel.duplicates)) ?? []
-    }
-
-    private func getDuplicatesPhotos() -> [PhotoModel] {
-        return (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort, type: "duplicates"))) ?? []
+        return (try? context.fetch(PhotoGroupModel.apply(filter: selectedFilter, sort: selectedSort, type: "duplicates"))) ?? []
     }
 
     private func groupSimilar(threshold: Float) async {
@@ -329,6 +324,7 @@ class PhotoLibrary {
             }
             
             group.updateLatestDate()
+            group.updateTotalSize()
             context.insert(group)
         }
 
