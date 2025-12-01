@@ -18,6 +18,9 @@ class VideoLibrary {
     var similarVideos: [VideoModel] = []
     var similarVideosFileSize: Int64 = 0
 
+    var selectedSort: SortVideo = .date
+    var selectedFilter: Set<FilterVideo> = []
+
     private let videoAssetRepository: VideoAssetRepository
     private let embeddingService: EmbeddingServiceProtocol
     private let imageProcessor: ImageProcessingProtocol
@@ -56,7 +59,6 @@ class VideoLibrary {
         total = videos.count
         
         await indexVideos()
-        
         await regroup()
 
         videosFileSize = videos.reduce(0) { $0 + ($1.fileSize ?? 0) }
@@ -64,9 +66,56 @@ class VideoLibrary {
         indexing = false
     }
 
+    func reset() async {
+        await MainActor.run {
+            indexing = true
+        }
+
+        do {
+            let groups = try context.fetch(FetchDescriptor<VideoGroupModel>())
+            for group in groups {
+                context.delete(group)
+            }
+            
+            let videos = try context.fetch(FetchDescriptor<VideoModel>())
+            for video in videos {
+                context.delete(video)
+            }
+            
+            try context.save()
+        } catch {
+            await MainActor.run {
+                indexing = false
+            }
+        }
+
+        await MainActor.run {
+            similarGroups = []
+            similarVideos = []
+            similarVideosFileSize = 0
+
+            videos = []
+            videosFileSize = 0
+
+            total = 0
+            indexed = 0
+        }
+
+        await loadVideos()
+    }
+
     func regroup() async {
         let threshold = settings.values.videoSimilarityThreshold
         await groupSimilar(threshold: threshold)
+
+        similarGroups = getSimilarGroups()
+        similarVideos = getSimilarVideos()
+        similarVideosFileSize = similarVideos.reduce(0) { $0 + ($1.fileSize ?? 0) }
+    }
+
+    func filter() async {
+        videos = (try? context.fetch(VideoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
+        videosFileSize = videos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
         similarGroups = getSimilarGroups()
         similarVideos = getSimilarVideos()
@@ -98,7 +147,7 @@ class VideoLibrary {
             return []
         }
         
-        return (try? context.fetch(FetchDescriptor<VideoModel>())) ?? []
+        return (try? context.fetch(VideoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
     }
 
     func indexVideos() async {
@@ -131,13 +180,24 @@ class VideoLibrary {
                     let fileSizeResult = await self.videoAssetRepository.getFileSize(for: asset)
                     let fileSize = (try? fileSizeResult.get()) ?? 0
                     
+                    let isModified = self.videoAssetRepository.isModified(for: asset)
+                    let isFavorite = self.videoAssetRepository.isFavorite(for: asset)
+                    
                     let embeddingResult = await self.generateVideoEmbedding(for: asset)
                     
                     if case .success(let embedding) = embeddingResult {
                         await MainActor.run {
                             video.fileSize = fileSize
                             video.embedding = embedding
+                            video.isModified = isModified
+                            video.isFavorite = isFavorite
                             self.indexed += 1
+
+                            do {
+                                try self.context.save()
+                            } catch {
+                                print("❌ Ошибка при сохранении контекста: \(error)")
+                            }
                         }
                     }
                 }
@@ -151,15 +211,12 @@ class VideoLibrary {
             }
         }
 
-        do {
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сохранении контекста: \(error)")
-        }
+        let filteredVideos = try? context.fetch(VideoModel.apply(filter: selectedFilter, sort: selectedSort))
+        videosFileSize = (filteredVideos ?? []).reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
     func getSimilarGroups() -> [VideoGroupModel] {
-        return (try? context.fetch(VideoGroupModel.similar)) ?? []
+        return (try? context.fetch(VideoGroupModel.apply(filter: selectedFilter, sort: selectedSort, type: "similar"))) ?? []
     }
 
     func getSimilarVideos() -> [VideoModel] {
@@ -213,6 +270,7 @@ class VideoLibrary {
             }
             
             group.updateLatestDate()
+            group.updateTotalSize()
             context.insert(group)
         }
 
@@ -369,24 +427,6 @@ class VideoLibrary {
         results.sort { $0.similarity > $1.similarity }
         
         return .success(results)
-    }
-
-    func reset() {
-        do {
-            let groups = try context.fetch(FetchDescriptor<VideoGroupModel>())
-            for group in groups {
-                context.delete(group)
-            }
-            
-            let videos = try context.fetch(FetchDescriptor<VideoModel>())
-            for video in videos {
-                context.delete(video)
-            }
-            
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сбросе контекста: \(error)")
-        }
     }
 }
 

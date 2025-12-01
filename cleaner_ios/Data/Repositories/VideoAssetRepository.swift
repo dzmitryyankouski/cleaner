@@ -52,11 +52,26 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
     }
 
     func isModified(for asset: PHAsset) -> Bool {
-        return false
+        let resources = PHAssetResource.assetResources(for: asset)
+        return resources.contains(where: { resource in
+            resource.type == .adjustmentData ||
+            resource.type == .adjustmentBaseVideo
+        })
     }
 
     func isFavorite(for asset: PHAsset) -> Bool {
-        return false
+        let options = PHFetchOptions()
+        options.predicate = NSPredicate(format: "localIdentifier == %@", asset.localIdentifier)
+
+        let favCollection = PHAssetCollection.fetchAssetCollections(
+            with: .smartAlbum,
+            subtype: .smartAlbumFavorites,
+            options: nil
+        ).firstObject
+
+        guard let favCollection = favCollection else { return false }
+
+        return PHAsset.fetchAssets(in: favCollection, options: options).count > 0
     }
     
     func getAVAsset(for asset: PHAsset) async -> AVAsset? {

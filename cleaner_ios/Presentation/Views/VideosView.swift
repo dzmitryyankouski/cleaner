@@ -18,6 +18,30 @@ struct VideoGroupNavigationItem: Hashable {
     }
 }
 
+enum FilterVideo: String, CaseIterable {
+    case modified = "Modified"
+    case favorites = "Favorites"
+    
+    var icon: String {
+        switch self {
+            case .modified: return "pencil.and.scribble"
+            case .favorites: return "star"
+        }
+    }
+}
+
+enum SortVideo: String, CaseIterable {
+    case date = "Date"
+    case size = "Size"
+    
+    var icon: String {
+        switch self {
+            case .date: return "clock"
+            case .size: return "arrow.up.arrow.down"
+        }
+    }
+}
+
 struct VideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
     @State private var selectedTab = 0
@@ -51,6 +75,36 @@ struct VideosView: View {
             .navigationTitle("Видео")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Section {
+                            ForEach(FilterVideo.allCases, id: \.self) { filter in
+                                Toggle(isOn: Binding(get: { videoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
+                                    if value {
+                                        videoLibrary?.selectedFilter.insert(filter)
+                                    } else {
+                                        videoLibrary?.selectedFilter.remove(filter)
+                                    }
+                                })) {
+                                    Label(filter.rawValue, systemImage: filter.icon)
+                                }
+                            }
+                        }
+                        Section {
+                            Picker("Sort", selection: Binding(get: { videoLibrary?.selectedSort ?? .date }, set: { value in
+                                videoLibrary?.selectedSort = value
+                            })) {
+                                ForEach(SortVideo.allCases, id: \.self) { sort in
+                                    Label(sort.rawValue, systemImage: sort.icon)
+                                        .tag(sort)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Фильтры", systemImage: "line.3.horizontal.decrease")
+                    }
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                ToolbarItem(placement: .topBarTrailing) {
                     Button(action: {
                         showSettings.toggle()
                     }) {
@@ -62,11 +116,22 @@ struct VideosView: View {
                 }
             }
             .refreshable {
-                videoLibrary?.reset()
-                await videoLibrary?.loadVideos()
+                Task {
+                    await videoLibrary?.reset()
+                }
             }
             .navigationDestination(for: VideoGroupNavigationItem.self) { item in
                 VideoDetailView(videos: item.videos, currentVideoId: item.currentVideoId, namespace: navigationTransitionNamespace)
+            }
+            .onChange(of: videoLibrary?.selectedFilter) { _, _ in
+                Task {
+                    await videoLibrary?.filter()
+                }
+            }
+            .onChange(of: videoLibrary?.selectedSort) { _, _ in
+                Task {
+                    await videoLibrary?.filter()
+                }
             }
         }
     }
@@ -78,14 +143,7 @@ struct AllVideosView: View {
     var namespace: Namespace.ID
 
     var body: some View {
-        if videoLibrary?.indexing ?? false {
-            ProgressLoadingCard(
-                title: "Индексация видео",
-                current: videoLibrary?.indexed ?? 0,
-                total: videoLibrary?.total ?? 0
-            )
-            .padding(.horizontal)
-        } else if videoLibrary?.similarGroups.isEmpty ?? true {
+        if videoLibrary?.videos.isEmpty ?? true && !(videoLibrary?.indexing ?? false) {
             EmptyState(
                 icon: "video",
                 title: "Видео не найдены",
@@ -93,11 +151,20 @@ struct AllVideosView: View {
             )
         } else {
             VStack(spacing: 12) {
-                StatisticCard(statistics: [
-                    .init(label: "Всего видео", value: "\(videoLibrary?.videos.count ?? 0)", alignment: .leading),
-                    .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.videosFileSize ?? 0).formatted, alignment: .trailing),
-                ])
-                .padding(.horizontal)
+                if videoLibrary?.indexing ?? false {
+                    ProgressLoadingCard(
+                        title: "Индексация видео",
+                        current: videoLibrary?.indexed ?? 0,
+                        total: videoLibrary?.total ?? 0
+                    )
+                    .padding(.horizontal)
+                } else {
+                    StatisticCard(statistics: [
+                        .init(label: "Всего видео", value: "\(videoLibrary?.videos.count ?? 0)", alignment: .leading),
+                        .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.videosFileSize ?? 0).formatted, alignment: .trailing),
+                    ])
+                    .padding(.horizontal)
+                }
 
                 VideoGrid(videos: videoLibrary?.videos ?? [], navigationPath: $navigationPath, namespace: namespace)
             }
