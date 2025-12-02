@@ -163,6 +163,18 @@ class PhotoLibrary {
         return .success(results)
     }
 
+    func delete(photo: PhotoModel) async {
+        print("🔍 Удаляем фотографию: \(photo.id)")
+    }
+
+    func removeLive(photo: PhotoModel) async {
+        print("🔍 Удаляем live фотографию: \(photo.id)")
+    }
+
+    func compress(photo: PhotoModel) async {
+        print("🔍 Сжимаем фотографию: \(photo.id)")
+    }
+
     private func getAllPhotos() async -> [PhotoModel] {
         let assets = await photoAssetRepository.fetchAssets()
 
