@@ -24,14 +24,14 @@ class PhotoLibrary {
     var selectedSort: SortPhoto = .date {
         didSet {
             Task {
-                await self.filter()
+                await self.refresh()
             }
         }
     }
     var selectedFilter: Set<FilterPhoto> = [] {
         didSet {
             Task {
-                await self.filter()
+                await self.refresh()
             }
         }
     }
@@ -76,6 +76,7 @@ class PhotoLibrary {
         
         await indexPhotos()
         await regroup()
+        await refresh()
 
         indexing = false
 
@@ -117,17 +118,9 @@ class PhotoLibrary {
         let threshold = settings.values.photoSimilarityThreshold
         await groupSimilar(threshold: threshold)
         await groupDuplicates(threshold: 0.99)
-
-        similarGroups = getSimilarGroups()
-        similarPhotosFileSize = similarGroups.reduce(0) { $0 + ($1.totalSize ?? 0) }
-        similarPhotosCount = similarGroups.reduce(0) { $0 + ($1.photos.count ?? 0) }
-
-        duplicatesGroups = getDuplicatesGroups()
-        duplicatesPhotosFileSize = duplicatesGroups.reduce(0) { $0 + ($1.totalSize ?? 0) }
-        duplicatesPhotosCount = duplicatesGroups.reduce(0) { $0 + ($1.photos.count ?? 0) }
     }
 
-    func filter() async {
+    func refresh() async {
         photos = (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
         photosFileSize = photos.reduce(0) { $0 + ($1.fileSize ?? 0) }
 
@@ -189,7 +182,7 @@ class PhotoLibrary {
             print("❌ Ошибка при сохранении контекста: \(error)")
         }
 
-        await filter()
+        await refresh()
     }
 
     func removeLive(photo: PhotoModel) async {
@@ -290,9 +283,6 @@ class PhotoLibrary {
                 activeTasks -= 1
             }
         }
-
-        let photos = try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))
-        photosFileSize = (photos ?? []).reduce(0) { $0 + ($1.fileSize ?? 0) }
     }
 
     private func getSimilarGroups() -> [PhotoGroupModel] {
@@ -351,7 +341,6 @@ class PhotoLibrary {
             let groupId = UUID().uuidString
             let group = PhotoGroupModel(id: groupId, type: type)
             
-            // Устанавливаем связь многие-ко-многим с обеих сторон
             group.photos = groupPhotos
 
             for photo in groupPhotos {

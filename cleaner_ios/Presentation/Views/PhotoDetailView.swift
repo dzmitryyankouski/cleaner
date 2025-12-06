@@ -4,26 +4,21 @@ import Photos
 struct PhotoDetailView: View {
     @State var photos: [PhotoModel]
 
-    let currentPhotoId: String
+    let currentItem: PhotoModel
     var namespace: Namespace.ID
 
     @Environment(\.photoLibrary) var photoLibrary
     @Environment(\.dismiss) var dismiss
     
-    @State private var selectedPhotoId: String? = nil
     @State private var assets: [String: PHAsset] = [:]
     @State private var showDeleteConfirmation = false
     @State private var showRemoveLiveConfirmation = false
     @State private var isProcessing = false
-
-    private var currentPhoto: PhotoModel? {
-        guard let selectedPhotoId = selectedPhotoId else { return nil }
-        return photos.first { $0.id == selectedPhotoId }
-    }
+    @State private var selectedItem: PhotoModel? = nil
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView(selection: $selectedPhotoId) {
+            TabView(selection: $selectedItem) {
                 ForEach(photos, id: \.id) { photo in
                     GeometryReader { geometry in
                         Photo(photo: photo, quality: .high, contentMode: .fit)
@@ -31,25 +26,25 @@ struct PhotoDetailView: View {
                             .clipped()
                     }
                     .id(photo.id)
-                    .tag(photo.id)
+                    .tag(photo)
                     .ignoresSafeArea()
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
             .onAppear {
-                selectedPhotoId = currentPhotoId
+                selectedItem = currentItem
             }
+            .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
         }
         .overlay(
             VStack {
                 Spacer()
-                PhotoThumbnailIndicator(photos: photos, selectedPhotoId: $selectedPhotoId)
+                PhotoThumbnailIndicator(photos: photos, selectedItem: $selectedItem)
             }
         )
-        .navigationTitle("Группа (\(photos.count))")
+        .navigationTitle(selectedItem?.id ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        .navigationTransition(.zoom(sourceID: selectedPhotoId ?? currentPhotoId, in: namespace))
+        .navigationTransition(.zoom(sourceID: selectedItem?.id ?? currentItem.id, in: namespace))
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
@@ -58,21 +53,21 @@ struct PhotoDetailView: View {
                     }) {
                         Label("Remove", systemImage: "trash")
                     }
-                    .disabled(currentPhoto == nil || isProcessing)
+                    .disabled(selectedItem == nil || isProcessing)
                     
                     Button(action: {
                         showRemoveLiveConfirmation = true
                     }) {
                         Label("Remove Live", systemImage: "livephoto")
                     }
-                    .disabled(currentPhoto == nil || isProcessing || currentPhoto?.isLivePhoto != true)
+                    .disabled(selectedItem == nil || isProcessing || selectedItem?.isLivePhoto != true)
                     
                     Button(action: {
                         handleCompress()
                     }) {
                         Label("Compress", systemImage: "arrow.down.to.line")
                     }
-                    .disabled(currentPhoto == nil || isProcessing)
+                    .disabled(selectedItem == nil || isProcessing)
                 } label: {
                     Image(systemName: "ellipsis")
                 }
@@ -96,10 +91,11 @@ struct PhotoDetailView: View {
     }
     
     private func handleDelete() {
-        guard let photo = currentPhoto else { return }
         isProcessing = true
         
         Task {
+            guard let photo = selectedItem else { return }
+
             await photoLibrary?.delete(photo: photo)
             await MainActor.run {
                 self.photos.removeAll { $0.id == photo.id }
@@ -113,7 +109,7 @@ struct PhotoDetailView: View {
     }
     
     private func handleRemoveLive() {
-        guard let photo = currentPhoto else { return }
+        guard let photo = selectedItem else { return }
         isProcessing = true
         
         Task {
@@ -125,7 +121,7 @@ struct PhotoDetailView: View {
     }
     
     private func handleCompress() {
-        guard let photo = currentPhoto else { return }
+        guard let photo = selectedItem else { return }
         isProcessing = true
         
         Task {

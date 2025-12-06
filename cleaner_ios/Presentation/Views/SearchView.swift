@@ -53,7 +53,7 @@ struct SearchView: View {
             .searchPresentationToolbarBehavior(.avoidHidingContent)
             .toolbar(.hidden, for: .navigationBar)
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
-                PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
+                PhotoDetailView(photos: item.photos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
             }
             .navigationDestination(for: VideoGroupNavigationItem.self) { item in
                 VideoDetailView(videos: item.videos, currentVideoId: item.currentVideoId, namespace: navigationTransitionNamespace)

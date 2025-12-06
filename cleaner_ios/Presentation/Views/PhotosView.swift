@@ -3,15 +3,15 @@ import SwiftData
 
 struct PhotoGroupNavigationItem: Hashable {
     let photos: [PhotoModel]
-    let currentPhotoId: String
+    let currentItem: PhotoModel
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(photos.map { $0.id }.joined())
-        hasher.combine(currentPhotoId)
+        hasher.combine(currentItem.id)
     }
     
     static func == (lhs: PhotoGroupNavigationItem, rhs: PhotoGroupNavigationItem) -> Bool {
-        lhs.photos.map { $0.id } == rhs.photos.map { $0.id } && lhs.currentPhotoId == rhs.currentPhotoId
+        lhs.photos.map { $0.id } == rhs.photos.map { $0.id } && lhs.currentItem.id == rhs.currentItem.id
     }
 }
 
@@ -125,7 +125,7 @@ struct PhotosView: View {
                 }
             }
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
-                PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
+                PhotoDetailView(photos: item.photos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
             }
         }
     }
@@ -262,7 +262,7 @@ struct PhotoGroupRowView: View {
                         Photo(photo: photo, quality: .medium, contentMode: .fill)
                             .frame(width: 150, height: 200)
                             .onTapGesture {
-                                navigationPath.append(PhotoGroupNavigationItem(photos: group.photos, currentPhotoId: photo.id))
+                                navigationPath.append(PhotoGroupNavigationItem(photos: group.photos, currentItem: photo))
                             }
                             .id(photo.id)
                             .matchedTransitionSource(id: photo.id, in: namespace)

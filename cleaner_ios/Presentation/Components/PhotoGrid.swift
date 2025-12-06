@@ -17,7 +17,7 @@ struct PhotoGrid: View {
                     .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
                     .clipped()
                     .onTapGesture {
-                        navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentPhotoId: photo.id))
+                        navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentItem: photo))
                     }
                     .id(photo.id)
                     .matchedTransitionSource(id: photo.id, in: namespace)
