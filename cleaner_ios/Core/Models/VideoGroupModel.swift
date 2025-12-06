@@ -2,7 +2,7 @@ import SwiftData
 import Photos
 
 @Model
-final class VideoGroupModel {
+final class VideoGroupModel: Identifiable {
     @Attribute(.unique) var id: String
     var type: String = "similar"
     var latestDate: Date = Date.distantPast

@@ -2,7 +2,7 @@ import SwiftData
 import Photos
 
 @Model
-final class PhotoModel {
+final class PhotoModel: Identifiable {
     @Attribute(.unique) var id: String
     @Relationship(deleteRule: .nullify)
     var groups: [PhotoGroupModel] = []

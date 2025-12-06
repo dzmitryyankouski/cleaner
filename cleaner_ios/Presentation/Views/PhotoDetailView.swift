@@ -2,7 +2,8 @@ import SwiftUI
 import Photos
 
 struct PhotoDetailView: View {
-    let photos: [PhotoModel]
+    @State var photos: [PhotoModel]
+
     let currentPhotoId: String
     var namespace: Namespace.ID
 
@@ -101,8 +102,9 @@ struct PhotoDetailView: View {
         Task {
             await photoLibrary?.delete(photo: photo)
             await MainActor.run {
+                self.photos.removeAll { $0.id == photo.id }
                 isProcessing = false
-                // Если удалили последнее фото в группе, закрываем view
+
                 if photos.count <= 1 {
                     dismiss()
                 }

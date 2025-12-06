@@ -164,7 +164,16 @@ class PhotoLibrary {
     }
 
     func delete(photo: PhotoModel) async {
+        context.delete(photo)
         print("🔍 Удаляем фотографию: \(photo.id)")
+
+        do {
+            try context.save()
+        } catch {
+            print("❌ Ошибка при сохранении контекста: \(error)")
+        }
+
+        await filter()
     }
 
     func removeLive(photo: PhotoModel) async {

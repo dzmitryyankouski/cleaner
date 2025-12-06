@@ -3,7 +3,7 @@ import Photos
 import AVFoundation
 
 @Model
-final class VideoModel {
+final class VideoModel: Identifiable {
     @Attribute(.unique) var id: String
     @Relationship(deleteRule: .nullify)
     var groups: [VideoGroupModel] = []

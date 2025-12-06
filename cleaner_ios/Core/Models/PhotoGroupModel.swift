@@ -2,7 +2,7 @@ import SwiftData
 import Photos
 
 @Model
-final class PhotoGroupModel {
+final class PhotoGroupModel: Identifiable {
     @Attribute(.unique) var id: String
     var type: String = "similar" // "similar" или "duplicate"
     var latestDate: Date = Date.distantPast
