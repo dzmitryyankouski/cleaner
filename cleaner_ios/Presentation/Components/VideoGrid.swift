@@ -15,7 +15,7 @@ struct VideoGrid: View {
                     .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
                     .clipped()
                     .onTapGesture {
-                        navigationPath.append(VideoGroupNavigationItem(videos: videos, currentVideoId: video.id))
+                        navigationPath.append(VideoGroupNavigationItem(videos: videos, currentItem: video))
                     }
                     .id(video.id)
                     .matchedTransitionSource(id: video.id, in: namespace)

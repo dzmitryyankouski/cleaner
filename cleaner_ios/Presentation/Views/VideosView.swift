@@ -6,15 +6,15 @@ import AVFoundation
 
 struct VideoGroupNavigationItem: Hashable {
     let videos: [VideoModel]
-    let currentVideoId: String
+    let currentItem: VideoModel
     
     func hash(into hasher: inout Hasher) {
         hasher.combine(videos.map { $0.id }.joined())
-        hasher.combine(currentVideoId)
+        hasher.combine(currentItem.id)
     }
     
     static func == (lhs: VideoGroupNavigationItem, rhs: VideoGroupNavigationItem) -> Bool {
-        lhs.videos.map { $0.id } == rhs.videos.map { $0.id } && lhs.currentVideoId == rhs.currentVideoId
+        lhs.videos.map { $0.id } == rhs.videos.map { $0.id } && lhs.currentItem.id == rhs.currentItem.id
     }
 }
 
@@ -121,7 +121,7 @@ struct VideosView: View {
                 }
             }
             .navigationDestination(for: VideoGroupNavigationItem.self) { item in
-                VideoDetailView(videos: item.videos, currentVideoId: item.currentVideoId, namespace: navigationTransitionNamespace)
+                VideoDetailView(videos: item.videos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
             }
             .onChange(of: videoLibrary?.selectedFilter) { _, _ in
                 Task {
@@ -231,7 +231,7 @@ struct VideoGroupRowView: View {
                             .clipped()
                             .matchedTransitionSource(id: video.id, in: namespace)
                             .onTapGesture {
-                                navigationPath.append(VideoGroupNavigationItem(videos: group.videos, currentVideoId: video.id))
+                                navigationPath.append(VideoGroupNavigationItem(videos: group.videos, currentItem: video))
                             }
                     }
                 }

@@ -56,7 +56,7 @@ struct SearchView: View {
                 PhotoDetailView(photos: item.photos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
             }
             .navigationDestination(for: VideoGroupNavigationItem.self) { item in
-                VideoDetailView(videos: item.videos, currentVideoId: item.currentVideoId, namespace: navigationTransitionNamespace)
+                VideoDetailView(videos: item.videos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
             }
             .onSubmit(of: .search) {
                 searchPhotos()
