@@ -15,6 +15,7 @@ struct PhotoDetailView: View {
     @State private var showRemoveLiveConfirmation = false
     @State private var isProcessing = false
     @State private var selectedItem: PhotoModel? = nil
+    @State private var itemToDelete: PhotoModel? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -49,6 +50,7 @@ struct PhotoDetailView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button(role: .destructive, action: {
+                        itemToDelete = selectedItem
                         showDeleteConfirmation = true
                     }) {
                         Label("Remove", systemImage: "trash")
@@ -74,6 +76,7 @@ struct PhotoDetailView: View {
                 .disabled(isProcessing)
                 .confirmationDialog("Удалить фотографию?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
                     Button("Удалить", role: .destructive) {
+                        print("выбранный элемент: \(itemToDelete?.id)")
                         handleDelete()
                     }
                 } message: {
@@ -91,19 +94,27 @@ struct PhotoDetailView: View {
     }
     
     private func handleDelete() {
+        guard let photoToDelete = itemToDelete else { return }
         isProcessing = true
-        
+
         Task {
-            guard let photo = selectedItem else { return }
+            let index = photos.firstIndex { $0.id == photoToDelete.id }
 
-            await photoLibrary?.delete(photo: photo)
+            await photoLibrary?.delete(photo: photoToDelete)
             await MainActor.run {
-                self.photos.removeAll { $0.id == photo.id }
-                isProcessing = false
+                if let index = index {
+                    photos.remove(at: index)
 
-                if photos.count <= 1 {
-                    dismiss()
+                    if photos.count <= 1 {
+                        isProcessing = false
+                        itemToDelete = nil
+                        dismiss()
+                    } else {
+                        selectedItem = photos[index]
+                    }
                 }
+                
+                isProcessing = false
             }
         }
     }
