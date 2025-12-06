@@ -2,6 +2,7 @@ import Foundation
 import Observation
 import SwiftData
 import Photos
+import Combine
 
 @Observable
 class PhotoLibrary {
@@ -20,9 +21,24 @@ class PhotoLibrary {
     var photos: [PhotoModel] = []
     var photosFileSize: Int64 = 0
 
-    var selectedSort: SortPhoto = .date
-    var selectedFilter: Set<FilterPhoto> = []
+    var selectedSort: SortPhoto = .date {
+        didSet {
+            Task {
+                await self.filter()
+            }
+        }
+    }
+    var selectedFilter: Set<FilterPhoto> = [] {
+        didSet {
+            Task {
+                await self.filter()
+            }
+        }
+    }
 
+    private let selectedSortSubject = CurrentValueSubject<SortPhoto, Never>(.date)
+    private let selectedFilterSubject = CurrentValueSubject<Set<FilterPhoto>, Never>([])
+    
     private let photoAssetRepository: AssetRepositoryProtocol
     private let embeddingService: EmbeddingServiceProtocol
     private let clusteringService: ClusteringServiceProtocol

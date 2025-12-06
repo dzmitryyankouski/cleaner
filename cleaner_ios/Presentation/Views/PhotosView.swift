@@ -127,16 +127,6 @@ struct PhotosView: View {
             .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
                 PhotoDetailView(photos: item.photos, currentPhotoId: item.currentPhotoId, namespace: navigationTransitionNamespace)
             }
-            .onChange(of: photoLibrary?.selectedFilter) { _, _ in
-                Task {
-                    await photoLibrary?.filter()
-                }
-            }
-            .onChange(of: photoLibrary?.selectedSort) { _, _ in
-                Task {
-                    await photoLibrary?.filter()
-                }
-            }
         }
     }
 }
