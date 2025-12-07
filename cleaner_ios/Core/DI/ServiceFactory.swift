@@ -34,7 +34,7 @@ final class ServiceFactory {
         )
     }
     
-    func makePhotoAssetRepository() -> AssetRepositoryProtocol {
+    func makePhotoAssetRepository() -> PhotoRepositoryProtocol {
         PhotoAssetRepository()
     }
     

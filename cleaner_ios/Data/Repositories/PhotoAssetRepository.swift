@@ -2,30 +2,30 @@ import Foundation
 import Photos
 import SwiftData
 
-final class PhotoAssetRepository: AssetRepositoryProtocol {
-    
+final class PhotoAssetRepository: PhotoRepositoryProtocol {
+
     func fetchAssets() async -> Result<[PHAsset], AssetError> {
         let authStatus = PHPhotoLibrary.authorizationStatus()
-        
+
         if authStatus == .denied || authStatus == .restricted {
             return .failure(.permissionDenied)
         }
-        
+
         if authStatus == .notDetermined {
             let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
             if newStatus == .denied || newStatus == .restricted {
                 return .failure(.permissionDenied)
             }
         }
-        
+
         let fetchOptions = PHFetchOptions()
         let photos = PHAsset.fetchAssets(with: .image, options: fetchOptions)
-        
+
         var assets: [PHAsset] = []
         photos.enumerateObjects { asset, _, _ in
             assets.append(asset)
         }
-        
+
         return .success(assets)
     }
 
@@ -49,7 +49,8 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
             for resource in resources {
                 dispatch.enter()
 
-                PHAssetResourceManager.default().requestData(for: resource, options: options) { data in
+                PHAssetResourceManager.default().requestData(for: resource, options: options) {
+                    data in
                     totalSize += Int64(data.count)
                 } completionHandler: { error in
                     if error != nil {
@@ -72,8 +73,7 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
     func isModified(for asset: PHAsset) -> Bool {
         let resources = PHAssetResource.assetResources(for: asset)
         return resources.contains(where: { resource in
-            resource.type == .adjustmentData ||
-            resource.type == .adjustmentBasePhoto
+            resource.type == .adjustmentData || resource.type == .adjustmentBasePhoto
         })
     }
 
@@ -91,18 +91,48 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
 
         return PHAsset.fetchAssets(in: favCollection, options: options).count > 0
     }
-    
+
     func delete(assets: [PHAsset]) async -> Result<Void, AssetError> {
         return await withCheckedContinuation { continuation in
-            PHPhotoLibrary.shared().performChanges({
-                PHAssetChangeRequest.deleteAssets(assets as NSArray)
-            }, completionHandler: { success, error in
-                if success {
-                    continuation.resume(returning: .success(()))
-                } else {
+            PHPhotoLibrary.shared().performChanges(
+                {
+                    PHAssetChangeRequest.deleteAssets(assets as NSArray)
+                },
+                completionHandler: { success, error in
+                    if success {
+                        continuation.resume(returning: .success(()))
+                    } else {
+                        continuation.resume(returning: .failure(.loadingFailed))
+                    }
+                })
+        }
+    }
+
+    func removeLive(asset: PHAsset) async -> Result<Void, AssetError> {
+        return await withCheckedContinuation { continuation in
+            let options = PHImageRequestOptions()
+            options.version = .current
+            options.deliveryMode = .highQualityFormat
+            options.isSynchronous = false
+
+            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) {
+                data, _, _, _ in
+                guard let data else {
                     continuation.resume(returning: .failure(.loadingFailed))
+                    return
                 }
-            })
+
+                PHPhotoLibrary.shared().performChanges {
+                    let request = PHAssetCreationRequest.forAsset()
+                    request.addResource(with: .photo, data: data, options: nil)
+                } completionHandler: { success, error in
+                    if success {
+                        continuation.resume(returning: .success(()))
+                    } else {
+                        continuation.resume(returning: .failure(.loadingFailed))
+                    }
+                }
+            }
         }
     }
 }

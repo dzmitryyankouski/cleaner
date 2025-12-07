@@ -81,7 +81,8 @@ struct PhotoDetailView: View {
                     titleVisibility: .visible
                 ) {
                     Button("Удалить", role: .destructive) {
-                        handleRemoveLive()
+                        guard let selectedItem = selectedItem else { return }
+                        handleRemoveLive(photo: selectedItem)
                     }
                 } message: {
                     Text("Будет удалена только Live Photo часть, само фото останется")
@@ -124,8 +125,7 @@ struct PhotoDetailView: View {
         }
     }
 
-    private func handleRemoveLive() {
-        guard let photo = selectedItem else { return }
+    private func handleRemoveLive(photo: PhotoModel) {
         isProcessing = true
 
         Task {

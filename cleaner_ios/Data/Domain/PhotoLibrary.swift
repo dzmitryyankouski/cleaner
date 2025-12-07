@@ -39,7 +39,7 @@ class PhotoLibrary {
     private let selectedSortSubject = CurrentValueSubject<SortPhoto, Never>(.date)
     private let selectedFilterSubject = CurrentValueSubject<Set<FilterPhoto>, Never>([])
     
-    private let photoAssetRepository: AssetRepositoryProtocol
+    private let photoAssetRepository: PhotoRepositoryProtocol
     private let embeddingService: EmbeddingServiceProtocol
     private let clusteringService: ClusteringServiceProtocol
     private let translationService: TranslationServiceProtocol?
@@ -48,7 +48,7 @@ class PhotoLibrary {
     private let settings: Settings
 
     init(
-        photoAssetRepository: AssetRepositoryProtocol,
+        photoAssetRepository: PhotoRepositoryProtocol,
         embeddingService: EmbeddingServiceProtocol,
         clusteringService: ClusteringServiceProtocol,
         translationService: TranslationServiceProtocol? = nil,
@@ -210,8 +210,24 @@ class PhotoLibrary {
         }
     }
 
-    func removeLive(photo: PhotoModel) async {
+    func removeLive(photo: PhotoModel) async -> Result<Void, AssetError> {
         print("🔍 Удаляем live фотографию: \(photo.id)")
+
+        let photoId = photo.id
+        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
+        guard let asset = assets.firstObject else { return .failure(.assetNotFound) }
+
+        let result = await photoAssetRepository.removeLive(asset: asset)
+        
+        switch result {
+        case .success:
+            await refresh()
+            print("✅ Live фотография удалена")
+            return .success(())
+        case .failure(let error):
+            print("❌ Ошибка при удалении live фотографии: \(error.localizedDescription)")
+            return .failure(.loadingFailed)
+        }
     }
 
     func compress(photo: PhotoModel) async {
