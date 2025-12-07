@@ -11,11 +11,9 @@ struct PhotoDetailView: View {
     @Environment(\.dismiss) var dismiss
 
     @State private var assets: [String: PHAsset] = [:]
-    @State private var showDeleteConfirmation = false
     @State private var showRemoveLiveConfirmation = false
     @State private var isProcessing = false
     @State private var selectedItem: PhotoModel? = nil
-    @State private var itemToDelete: PhotoModel? = nil
 
     var body: some View {
         VStack(spacing: 0) {
@@ -52,8 +50,8 @@ struct PhotoDetailView: View {
                     Button(
                         role: .destructive,
                         action: {
-                            itemToDelete = selectedItem
-                            showDeleteConfirmation = true
+                            guard let selectedItem = selectedItem else { return }
+                            handleDelete(photo: selectedItem)
                         }
                     ) {
                         Label("Remove", systemImage: "trash")
@@ -79,17 +77,6 @@ struct PhotoDetailView: View {
                 }
                 .disabled(isProcessing)
                 .confirmationDialog(
-                    "Удалить фотографию?", isPresented: $showDeleteConfirmation,
-                    titleVisibility: .visible
-                ) {
-                    Button("Удалить", role: .destructive) {
-                        print("выбранный элемент: \(itemToDelete?.id)")
-                        handleDelete()
-                    }
-                } message: {
-                    Text("Это действие нельзя отменить")
-                }
-                .confirmationDialog(
                     "Удалить Live Photo?", isPresented: $showRemoveLiveConfirmation,
                     titleVisibility: .visible
                 ) {
@@ -103,20 +90,17 @@ struct PhotoDetailView: View {
         }
     }
 
-    private func handleDelete() {
-        guard let photoToDelete = itemToDelete else { return }
+    private func handleDelete(photo: PhotoModel) {
         isProcessing = true
 
         Task {
-            let index = photos.firstIndex { $0.id == photoToDelete.id }
-            guard let result = await photoLibrary?.delete(photos: [photoToDelete]) else {
+            let index = photos.firstIndex { $0.id == photo.id }
+            guard let result = await photoLibrary?.delete(photos: [photo]) else {
                 await MainActor.run {
                     isProcessing = false
                 }
                 return
             }
-
-            print("deleting photo")
 
             switch result {
             case .success:
@@ -126,7 +110,6 @@ struct PhotoDetailView: View {
                         photos.remove(at: index)
 
                         if photos.count <= 1 {
-                            itemToDelete = nil
                             dismiss()
                         } else {
                             selectedItem = photos[index]
