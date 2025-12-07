@@ -102,7 +102,12 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
         }
     }
 
-    func removeLive(asset: PHAsset) async -> Result<Void, AssetError> {
+    func removeLive(photo: PhotoModel) async -> Result<Void, AssetError> {
+        let assetsResult = await fetchAssetsForPhotos(photos: [photo])
+        guard case .success(let assets) = assetsResult, let asset = assets.first else {
+            return .failure(.loadingFailed)
+        }
+
         return await withCheckedContinuation { continuation in
             let options = PHImageRequestOptions()
             options.version = .current
@@ -121,7 +126,20 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
                     request.addResource(with: .photo, data: data, options: nil)
                 } completionHandler: { success, error in
                     if success {
-                        continuation.resume(returning: .success(()))
+                        Task {
+                            photo.isLivePhoto = false
+                            let fileSizeResult = await self.getFileSize(for: asset)
+                            if case .success(let fileSize) = fileSizeResult {
+                                photo.fileSize = fileSize
+                            }
+
+                            do {
+                                try self.context.save()
+                                continuation.resume(returning: .success(()))
+                            } catch {
+                                continuation.resume(returning: .failure(.loadingFailed))
+                            }
+                        }
                     } else {
                         continuation.resume(returning: .failure(.loadingFailed))
                     }

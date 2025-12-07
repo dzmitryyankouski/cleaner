@@ -179,6 +179,7 @@ class PhotoLibrary {
 
     func delete(photos: [PhotoModel]) async -> Result<Void, AssetError> {
         let result = await photoAssetRepository.delete(photos: photos)
+
         guard case .success = result else {
             return .failure(.loadingFailed)
         }
@@ -188,23 +189,14 @@ class PhotoLibrary {
     }
 
     func removeLive(photo: PhotoModel) async -> Result<Void, AssetError> {
-        print("🔍 Удаляем live фотографию: \(photo.id)")
+        let result = await photoAssetRepository.removeLive(photo: photo)
 
-        let photoId = photo.id
-        let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
-        guard let asset = assets.firstObject else { return .failure(.assetNotFound) }
-
-        let result = await photoAssetRepository.removeLive(asset: asset)
-        
-        switch result {
-        case .success:
-            await refresh()
-            print("✅ Live фотография удалена")
-            return .success(())
-        case .failure(let error):
-            print("❌ Ошибка при удалении live фотографии: \(error.localizedDescription)")
+        guard case .success = result else {
             return .failure(.loadingFailed)
         }
+
+        await refresh()
+        return .success(())
     }
 
     func compress(photo: PhotoModel) async {
