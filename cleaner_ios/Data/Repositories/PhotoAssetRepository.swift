@@ -72,19 +72,33 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
         return PHAsset.fetchAssets(in: favCollection, options: options).count > 0
     }
 
-    func delete(assets: [PHAsset]) async -> Result<Void, AssetError> {
+    func delete(photos: [PhotoModel]) async -> Result<Void, AssetError> {
+        let assetsResult = await fetchAssetsForPhotos(photos: photos)
+        guard case .success(let assets) = assetsResult else {
+            return .failure(.loadingFailed)
+        }
+
         return await withCheckedContinuation { continuation in
-            PHPhotoLibrary.shared().performChanges(
-                {
-                    PHAssetChangeRequest.deleteAssets(assets as NSArray)
-                },
-                completionHandler: { success, error in
-                    if success {
-                        continuation.resume(returning: .success(()))
-                    } else {
-                        continuation.resume(returning: .failure(.loadingFailed))
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.deleteAssets(assets as NSArray)
+            }, completionHandler: { success, error in
+                if success {
+                    for photo in photos {
+                        self.context.delete(photo)
                     }
-                })
+
+                    do {
+                        try self.context.save()
+                    } catch {
+                        continuation.resume(returning: .failure(.loadingFailed))
+                        return
+                    }
+
+                    continuation.resume(returning: .success(()))
+                } else {
+                    continuation.resume(returning: .failure(.loadingFailed))
+                }
+            })
         }
     }
 
@@ -169,5 +183,19 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
         }
 
         return .success(assets)
+    }
+
+    private func fetchAssetsForPhotos(photos: [PhotoModel]) async -> Result<[PHAsset], AssetError> {
+        return await withCheckedContinuation { continuation in
+            let assetIds = photos.map { $0.id }
+            let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: assetIds, options: nil)
+            
+            var assets: [PHAsset] = []
+            fetchResult.enumerateObjects { asset, _, _ in
+                assets.append(asset)
+            }
+            
+            continuation.resume(returning: .success(assets))
+        }
     }
 }
