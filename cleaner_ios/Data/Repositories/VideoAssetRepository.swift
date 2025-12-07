@@ -1,6 +1,7 @@
 import Foundation
 import Photos
 import AVFoundation
+import SwiftData
 
 final class VideoAssetRepository: AssetRepositoryProtocol {
     
@@ -82,6 +83,20 @@ final class VideoAssetRepository: AssetRepositoryProtocol {
             PHImageManager.default().requestAVAsset(forVideo: asset, options: options) { avAsset, _, _ in
                 continuation.resume(returning: avAsset)
             }
+        }
+    }
+    
+    func delete(assets: [PHAsset]) async -> Result<Void, AssetError> {
+        return await withCheckedContinuation { continuation in
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.deleteAssets(assets as NSArray)
+            }, completionHandler: { success, error in
+                if success {
+                    continuation.resume(returning: .success(()))
+                } else {
+                    continuation.resume(returning: .failure(.loadingFailed))
+                }
+            })
         }
     }
 }

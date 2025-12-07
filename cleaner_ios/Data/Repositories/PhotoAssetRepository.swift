@@ -1,5 +1,6 @@
 import Foundation
 import Photos
+import SwiftData
 
 final class PhotoAssetRepository: AssetRepositoryProtocol {
     
@@ -89,5 +90,19 @@ final class PhotoAssetRepository: AssetRepositoryProtocol {
         guard let favCollection = favCollection else { return false }
 
         return PHAsset.fetchAssets(in: favCollection, options: options).count > 0
+    }
+    
+    func delete(assets: [PHAsset]) async -> Result<Void, AssetError> {
+        return await withCheckedContinuation { continuation in
+            PHPhotoLibrary.shared().performChanges({
+                PHAssetChangeRequest.deleteAssets(assets as NSArray)
+            }, completionHandler: { success, error in
+                if success {
+                    continuation.resume(returning: .success(()))
+                } else {
+                    continuation.resume(returning: .failure(.loadingFailed))
+                }
+            })
+        }
     }
 }

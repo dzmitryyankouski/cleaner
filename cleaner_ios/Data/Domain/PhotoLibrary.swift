@@ -172,17 +172,42 @@ class PhotoLibrary {
         return .success(results)
     }
 
-    func delete(photo: PhotoModel) async {
-        context.delete(photo)
-        print("🔍 Удаляем фотографию: \(photo.id)")
+    func delete(photos: [PhotoModel]) async -> Result<Void, AssetError> {
+        print("🔍 Удаляем фотографии: \(photos.count)")
 
-        do {
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сохранении контекста: \(error)")
+        let photoIds = photos.map { $0.id }
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: photoIds, options: nil)
+        
+        var assets: [PHAsset] = []
+        fetchResult.enumerateObjects { asset, _, _ in
+            assets.append(asset)
         }
-
-        await refresh()
+        
+        guard !assets.isEmpty else {
+            print("❌ Ассеты не найдены")
+            return .failure(.assetNotFound)
+        }
+        
+        let result = await photoAssetRepository.delete(assets: assets)
+        
+        switch result {
+        case .success:
+            for photo in photos {
+                context.delete(photo)
+            }
+            
+            do {
+                try context.save()
+            } catch {
+                print("❌ Ошибка при сохранении контекста: \(error)")
+            }
+            
+            await refresh()
+            return .success(())
+        case .failure(let error):
+            print("❌ Ошибка при удалении фотографий: \(error.localizedDescription)")
+            return .failure(error)
+        }
     }
 
     func removeLive(photo: PhotoModel) async {

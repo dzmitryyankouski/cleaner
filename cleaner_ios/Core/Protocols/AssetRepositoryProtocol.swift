@@ -6,6 +6,7 @@ protocol AssetRepositoryProtocol {
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError>
     func isModified(for asset: PHAsset) -> Bool
     func isFavorite(for asset: PHAsset) -> Bool
+    func delete(assets: [PHAsset]) async -> Result<Void, AssetError>
 }
 
 enum AssetError: LocalizedError {

@@ -1,5 +1,5 @@
-import SwiftUI
 import Photos
+import SwiftUI
 
 struct PhotoDetailView: View {
     @State var photos: [PhotoModel]
@@ -9,7 +9,7 @@ struct PhotoDetailView: View {
 
     @Environment(\.photoLibrary) var photoLibrary
     @Environment(\.dismiss) var dismiss
-    
+
     @State private var assets: [String: PHAsset] = [:]
     @State private var showDeleteConfirmation = false
     @State private var showRemoveLiveConfirmation = false
@@ -49,21 +49,25 @@ struct PhotoDetailView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button(role: .destructive, action: {
-                        itemToDelete = selectedItem
-                        showDeleteConfirmation = true
-                    }) {
+                    Button(
+                        role: .destructive,
+                        action: {
+                            itemToDelete = selectedItem
+                            showDeleteConfirmation = true
+                        }
+                    ) {
                         Label("Remove", systemImage: "trash")
                     }
                     .disabled(selectedItem == nil || isProcessing)
-                    
+
                     Button(action: {
                         showRemoveLiveConfirmation = true
                     }) {
                         Label("Remove Live", systemImage: "livephoto")
                     }
-                    .disabled(selectedItem == nil || isProcessing || selectedItem?.isLivePhoto != true)
-                    
+                    .disabled(
+                        selectedItem == nil || isProcessing || selectedItem?.isLivePhoto != true)
+
                     Button(action: {
                         handleCompress()
                     }) {
@@ -74,7 +78,10 @@ struct PhotoDetailView: View {
                     Image(systemName: "ellipsis")
                 }
                 .disabled(isProcessing)
-                .confirmationDialog("Удалить фотографию?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+                .confirmationDialog(
+                    "Удалить фотографию?", isPresented: $showDeleteConfirmation,
+                    titleVisibility: .visible
+                ) {
                     Button("Удалить", role: .destructive) {
                         print("выбранный элемент: \(itemToDelete?.id)")
                         handleDelete()
@@ -82,7 +89,10 @@ struct PhotoDetailView: View {
                 } message: {
                     Text("Это действие нельзя отменить")
                 }
-                .confirmationDialog("Удалить Live Photo?", isPresented: $showRemoveLiveConfirmation, titleVisibility: .visible) {
+                .confirmationDialog(
+                    "Удалить Live Photo?", isPresented: $showRemoveLiveConfirmation,
+                    titleVisibility: .visible
+                ) {
                     Button("Удалить", role: .destructive) {
                         handleRemoveLive()
                     }
@@ -92,37 +102,49 @@ struct PhotoDetailView: View {
             }
         }
     }
-    
+
     private func handleDelete() {
         guard let photoToDelete = itemToDelete else { return }
         isProcessing = true
 
         Task {
             let index = photos.firstIndex { $0.id == photoToDelete.id }
+            guard let result = await photoLibrary?.delete(photos: [photoToDelete]) else {
+                await MainActor.run {
+                    isProcessing = false
+                }
+                return
+            }
 
-            await photoLibrary?.delete(photo: photoToDelete)
-            await MainActor.run {
-                if let index = index {
-                    photos.remove(at: index)
+            print("deleting photo")
 
-                    if photos.count <= 1 {
+            switch result {
+            case .success:
+                await MainActor.run {
+                    if let index = index {
                         isProcessing = false
-                        itemToDelete = nil
-                        dismiss()
-                    } else {
-                        selectedItem = photos[index]
+                        photos.remove(at: index)
+
+                        if photos.count <= 1 {
+                            itemToDelete = nil
+                            dismiss()
+                        } else {
+                            selectedItem = photos[index]
+                        }
                     }
                 }
-                
-                isProcessing = false
+            case .failure(let error):
+                await MainActor.run {
+                    isProcessing = false
+                }
             }
         }
     }
-    
+
     private func handleRemoveLive() {
         guard let photo = selectedItem else { return }
         isProcessing = true
-        
+
         Task {
             await photoLibrary?.removeLive(photo: photo)
             await MainActor.run {
@@ -130,11 +152,11 @@ struct PhotoDetailView: View {
             }
         }
     }
-    
+
     private func handleCompress() {
         guard let photo = selectedItem else { return }
         isProcessing = true
-        
+
         Task {
             await photoLibrary?.compress(photo: photo)
             await MainActor.run {
