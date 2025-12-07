@@ -39,7 +39,7 @@ final class AppDependencyContainer {
         let photoContext = ModelContext(modelContainer)
 
         return PhotoLibrary(
-            photoAssetRepository: serviceFactory.makePhotoAssetRepository(),
+            photoAssetRepository: serviceFactory.makePhotoAssetRepository(context: photoContext),
             embeddingService: embeddingService,
             clusteringService: serviceFactory.makeClusteringService(),
             translationService: serviceFactory.makeTranslationService(),

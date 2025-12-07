@@ -3,30 +3,10 @@ import Photos
 import SwiftData
 
 final class PhotoAssetRepository: PhotoRepositoryProtocol {
+    private let context: ModelContext
 
-    func fetchAssets() async -> Result<[PHAsset], AssetError> {
-        let authStatus = PHPhotoLibrary.authorizationStatus()
-
-        if authStatus == .denied || authStatus == .restricted {
-            return .failure(.permissionDenied)
-        }
-
-        if authStatus == .notDetermined {
-            let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
-            if newStatus == .denied || newStatus == .restricted {
-                return .failure(.permissionDenied)
-            }
-        }
-
-        let fetchOptions = PHFetchOptions()
-        let photos = PHAsset.fetchAssets(with: .image, options: fetchOptions)
-
-        var assets: [PHAsset] = []
-        photos.enumerateObjects { asset, _, _ in
-            assets.append(asset)
-        }
-
-        return .success(assets)
+    init(context: ModelContext) {
+        self.context = context   
     }
 
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
@@ -134,5 +114,60 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
                 }
             }
         }
+    }
+
+    func fetchAll(filter: Set<FilterPhoto>, sort: SortPhoto) async -> Result<[PhotoModel], AssetError> {
+        let assets = await fetchAssets()
+        guard case .success(let assets) = assets else {
+            return .failure(.loadingFailed)
+        }
+
+        for asset in assets {
+            let assetId = asset.localIdentifier
+            if let _ = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.id == assetId })).first {
+                continue
+            }
+
+            context.insert(PhotoModel(asset: asset))
+        }
+
+        do {
+            try context.save()
+        } catch {
+            return .failure(.loadingFailed)
+        }
+
+        let photos = try? context.fetch(PhotoModel.apply(filter: filter, sort: sort))
+
+        guard let photos = photos else {
+            return .failure(.loadingFailed)
+        }
+
+        return .success(photos)
+    }
+
+    private func fetchAssets() async -> Result<[PHAsset], AssetError> {
+        let authStatus = PHPhotoLibrary.authorizationStatus()
+
+        if authStatus == .denied || authStatus == .restricted {
+            return .failure(.permissionDenied)
+        }
+
+        if authStatus == .notDetermined {
+            let newStatus = await PHPhotoLibrary.requestAuthorization(for: .readWrite)
+            if newStatus == .denied || newStatus == .restricted {
+                return .failure(.permissionDenied)
+            }
+        }
+
+        let fetchOptions = PHFetchOptions()
+        let photos = PHAsset.fetchAssets(with: .image, options: fetchOptions)
+
+        var assets: [PHAsset] = []
+        photos.enumerateObjects { asset, _, _ in
+            assets.append(asset)
+        }
+
+        return .success(assets)
     }
 }

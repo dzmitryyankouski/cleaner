@@ -71,7 +71,12 @@ class PhotoLibrary {
         print("🔍 Загрузка фотографий")
         indexing = true
 
-        photos = await getAllPhotos()
+        let photosResult = await photoAssetRepository.fetchAll(filter: selectedFilter, sort: selectedSort)
+        guard case .success(let photos) = photosResult else {
+            print("❌ Не удалось загрузить фотографии")
+            return
+        }
+
         total = photos.count
         
         await indexPhotos()
@@ -232,34 +237,6 @@ class PhotoLibrary {
 
     func compress(photo: PhotoModel) async {
         print("🔍 Сжимаем фотографию: \(photo.id)")
-    }
-
-    private func getAllPhotos() async -> [PhotoModel] {
-        let assets = await photoAssetRepository.fetchAssets()
-
-        guard case .success(let assets) = assets else {
-            print("❌ Не удалось загрузить фотографии")
-            return []
-        }
-
-        for asset in assets {
-            let assetId = asset.localIdentifier
-            if let _ = try? context.fetch(FetchDescriptor<PhotoModel>(predicate: #Predicate<PhotoModel> { $0.id == assetId })).first {
-                continue
-            }
-            
-            let photo = PhotoModel(asset: asset)
-            context.insert(photo)
-        }
-
-        do {
-            try context.save()
-        } catch {
-            print("❌ Ошибка при сохранении фотографий: \(error)")
-            return []
-        }
-        
-        return (try? context.fetch(PhotoModel.apply(filter: selectedFilter, sort: selectedSort))) ?? []
     }
 
     private func indexPhotos() async {

@@ -47,22 +47,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CDFE914F2E6C8A440017D2B6 /* cleaner_ios */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = cleaner_ios;
 			sourceTree = "<group>";
 		};
 		CDFE915D2E6C8A460017D2B6 /* cleaner_iosTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = cleaner_iosTests;
 			sourceTree = "<group>";
 		};
 		CDFE91672E6C8A460017D2B6 /* cleaner_iosUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-			);
 			path = cleaner_iosUITests;
 			sourceTree = "<group>";
 		};
