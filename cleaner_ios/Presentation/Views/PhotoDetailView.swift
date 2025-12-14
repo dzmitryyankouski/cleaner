@@ -129,7 +129,7 @@ struct PhotoDetailView: View {
         isProcessing = true
 
         Task {
-            await photoLibrary?.removeLive(photo: photo)
+            await photoLibrary?.removeLive(photos: [photo])
             await MainActor.run {
                 isProcessing = false
             }
@@ -141,7 +141,7 @@ struct PhotoDetailView: View {
         isProcessing = true
 
         Task {
-            await photoLibrary?.compress(photo: photo)
+            await photoLibrary?.compress(photos: [photo])
             await MainActor.run {
                 isProcessing = false
             }

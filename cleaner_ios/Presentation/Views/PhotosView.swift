@@ -45,6 +45,7 @@ enum SortPhoto: String, CaseIterable {
 
 struct PhotosView: View {
     @Namespace private var navigationTransitionNamespace
+
     @Environment(\.photoLibrary) var photoLibrary
 
     @State private var selectedTab = 0
@@ -78,44 +79,122 @@ struct PhotosView: View {
             }
             .navigationTitle("Фотографии")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Section {
-                            ForEach(FilterPhoto.allCases, id: \.self) { filter in
-                                Toggle(isOn: Binding(get: { photoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
-                                    if value {
-                                        photoLibrary?.selectedFilter.insert(filter)
-                                    } else {
-                                        photoLibrary?.selectedFilter.remove(filter)
-                                    }
-                                })) {
-                                    Label(filter.rawValue, systemImage: filter.icon)
-                                }
+
+                if !(photoLibrary?.selectedPhotos.isEmpty ?? true) {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel", systemImage: "xmark") {
+                            withAnimation {
+                                photoLibrary?.selectedPhotos.removeAll()
                             }
                         }
-                        Section {
-                            Picker("Sort", selection: Binding(get: { photoLibrary?.selectedSort ?? .date }, set: { value in
-                                photoLibrary?.selectedSort = value
-                            })) {
-                                ForEach(SortPhoto.allCases, id: \.self) { sort in
-                                    Label(sort.rawValue, systemImage: sort.icon)
-                                        .tag(sort)
-                                }
-                            }
-                        }
-                    } label: {
-                        Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
                 }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        showSettings.toggle()
-                    }) {
-                        Image(systemName: "gearshape")
+
+                if photoLibrary?.selectedPhotos.isEmpty ?? true {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Section {
+                                ForEach(FilterPhoto.allCases, id: \.self) { filter in
+                                    Toggle(isOn: Binding(get: { photoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
+                                        if value {
+                                            photoLibrary?.selectedFilter.insert(filter)
+                                        } else {
+                                            photoLibrary?.selectedFilter.remove(filter)
+                                        }
+                                    })) {
+                                        Label(filter.rawValue, systemImage: filter.icon)
+                                    }
+                                }
+                            }
+                            Section {
+                                Picker("Sort", selection: Binding(get: { photoLibrary?.selectedSort ?? .date }, set: { value in
+                                    photoLibrary?.selectedSort = value
+                                })) {
+                                    ForEach(SortPhoto.allCases, id: \.self) { sort in
+                                        Label(sort.rawValue, systemImage: sort.icon)
+                                            .tag(sort)
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label("Фильтры", systemImage: "line.3.horizontal.decrease")
+                        }
                     }
-                    .popover(isPresented: $showSettings) {
-                        SettingsView(isPresented: $showSettings)
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: {
+                            showSettings.toggle()
+                        }) {
+                            Image(systemName: "gearshape")
+                        }
+                        .popover(isPresented: $showSettings) {
+                            SettingsView(isPresented: $showSettings)
+                        }
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Button(role: .destructive, action: {
+                                Task {
+                                    guard let result = await photoLibrary?.delete(photos: photoLibrary?.selectedPhotos ?? []) else {
+                                        return
+                                    }
+
+                                    guard case .success = result else {
+                                        return
+                                    }
+
+                                    await photoLibrary?.refresh()
+
+                                    withAnimation {
+                                        photoLibrary?.selectedPhotos.removeAll()
+                                    }
+                                }
+                            }) {
+                                Label("Remove", systemImage: "trash")
+                            }
+
+                            Button(action: {
+                                Task {
+                                    print("🔍 Удаляем живое фото: \(photoLibrary?.selectedPhotos.count ?? 0)")
+                                    guard let result = await photoLibrary?.removeLive(photos: photoLibrary?.selectedPhotos ?? []) else {
+                                        print("❌ Не удалось удалить живое фото")
+                                        return
+                                    }
+
+                                    guard case .success = result else {
+                                        print("❌ Не удалось удалить живое фото")
+                                        return
+                                    }
+
+                                    withAnimation {
+                                        photoLibrary?.selectedPhotos.removeAll()
+                                    }
+                                }
+                            }) {
+                                Label("Remove Live", systemImage: "livephoto")
+                            }
+
+                            Button(action: {
+                                Task {
+                                    guard let result = await photoLibrary?.compress(photos: photoLibrary?.selectedPhotos ?? []) else {
+                                        return
+                                    }
+
+                                    guard case .success = result else {
+                                        return
+                                    }
+
+                                    withAnimation {
+                                        photoLibrary?.selectedPhotos.removeAll()
+                                    }
+                                }
+                            }) {
+                                Label("Compress", systemImage: "arrow.down.to.line")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                        }
                     }
                 }
             }

@@ -3,6 +3,7 @@ import Observation
 import SwiftData
 import Photos
 import Combine
+import UIKit
 
 @Observable
 class PhotoLibrary {
@@ -20,6 +21,8 @@ class PhotoLibrary {
 
     var photos: [PhotoModel] = []
     var photosFileSize: Int64 = 0
+
+    var selectedPhotos: [PhotoModel] = []
 
     var selectedSort: SortPhoto = .date {
         didSet {
@@ -189,38 +192,63 @@ class PhotoLibrary {
         return .success(())
     }
 
-    func removeLive(photo: PhotoModel) async -> Result<Void, AssetError> {
-        let result = await photoAssetRepository.removeLive(photo: photo)
+    func removeLive(photos: [PhotoModel]) async -> Result<Void, AssetError> {
+        print("🔍 Удаляем живое фото: \(photos.count)")
+        await withTaskGroup(of: Void.self) { group in
+            for photo in photos {
+                group.addTask {
+                    let result = await self.photoAssetRepository.removeLive(photo: photo)
+                    guard case .success = result else {
+                        print("❌ Не удалось удалить живое фото: \(photo.id)")
+                        return
+                    }
 
-        guard case .success = result else {
-            return .failure(.loadingFailed)
+                    print("✅ Живое фото удалено: \(photo.id)")
+                }
+            }
         }
 
         await refresh()
         return .success(())
     }
 
-    func compress(photo: PhotoModel) async -> Result<Void, AssetError> {
-        print("🔍 Сжимаем фотографию: \(photo.id)")
-        let result = await photoAssetRepository.compress(photo: photo, quality: 0.7)
-        guard case .success(let newPhoto) = result else {
-            return .failure(.loadingFailed)
+    func compress(photos: [PhotoModel]) async -> Result<Void, AssetError> {
+        await withTaskGroup(of: Void.self) { group in
+            for photo in photos {
+                group.addTask {
+                    let result = await self.photoAssetRepository.compress(photo: photo, quality: 0.7)
+                    guard case .success(let newPhoto) = result else {
+                        print("❌ Не удалось сжать фото: \(photo.id)")
+                        return
+                    }
+
+                    let oldFileSize = FileSize(bytes: photo.fileSize ?? 0).formatted
+                    let newFileSize = FileSize(bytes: newPhoto.fileSize ?? 0).formatted
+                    
+                    let oldSize = Double(photo.fileSize ?? 0)
+                    let newSize = Double(newPhoto.fileSize ?? 0)
+                    let compressionPercent = oldSize > 0 ? ((oldSize - newSize) / oldSize) * 100 : 0.0
+
+                    print("Photo compressed from \(oldFileSize) to \(newFileSize) (\(String(format: "%.1f", compressionPercent))%)")
+                }
+            }
         }
 
-        let oldFileSize = FileSize(bytes: photo.fileSize ?? 0).formatted
-        let newFileSize = FileSize(bytes: newPhoto.fileSize ?? 0).formatted
-        
-        let oldSize = Double(photo.fileSize ?? 0)
-        let newSize = Double(newPhoto.fileSize ?? 0)
-        let compressionPercent = oldSize > 0 ? ((oldSize - newSize) / oldSize) * 100 : 0.0
-
-        print("Photo compressed from \(oldFileSize) to \(newFileSize) (\(String(format: "%.1f", compressionPercent))%)")
-
-        await photoAssetRepository.delete(photos: [photo])
-
+        await photoAssetRepository.delete(photos: photos)
         await refresh()
 
         return .success(())
+    }
+
+    func select(photo: PhotoModel) {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+
+        if selectedPhotos.contains(photo) {
+            selectedPhotos.removeAll { $0.id == photo.id }
+        } else {
+            selectedPhotos.append(photo)
+        }
     }
 
     private func indexPhotos() async {

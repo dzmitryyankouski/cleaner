@@ -16,8 +16,28 @@ struct PhotoGrid: View {
                 Photo(photo: photo, quality: .medium, contentMode: .fill)
                     .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
                     .clipped()
+                    .overlay(
+                        Group {
+                            if photoLibrary?.selectedPhotos.contains(photo) ?? false {
+                                Color.white.opacity(0.5)
+                            }
+                        }
+                    )
                     .onTapGesture {
-                        navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentItem: photo))
+                        if photoLibrary?.selectedPhotos.isEmpty ?? true {
+                            navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentItem: photo))
+                        } else {
+                            withAnimation {
+                                photoLibrary?.select(photo: photo)
+                            }
+                            print("selected photos: \(photoLibrary?.selectedPhotos.count ?? 0)")
+                        }
+                    }
+                    .onLongPressGesture {
+                        withAnimation {
+                            photoLibrary?.select(photo: photo)
+                        }
+                        print("selected photos: \(photoLibrary?.selectedPhotos.count ?? 0)")
                     }
                     .id(photo.id)
                     .matchedTransitionSource(id: photo.id, in: namespace)
