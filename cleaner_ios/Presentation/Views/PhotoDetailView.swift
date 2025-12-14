@@ -71,7 +71,7 @@ struct PhotoDetailView: View {
                     }) {
                         Label("Compress", systemImage: "arrow.down.to.line")
                     }
-                    .disabled(selectedItem == nil || isProcessing)
+                    .disabled(selectedItem == nil || isProcessing || selectedItem?.isCompressed == true)
                 } label: {
                     Image(systemName: "ellipsis")
                 }

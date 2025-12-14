@@ -14,8 +14,7 @@ final class PhotoModel: Identifiable {
     var isLivePhoto: Bool = false
     var isModified: Bool = false
     var isFavorite: Bool = false
-    var fullScreenFrameWidth: Double = 0
-    var fullScreenFrameHeight: Double = 0
+    var isCompressed: Bool = false
     
     private static var assetCache: [String: PHAsset] = [:]
     private static let cacheQueue = DispatchQueue(label: "com.cleaner.assetCache", attributes: .concurrent)

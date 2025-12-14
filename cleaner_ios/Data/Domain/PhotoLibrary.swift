@@ -184,6 +184,7 @@ class PhotoLibrary {
             return .failure(.loadingFailed)
         }
 
+        await regroup()
         await refresh()
         return .success(())
     }
@@ -199,8 +200,27 @@ class PhotoLibrary {
         return .success(())
     }
 
-    func compress(photo: PhotoModel) async {
+    func compress(photo: PhotoModel) async -> Result<Void, AssetError> {
         print("🔍 Сжимаем фотографию: \(photo.id)")
+        let result = await photoAssetRepository.compress(photo: photo, quality: 0.7)
+        guard case .success(let newPhoto) = result else {
+            return .failure(.loadingFailed)
+        }
+
+        let oldFileSize = FileSize(bytes: photo.fileSize ?? 0).formatted
+        let newFileSize = FileSize(bytes: newPhoto.fileSize ?? 0).formatted
+        
+        let oldSize = Double(photo.fileSize ?? 0)
+        let newSize = Double(newPhoto.fileSize ?? 0)
+        let compressionPercent = oldSize > 0 ? ((oldSize - newSize) / oldSize) * 100 : 0.0
+
+        print("Photo compressed from \(oldFileSize) to \(newFileSize) (\(String(format: "%.1f", compressionPercent))%)")
+
+        await photoAssetRepository.delete(photos: [photo])
+
+        await refresh()
+
+        return .success(())
     }
 
     private func indexPhotos() async {

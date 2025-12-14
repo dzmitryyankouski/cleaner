@@ -1,6 +1,9 @@
 import Foundation
 import Photos
 import SwiftData
+import UIKit
+import ImageIO
+import UniformTypeIdentifiers
 
 final class PhotoAssetRepository: PhotoRepositoryProtocol {
     private let context: ModelContext
@@ -29,8 +32,7 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
             for resource in resources {
                 dispatch.enter()
 
-                PHAssetResourceManager.default().requestData(for: resource, options: options) {
-                    data in
+                PHAssetResourceManager.default().requestData(for: resource, options: options) { data in
                     totalSize += Int64(data.count)
                 } completionHandler: { error in
                     if error != nil {
@@ -178,6 +180,82 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
         return .success(photos)
     }
 
+    func compress(photo: PhotoModel, quality: CGFloat) async -> Result<PhotoModel, AssetError> {
+        let assetsResult = await fetchAssetsForPhotos(photos: [photo])
+        guard case .success(let assets) = assetsResult, let asset = assets.first else {
+            return .failure(.loadingFailed)
+        }
+
+        return await withCheckedContinuation { continuation in
+            let options = PHImageRequestOptions()
+            options.version = .current
+            options.deliveryMode = .highQualityFormat
+            options.isSynchronous = false
+
+            PHImageManager.default().requestImageDataAndOrientation(for: asset, options: options) { data, dataUTI, orientation, _ in
+                guard let data else {
+                    continuation.resume(returning: .failure(.loadingFailed))
+                    return
+                }
+
+                guard let image = UIImage(data: data) else {
+                    continuation.resume(returning: .failure(.loadingFailed))
+                    return
+                }
+                
+                let originalFormat = dataUTI ?? ""
+                let isHEIC = originalFormat.contains("heic") || originalFormat.contains("heif")
+                
+                let originalFileSize = photo.fileSize ?? Int64(data.count)
+                
+                let compressedData = isHEIC ? self.compressHEIC(image: image, quality: quality, orientation: orientation) : image.jpegData(compressionQuality: quality) 
+                
+                guard let compressedData = compressedData else {
+                    continuation.resume(returning: .failure(.loadingFailed))
+                    return
+                }
+
+                var placeholderAssetIdentifier: String?
+                
+                PHPhotoLibrary.shared().performChanges({
+                    let request = PHAssetCreationRequest.forAsset()
+                    request.addResource(with: .photo, data: compressedData, options: nil)
+                    placeholderAssetIdentifier = request.placeholderForCreatedAsset?.localIdentifier
+                }, completionHandler: { success, error in
+                    guard success, let identifier = placeholderAssetIdentifier else {
+                        continuation.resume(returning: .failure(.loadingFailed))
+                        return
+                    }
+                    
+                    let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
+                    guard let newAsset = fetchResult.firstObject else {
+                        continuation.resume(returning: .failure(.loadingFailed))
+                        return
+                    }
+                    
+                    let newPhotoModel = PhotoModel(asset: newAsset)
+                    newPhotoModel.fileSize = Int64(compressedData.count)
+                    newPhotoModel.isCompressed = true
+                    newPhotoModel.embedding = photo.embedding
+                    newPhotoModel.creationDate = photo.creationDate
+                    newPhotoModel.groups = photo.groups
+                    newPhotoModel.isLivePhoto = false
+                    newPhotoModel.isScreenshot = photo.isScreenshot
+                    newPhotoModel.isModified = true
+                    
+                    self.context.insert(newPhotoModel)
+
+                    do {
+                        try self.context.save()
+                        continuation.resume(returning: .success(newPhotoModel))
+                    } catch {
+                        continuation.resume(returning: .failure(.loadingFailed))
+                    }
+                })
+            }
+        }
+    }
+
     private func fetchAssets() async -> Result<[PHAsset], AssetError> {
         let authStatus = PHPhotoLibrary.authorizationStatus()
 
@@ -215,5 +293,28 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
             
             continuation.resume(returning: .success(assets))
         }
+    }
+    
+    private func compressHEIC(image: UIImage, quality: CGFloat, orientation: CGImagePropertyOrientation) -> Data? {
+        guard let cgImage = image.cgImage else { return nil }
+        
+        let mutableData = NSMutableData()
+        guard let destination = CGImageDestinationCreateWithData(mutableData, UTType.heic.identifier as CFString, 1, nil) else {
+            return nil
+        }
+        
+        var options: [CFString: Any] = [
+            kCGImageDestinationLossyCompressionQuality: quality
+        ]
+        
+        options[kCGImagePropertyOrientation] = orientation.rawValue
+        
+        CGImageDestinationAddImage(destination, cgImage, options as CFDictionary)
+        
+        guard CGImageDestinationFinalize(destination) else {
+            return nil
+        }
+        
+        return mutableData as Data
     }
 }
