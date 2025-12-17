@@ -429,6 +429,18 @@ class VideoLibrary {
         
         return .success(results)
     }
+    
+    func delete(videos: [VideoModel]) async -> Result<Void, AssetError> {
+        let result = await videoAssetRepository.delete(videos: videos)
+
+        guard case .success = result else {
+            return .failure(.loadingFailed)
+        }
+
+        await regroup()
+        await filter()
+        return .success(())
+    }
 }
 
 enum VideoIndexingError: LocalizedError {

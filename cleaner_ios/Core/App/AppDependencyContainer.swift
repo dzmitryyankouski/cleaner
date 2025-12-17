@@ -58,7 +58,7 @@ final class AppDependencyContainer {
         let videoContext = ModelContext(modelContainer)
 
         return VideoLibrary(
-            videoAssetRepository: serviceFactory.makeVideoAssetRepository(),
+            videoAssetRepository: serviceFactory.makeVideoAssetRepository(context: videoContext),
             embeddingService: embeddingService,
             imageProcessor: serviceFactory.makeImageProcessingService(),
             clusteringService: serviceFactory.makeClusteringService(),

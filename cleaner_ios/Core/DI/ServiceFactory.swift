@@ -38,8 +38,8 @@ final class ServiceFactory {
         PhotoAssetRepository(context: context)
     }
     
-    func makeVideoAssetRepository() -> VideoAssetRepository {
-        VideoAssetRepository()
+    func makeVideoAssetRepository(context: ModelContext) -> VideoAssetRepository {
+        VideoAssetRepository(context: context)
     }
     
     func makeClusteringService() -> ClusteringServiceProtocol {
