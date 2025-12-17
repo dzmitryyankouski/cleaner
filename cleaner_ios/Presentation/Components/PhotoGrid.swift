@@ -22,6 +22,7 @@ struct PhotoGrid: View {
                                 Color.white.opacity(0.5)
                             }
                         }
+                        .transaction { $0.animation = nil }
                     )
                     .onTapGesture {
                         if photoLibrary?.selectedPhotos.isEmpty ?? true {
@@ -33,12 +34,14 @@ struct PhotoGrid: View {
                             print("selected photos: \(photoLibrary?.selectedPhotos.count ?? 0)")
                         }
                     }
-                    .onLongPressGesture {
-                        withAnimation {
-                            photoLibrary?.select(photo: photo)
-                        }
-                        print("selected photos: \(photoLibrary?.selectedPhotos.count ?? 0)")
-                    }
+                    .highPriorityGesture(
+                        LongPressGesture(minimumDuration: 0.3)
+                            .onEnded { _ in
+                                withAnimation {
+                                    photoLibrary?.select(photo: photo)
+                                }
+                            }
+                    )
                     .id(photo.id)
                     .matchedTransitionSource(id: photo.id, in: namespace)
             }

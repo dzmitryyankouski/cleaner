@@ -325,6 +325,8 @@ struct AllPhotosView: View {
 }
 
 struct PhotoGroupRowView: View {
+    @Environment(\.photoLibrary) var photoLibrary
+    
     let group: PhotoGroupModel
     @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
@@ -340,12 +342,34 @@ struct PhotoGroupRowView: View {
                     ForEach(group.photos, id: \.id) { photo in
                         Photo(photo: photo, quality: .medium, contentMode: .fill)
                             .frame(width: 150, height: 200)
-                            .onTapGesture {
-                                navigationPath.append(PhotoGroupNavigationItem(photos: group.photos, currentItem: photo))
-                            }
                             .id(photo.id)
                             .matchedTransitionSource(id: photo.id, in: namespace)
                             .clipped()
+                            .overlay(
+                                Group {
+                                    if photoLibrary?.selectedPhotos.contains(photo) ?? false {
+                                        Color.white.opacity(0.5)
+                                    }
+                                }
+                                .transaction { $0.animation = nil }
+                            )
+                            .onTapGesture {
+                                if photoLibrary?.selectedPhotos.isEmpty ?? true {
+                                    navigationPath.append(PhotoGroupNavigationItem(photos: group.photos, currentItem: photo))
+                                } else {
+                                    withAnimation {
+                                        photoLibrary?.select(photo: photo)
+                                    }
+                                }
+                            }
+                            .highPriorityGesture(
+                                LongPressGesture(minimumDuration: 0.3)
+                                    .onEnded { _ in
+                                        withAnimation {
+                                            photoLibrary?.select(photo: photo)
+                                        }
+                                    }
+                            )
                     }
                 }
             }
