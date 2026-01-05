@@ -1,20 +1,6 @@
 import SwiftUI
 import SwiftData
 
-struct PhotoGroupNavigationItem: Hashable {
-    let photos: [PhotoModel]
-    let currentItem: PhotoModel
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(photos.map { $0.id }.joined())
-        hasher.combine(currentItem.id)
-    }
-    
-    static func == (lhs: PhotoGroupNavigationItem, rhs: PhotoGroupNavigationItem) -> Bool {
-        lhs.photos.map { $0.id } == rhs.photos.map { $0.id } && lhs.currentItem.id == rhs.currentItem.id
-    }
-}
-
 enum FilterPhoto: String, CaseIterable {
     case screenshots = "Screenshots"
     case livePhotos = "Live Photos"
@@ -203,9 +189,6 @@ struct PhotosView: View {
                     await photoLibrary?.reset()
                 }
             }
-            .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
-                PhotoDetailView(photos: item.photos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
-            }
         }
     }
 }
@@ -326,10 +309,12 @@ struct AllPhotosView: View {
 
 struct PhotoGroupRowView: View {
     @Environment(\.photoLibrary) var photoLibrary
-    
+
     let group: PhotoGroupModel
     @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
+
+    @State private var selectedPhoto: PhotoModel? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -355,7 +340,7 @@ struct PhotoGroupRowView: View {
                             )
                             .onTapGesture {
                                 if photoLibrary?.selectedPhotos.isEmpty ?? true {
-                                    navigationPath.append(PhotoGroupNavigationItem(photos: group.photos, currentItem: photo))
+                                    selectedPhoto = photo
                                 } else {
                                     withAnimation {
                                         photoLibrary?.select(photo: photo)
@@ -372,8 +357,13 @@ struct PhotoGroupRowView: View {
                             )
                     }
                 }
+                .scrollTargetLayout()
             }
             .scrollClipDisabled(true)
+            .scrollTargetBehavior(.viewAligned)
+        }
+        .fullScreenCover(item: $selectedPhoto) { photo in
+            PhotoDetailView(photos: group.photos, currentItem: photo, namespace: namespace)
         }
     }
 }

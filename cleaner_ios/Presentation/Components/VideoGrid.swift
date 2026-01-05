@@ -3,8 +3,9 @@ import Photos
 
 struct VideoGrid: View {
     let videos: [VideoModel]
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
+
+    @State private var selectedVideo: VideoModel? = nil
 
     let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 3)
 
@@ -15,11 +16,14 @@ struct VideoGrid: View {
                     .frame(width: UIScreen.main.bounds.width / 3 - (2 / 3), height: UIScreen.main.bounds.width / 2)
                     .clipped()
                     .onTapGesture {
-                        navigationPath.append(VideoGroupNavigationItem(videos: videos, currentItem: video))
+                        selectedVideo = video
                     }
                     .id(video.id)
                     .matchedTransitionSource(id: video.id, in: namespace)
             }
+        }
+        .fullScreenCover(item: $selectedVideo) { video in
+            VideoDetailView(videos: videos, currentItem: video, namespace: namespace)
         }
     }
 }

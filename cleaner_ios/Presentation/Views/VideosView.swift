@@ -4,20 +4,6 @@ import Photos
 import AVKit
 import AVFoundation
 
-struct VideoGroupNavigationItem: Hashable {
-    let videos: [VideoModel]
-    let currentItem: VideoModel
-    
-    func hash(into hasher: inout Hasher) {
-        hasher.combine(videos.map { $0.id }.joined())
-        hasher.combine(currentItem.id)
-    }
-    
-    static func == (lhs: VideoGroupNavigationItem, rhs: VideoGroupNavigationItem) -> Bool {
-        lhs.videos.map { $0.id } == rhs.videos.map { $0.id } && lhs.currentItem.id == rhs.currentItem.id
-    }
-}
-
 enum FilterVideo: String, CaseIterable {
     case modified = "Modified"
     case favorites = "Favorites"
@@ -46,24 +32,23 @@ struct VideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
-    @State private var navigationPath = NavigationPath()
     @Namespace private var navigationTransitionNamespace
 
     private let tabs = ["Все", "Похожие"]
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack {
             ZStack(alignment: .top) {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
                         Section {
                             switch selectedTab {
                             case 0:
-                                AllVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                AllVideosView(namespace: navigationTransitionNamespace)
                             case 1:
-                                SimilarVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                SimilarVideosView(namespace: navigationTransitionNamespace)
                             default:
-                                AllVideosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                AllVideosView(namespace: navigationTransitionNamespace)
                             }
                         } header: {
                             PickerHeader(selectedTab: $selectedTab, tabs: tabs)
@@ -120,9 +105,6 @@ struct VideosView: View {
                     await videoLibrary?.reset()
                 }
             }
-            .navigationDestination(for: VideoGroupNavigationItem.self) { item in
-                VideoDetailView(videos: item.videos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
-            }
             .onChange(of: videoLibrary?.selectedFilter) { _, _ in
                 Task {
                     await videoLibrary?.filter()
@@ -139,7 +121,6 @@ struct VideosView: View {
 
 struct AllVideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 
     var body: some View {
@@ -166,7 +147,7 @@ struct AllVideosView: View {
                     .padding(.horizontal)
                 }
 
-                VideoGrid(videos: videoLibrary?.videos ?? [], navigationPath: $navigationPath, namespace: namespace)
+                VideoGrid(videos: videoLibrary?.videos ?? [], namespace: namespace)
             }
         }
     }
@@ -174,7 +155,6 @@ struct AllVideosView: View {
 
 struct SimilarVideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 
     var body: some View {
@@ -202,7 +182,7 @@ struct SimilarVideosView: View {
 
                 LazyVStack(spacing: 20) {
                     ForEach(videoLibrary?.similarGroups ?? [], id: \.id) { group in
-                        VideoGroupRowView(group: group, navigationPath: $navigationPath, namespace: namespace)
+                        VideoGroupRowView(group: group, namespace: namespace)
                     }
                 }
                 .padding(.top)
@@ -213,8 +193,9 @@ struct SimilarVideosView: View {
 
 struct VideoGroupRowView: View {
     let group: VideoGroupModel
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
+
+    @State private var selectedVideo: VideoModel? = nil
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -231,12 +212,15 @@ struct VideoGroupRowView: View {
                             .clipped()
                             .matchedTransitionSource(id: video.id, in: namespace)
                             .onTapGesture {
-                                navigationPath.append(VideoGroupNavigationItem(videos: group.videos, currentItem: video))
+                                selectedVideo = video
                             }
                     }
                 }
             }
             .scrollClipDisabled(true)
+        }
+        .fullScreenCover(item: $selectedVideo) { video in
+            VideoDetailView(videos: group.videos, currentItem: video, namespace: namespace)
         }
     }
 }

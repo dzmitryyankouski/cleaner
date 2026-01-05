@@ -35,14 +35,14 @@ struct Photo: View {
     private func loadImageIfNeeded() {
         guard !isLoading else { return }
 
-        if let cachedImage = ImageCache.shared.getImage(for: photo.id, quality: quality) {
-            image = cachedImage
-            return
-        }
+        // if let cachedImage = ImageCache.shared.getImage(for: photo.id, quality: quality) {
+        //     image = cachedImage
+        //     return
+        // }
 
-         if let bestAvailableImage = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
-            image = bestAvailableImage.image
-        }
+        // if let bestAvailableImage = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
+        //     image = bestAvailableImage.image
+        // }
 
         isLoading = true
 
@@ -74,7 +74,7 @@ struct Photo: View {
 
             manager.requestImage(for: asset, targetSize: targetSize, contentMode: .aspectFill, options: options) { image, info in
                 guard let image = image else {
-                    print("❌ Не удалось получить изображение")
+                    print("❌ Cannot load image")
                     return
                 }
 
@@ -86,7 +86,7 @@ struct Photo: View {
                     self.image = image
                 }
                 
-                ImageCache.shared.setImage(image, for: self.photo.id, quality: quality)
+                // ImageCache.shared.setImage(image, for: self.photo.id, quality: quality)
             }
         }
     }

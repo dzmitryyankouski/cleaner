@@ -6,6 +6,8 @@ struct PhotoGrid: View {
     @Environment(\.photoLibrary) var photoLibrary
     @Binding var navigationPath: NavigationPath
 
+    @State private var selectedPhoto: PhotoModel? = nil
+
     var namespace: Namespace.ID
 
     let columns = Array(repeating: GridItem(.flexible(), spacing: 1), count: 3)
@@ -26,7 +28,7 @@ struct PhotoGrid: View {
                     )
                     .onTapGesture {
                         if photoLibrary?.selectedPhotos.isEmpty ?? true {
-                            navigationPath.append(PhotoGroupNavigationItem(photos: photos, currentItem: photo))
+                            selectedPhoto = photo
                         } else {
                             withAnimation {
                                 photoLibrary?.select(photo: photo)
@@ -45,6 +47,9 @@ struct PhotoGrid: View {
                     .id(photo.id)
                     .matchedTransitionSource(id: photo.id, in: namespace)
             }
+        }
+        .fullScreenCover(item: $selectedPhoto) { photo in
+            PhotoDetailView(photos: photos, currentItem: photo, namespace: namespace)
         }
     }
 }

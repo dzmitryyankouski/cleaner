@@ -35,7 +35,7 @@ struct SearchView: View {
                 case 1:
                     if !searchResultsVideos.isEmpty {
                         ScrollView {
-                            VideoGrid(videos: searchResultsVideos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            VideoGrid(videos: searchResultsVideos, namespace: navigationTransitionNamespace)
                         }
                     } else {
                         EmptyState(
@@ -52,12 +52,6 @@ struct SearchView: View {
             .searchable(text: $searchText, prompt: "Поиск фотографий и видео")
             .searchPresentationToolbarBehavior(.avoidHidingContent)
             .toolbar(.hidden, for: .navigationBar)
-            .navigationDestination(for: PhotoGroupNavigationItem.self) { item in
-                PhotoDetailView(photos: item.photos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
-            }
-            .navigationDestination(for: VideoGroupNavigationItem.self) { item in
-                VideoDetailView(videos: item.videos, currentItem: item.currentItem, namespace: navigationTransitionNamespace)
-            }
             .onSubmit(of: .search) {
                 searchPhotos()
                 searchVideos()
