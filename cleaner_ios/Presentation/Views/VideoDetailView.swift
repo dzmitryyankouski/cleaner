@@ -35,7 +35,12 @@ struct VideoDetailView: View {
         .overlay(
             VStack {
                 VideoDetailHeader(videos: $videos, selectedItem: $selectedItem)
+
                 Spacer()
+
+                ThumbnailIndicator(items: videos, selectedItem: $selectedItem) { video in
+                    VideoThumbnail(video: video)
+                }
             }
         )
         .navigationTransition(.zoom(sourceID: selectedItem?.id ?? currentItem.id, in: namespace))
