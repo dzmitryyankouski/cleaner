@@ -37,8 +37,12 @@ struct PhotoDetailView: View {
         .overlay(
             VStack {
                 PhotoDetailHeader(photos: $photos, selectedItem: $selectedItem)
+                
                 Spacer()
-                PhotoThumbnailIndicator(photos: photos, selectedItem: $selectedItem)
+
+                ThumbnailIndicator(items: photos, selectedItem: $selectedItem) { photo in
+                    Photo(photo: photo, quality: .low, contentMode: .fill)
+                }
             }
         )
         .navigationTransition(.zoom(sourceID: selectedItem?.id ?? currentItem.id, in: namespace))

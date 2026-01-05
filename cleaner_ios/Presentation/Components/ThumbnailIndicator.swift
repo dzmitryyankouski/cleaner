@@ -1,24 +1,24 @@
 import SwiftUI
 import Photos
 
-struct PhotoThumbnailIndicator: View {
-    let photos: [PhotoModel]
-    @Binding var selectedItem: PhotoModel?
+struct ThumbnailIndicator<Item: Identifiable & Equatable, Content: View>: View {
+    let items: [Item]
+    @Binding var selectedItem: Item?
+    @ViewBuilder let content: (Item) -> Content
     
-    private let thumbnailSize: CGFloat = 60
     private let spacing: CGFloat = 8
     
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView(.horizontal, showsIndicators: false) {
                 LazyHStack(spacing: spacing) {
-                    ForEach(photos, id: \.id) { photo in
-                        Photo(photo: photo, quality: .low, contentMode: .fill)
-                            .frame(width: photo.id == selectedItem?.id ? 50 : 30, height: 50)
+                    ForEach(items, id: \.id) { item in
+                        content(item)
+                            .frame(width: item.id == selectedItem?.id ? 50 : 30, height: 50)
                             .clipShape(RoundedRectangle(cornerRadius: 4))
-                            .id(photo.id)
+                            .id(item.id)
                             .onTapGesture {
-                                selectedItem = photo
+                                selectedItem = item
                             }
                             .animation(.easeInOut(duration: 0.2), value: selectedItem?.id)
                     }
@@ -26,10 +26,10 @@ struct PhotoThumbnailIndicator: View {
                 .padding(.horizontal, spacing)
             }
             .frame(height: 50)
-            .onChange(of: selectedItem?.id) { newValue in
+            .onChange(of: selectedItem) { newValue in
                 if let newValue = newValue {
                     withAnimation {
-                        proxy.scrollTo(newValue, anchor: .center)
+                        proxy.scrollTo(newValue.id, anchor: .center)
                     }
                 }
             }
