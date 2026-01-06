@@ -4,6 +4,7 @@ import SwiftData
 import Photos
 import AVFoundation
 import CoreVideo
+import UIKit
 
 @Observable
 class VideoLibrary {
@@ -17,6 +18,8 @@ class VideoLibrary {
     var similarGroups: [VideoGroupModel] = []
     var similarVideos: [VideoModel] = []
     var similarVideosFileSize: Int64 = 0
+
+    var selectedVideos: [VideoModel] = []
 
     var selectedSort: SortVideo = .date
     var selectedFilter: Set<FilterVideo> = []
@@ -440,6 +443,17 @@ class VideoLibrary {
         await regroup()
         await filter()
         return .success(())
+    }
+
+    func select(video: VideoModel) {
+        let generator = UIImpactFeedbackGenerator(style: .light)
+        generator.impactOccurred()
+
+        if selectedVideos.contains(video) {
+            selectedVideos.removeAll { $0.id == video.id }
+        } else {
+            selectedVideos.append(video)
+        }
     }
 }
 

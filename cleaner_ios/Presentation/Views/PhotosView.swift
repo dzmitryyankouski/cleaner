@@ -48,13 +48,13 @@ struct PhotosView: View {
                         Section {
                             switch selectedTab {
                             case 0:
-                                AllPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                AllPhotosView(namespace: navigationTransitionNamespace)
                             case 1:
-                                SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                SimilarPhotosView(namespace: navigationTransitionNamespace)
                             case 2:
-                                DuplicatesView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                DuplicatesView(namespace: navigationTransitionNamespace)
                             default:
-                                SimilarPhotosView(navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                                SimilarPhotosView(namespace: navigationTransitionNamespace)
                             }
                         } header: {
                             PickerHeader(selectedTab: $selectedTab, tabs: tabs)
@@ -196,7 +196,6 @@ struct PhotosView: View {
 struct SimilarPhotosView: View {
     @Environment(\.photoLibrary) var photoLibrary
 
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 
     var body: some View {
@@ -224,7 +223,7 @@ struct SimilarPhotosView: View {
 
                 LazyVStack(spacing: 20) {
                     ForEach(photoLibrary?.similarGroups ?? [], id: \.id) { group in
-                        PhotoGroupRowView(group: group, navigationPath: $navigationPath, namespace: namespace)
+                        PhotoGroupRowView(group: group, namespace: namespace)
                     }
                 }
                 .padding(.top)
@@ -235,7 +234,6 @@ struct SimilarPhotosView: View {
 
 struct DuplicatesView: View {
     @Environment(\.photoLibrary) var photoLibrary
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 
     var body: some View {
@@ -263,7 +261,7 @@ struct DuplicatesView: View {
 
                 LazyVStack(spacing: 20) {
                     ForEach(photoLibrary?.duplicatesGroups ?? [], id: \.id) { group in
-                        PhotoGroupRowView(group: group, navigationPath: $navigationPath, namespace: namespace)
+                        PhotoGroupRowView(group: group, namespace: namespace)
                     }
                 }
                 .padding(.top)
@@ -274,7 +272,6 @@ struct DuplicatesView: View {
 
 struct AllPhotosView: View {
     @Environment(\.photoLibrary) var photoLibrary
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 
     var body: some View {
@@ -301,7 +298,7 @@ struct AllPhotosView: View {
                     .padding(.horizontal)
                 }
 
-                PhotoGrid(photos: photoLibrary?.photos ?? [], navigationPath: $navigationPath, namespace: namespace)
+                PhotoGrid(photos: photoLibrary?.photos ?? [], namespace: namespace)
             }
         }
     }
@@ -311,7 +308,6 @@ struct PhotoGroupRowView: View {
     @Environment(\.photoLibrary) var photoLibrary
 
     let group: PhotoGroupModel
-    @Binding var navigationPath: NavigationPath
     var namespace: Namespace.ID
 
     @State private var selectedPhoto: PhotoModel? = nil
@@ -322,45 +318,53 @@ struct PhotoGroupRowView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 1) {
-                    ForEach(group.photos, id: \.id) { photo in
-                        Photo(photo: photo, quality: .medium, contentMode: .fill)
-                            .frame(width: 150, height: 200)
-                            .id(photo.id)
-                            .matchedTransitionSource(id: photo.id, in: namespace)
-                            .clipped()
-                            .overlay(
-                                Group {
-                                    if photoLibrary?.selectedPhotos.contains(photo) ?? false {
-                                        Color.white.opacity(0.5)
-                                    }
-                                }
-                                .transaction { $0.animation = nil }
-                            )
-                            .onTapGesture {
-                                if photoLibrary?.selectedPhotos.isEmpty ?? true {
-                                    selectedPhoto = photo
-                                } else {
-                                    withAnimation {
-                                        photoLibrary?.select(photo: photo)
-                                    }
-                                }
-                            }
-                            .highPriorityGesture(
-                                LongPressGesture(minimumDuration: 0.3)
-                                    .onEnded { _ in
-                                        withAnimation {
-                                            photoLibrary?.select(photo: photo)
-                                        }
-                                    }
-                            )
-                    }
-                }
-                .scrollTargetLayout()
+            RowItems(items: group.photos, selectedItems: photoLibrary?.selectedPhotos ?? [], namespace: namespace) { photo in
+                Photo(photo: photo, quality: .medium, contentMode: .fill)
+            } onSelect: { photo in
+                photoLibrary?.select(photo: photo)
+            } onTap: { photo in
+                selectedPhoto = photo
             }
-            .scrollClipDisabled(true)
-            .scrollTargetBehavior(.viewAligned)
+
+            // ScrollView(.horizontal, showsIndicators: false) {
+            //     LazyHStack(spacing: 1) {
+            //         ForEach(group.photos, id: \.id) { photo in
+            //             Photo(photo: photo, quality: .medium, contentMode: .fill)
+            //                 .frame(width: 150, height: 200)
+            //                 .id(photo.id)
+            //                 .matchedTransitionSource(id: photo.id, in: namespace)
+            //                 .clipped()
+            //                 .overlay(
+            //                     Group {
+            //                         if photoLibrary?.selectedPhotos.contains(photo) ?? false {
+            //                             Color.white.opacity(0.5)
+            //                         }
+            //                     }
+            //                     .transaction { $0.animation = nil }
+            //                 )
+            //                 .onTapGesture {
+            //                     if photoLibrary?.selectedPhotos.isEmpty ?? true {
+            //                         selectedPhoto = photo
+            //                     } else {
+            //                         withAnimation {
+            //                             photoLibrary?.select(photo: photo)
+            //                         }
+            //                     }
+            //                 }
+            //                 .highPriorityGesture(
+            //                     LongPressGesture(minimumDuration: 0.3)
+            //                         .onEnded { _ in
+            //                             withAnimation {
+            //                                 photoLibrary?.select(photo: photo)
+            //                             }
+            //                         }
+            //                 )
+            //         }
+            //     }
+            //     .scrollTargetLayout()
+            // }
+            // .scrollClipDisabled(true)
+            // .scrollTargetBehavior(.viewAligned)
         }
         .fullScreenCover(item: $selectedPhoto) { photo in
             PhotoDetailView(photos: group.photos, currentItem: photo, namespace: namespace)

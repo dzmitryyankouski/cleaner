@@ -4,7 +4,6 @@ struct PhotoGrid: View {
     let photos: [PhotoModel]
 
     @Environment(\.photoLibrary) var photoLibrary
-    @Binding var navigationPath: NavigationPath
 
     @State private var selectedPhoto: PhotoModel? = nil
 

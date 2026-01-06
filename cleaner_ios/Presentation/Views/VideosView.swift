@@ -59,44 +59,83 @@ struct VideosView: View {
             }
             .navigationTitle("Видео")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
-                        Section {
-                            ForEach(FilterVideo.allCases, id: \.self) { filter in
-                                Toggle(isOn: Binding(get: { videoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
-                                    if value {
-                                        videoLibrary?.selectedFilter.insert(filter)
-                                    } else {
-                                        videoLibrary?.selectedFilter.remove(filter)
-                                    }
-                                })) {
-                                    Label(filter.rawValue, systemImage: filter.icon)
-                                }
+
+                if !(videoLibrary?.selectedVideos.isEmpty ?? true) {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel", systemImage: "xmark") {
+                            withAnimation {
+                                videoLibrary?.selectedVideos.removeAll()
                             }
                         }
-                        Section {
-                            Picker("Sort", selection: Binding(get: { videoLibrary?.selectedSort ?? .date }, set: { value in
-                                videoLibrary?.selectedSort = value
-                            })) {
-                                ForEach(SortVideo.allCases, id: \.self) { sort in
-                                    Label(sort.rawValue, systemImage: sort.icon)
-                                        .tag(sort)
-                                }
-                            }
-                        }
-                    } label: {
-                        Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
                 }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        showSettings.toggle()
-                    }) {
-                        Image(systemName: "gearshape")
+
+                if videoLibrary?.selectedVideos.isEmpty ?? true {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Section {
+                                ForEach(FilterVideo.allCases, id: \.self) { filter in
+                                    Toggle(isOn: Binding(get: { videoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
+                                        if value {
+                                            videoLibrary?.selectedFilter.insert(filter)
+                                        } else {
+                                            videoLibrary?.selectedFilter.remove(filter)
+                                        }
+                                    })) {
+                                        Label(filter.rawValue, systemImage: filter.icon)
+                                    }
+                                }
+                            }
+                            Section {
+                                Picker("Sort", selection: Binding(get: { videoLibrary?.selectedSort ?? .date }, set: { value in
+                                    videoLibrary?.selectedSort = value
+                                })) {
+                                    ForEach(SortVideo.allCases, id: \.self) { sort in
+                                        Label(sort.rawValue, systemImage: sort.icon)
+                                            .tag(sort)
+                                    }
+                                }
+                            }
+                        } label: {
+                            Label("Фильтры", systemImage: "line.3.horizontal.decrease")
+                        }
                     }
-                    .popover(isPresented: $showSettings) {
-                        SettingsView(isPresented: $showSettings)
+                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button(action: {
+                            showSettings.toggle()
+                        }) {
+                            Image(systemName: "gearshape")
+                        }
+                        .popover(isPresented: $showSettings) {
+                            SettingsView(isPresented: $showSettings)
+                        }
+                    }
+                } else {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Button(role: .destructive, action: {
+                                Task {
+                                    guard let result = await videoLibrary?.delete(videos: videoLibrary?.selectedVideos ?? []) else {
+                                        return
+                                    }
+
+                                    guard case .success = result else {
+                                        return
+                                    }
+
+                                    await videoLibrary?.filter()
+
+                                    withAnimation {
+                                        videoLibrary?.selectedVideos.removeAll()
+                                    }
+                                }
+                            }) {
+                                Label("Remove", systemImage: "trash")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                        }
                     }
                 }
             }
@@ -192,6 +231,8 @@ struct SimilarVideosView: View {
 }
 
 struct VideoGroupRowView: View {
+    @Environment(\.videoLibrary) var videoLibrary
+    
     let group: VideoGroupModel
     var namespace: Namespace.ID
 
@@ -203,21 +244,13 @@ struct VideoGroupRowView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                LazyHStack(spacing: 1) {
-                    ForEach(group.videos, id: \.id) { video in
-                        VideoThumbnail(video: video)
-                            .id(video.id)
-                            .frame(width: 150, height: 200)
-                            .clipped()
-                            .matchedTransitionSource(id: video.id, in: namespace)
-                            .onTapGesture {
-                                selectedVideo = video
-                            }
-                    }
-                }
+            RowItems(items: group.videos, selectedItems: videoLibrary?.selectedVideos ?? [], namespace: namespace) { video in
+                VideoThumbnail(video: video)
+            } onSelect: { video in
+                videoLibrary?.select(video: video)
+            } onTap: { video in
+                selectedVideo = video
             }
-            .scrollClipDisabled(true)
         }
         .fullScreenCover(item: $selectedVideo) { video in
             VideoDetailView(videos: group.videos, currentItem: video, namespace: namespace)

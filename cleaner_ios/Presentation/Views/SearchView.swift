@@ -23,7 +23,7 @@ struct SearchView: View {
                 case 0:
                     if !searchResultsPhotos.isEmpty {
                         ScrollView {
-                            PhotoGrid(photos: searchResultsPhotos, navigationPath: $navigationPath, namespace: navigationTransitionNamespace)
+                            PhotoGrid(photos: searchResultsPhotos, namespace: navigationTransitionNamespace)
                         }
                     } else {
                         EmptyState(
