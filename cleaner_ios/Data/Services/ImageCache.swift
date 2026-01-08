@@ -1,10 +1,16 @@
 import UIKit
 import Photos
 
-enum PhotoQuality {
-    case low
-    case medium
-    case high
+enum PhotoQuality: Int, Comparable {
+    case low = 0
+    case medium = 1
+    case high = 2
+    
+    var level: Int { rawValue }
+    
+    static func < (lhs: PhotoQuality, rhs: PhotoQuality) -> Bool {
+        lhs.rawValue < rhs.rawValue
+    }
 }
 
 final class ImageCache {

@@ -1,4 +1,3 @@
-import Photos
 import SwiftUI
 
 struct PhotoDetailView: View {
@@ -11,7 +10,6 @@ struct PhotoDetailView: View {
     let namespace: Namespace.ID
     
     // MARK: - Private State
-    @State private var assets: [String: PHAsset] = [:]
     @State private var selectedItem: PhotoModel? = nil
 
     var body: some View {
@@ -19,7 +17,7 @@ struct PhotoDetailView: View {
             TabView(selection: $selectedItem) {
                 ForEach(photos, id: \.id) { photo in
                     GeometryReader { geometry in
-                        Photo(photo: photo, quality: .high, contentMode: .fit, useAnimation: true)
+                        Photo(photo: photo, quality: .high, contentMode: .fit)
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .clipped()
                     }
@@ -30,6 +28,12 @@ struct PhotoDetailView: View {
             }
             .onAppear {
                 selectedItem = currentItem
+                preloadNeighbors(for: currentItem)
+            }
+            .onChange(of: selectedItem) { _, newValue in
+                if let newValue {
+                    preloadNeighbors(for: newValue)
+                }
             }
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
@@ -46,5 +50,19 @@ struct PhotoDetailView: View {
             }
         )
         .navigationTransition(.zoom(sourceID: selectedItem?.id ?? currentItem.id, in: namespace))
+    }
+    
+    // MARK: - Preloading
+    
+    private func preloadNeighbors(for photo: PhotoModel) {
+        guard let currentIndex = photos.firstIndex(where: { $0.id == photo.id }) else { return }
+        
+        // Предзагружаем соседние фото
+        for offset in [-2, -1, 1, 2] {
+            let index = currentIndex + offset
+            guard index >= 0 && index < photos.count else { continue }
+            let neighborPhoto = photos[index]
+            Task { _ = await neighborPhoto.loadImage(quality: .high) }
+        }
     }
 }
