@@ -325,46 +325,6 @@ struct PhotoGroupRowView: View {
             } onTap: { photo in
                 selectedPhoto = photo
             }
-
-            // ScrollView(.horizontal, showsIndicators: false) {
-            //     LazyHStack(spacing: 1) {
-            //         ForEach(group.photos, id: \.id) { photo in
-            //             Photo(photo: photo, quality: .medium, contentMode: .fill)
-            //                 .frame(width: 150, height: 200)
-            //                 .id(photo.id)
-            //                 .matchedTransitionSource(id: photo.id, in: namespace)
-            //                 .clipped()
-            //                 .overlay(
-            //                     Group {
-            //                         if photoLibrary?.selectedPhotos.contains(photo) ?? false {
-            //                             Color.white.opacity(0.5)
-            //                         }
-            //                     }
-            //                     .transaction { $0.animation = nil }
-            //                 )
-            //                 .onTapGesture {
-            //                     if photoLibrary?.selectedPhotos.isEmpty ?? true {
-            //                         selectedPhoto = photo
-            //                     } else {
-            //                         withAnimation {
-            //                             photoLibrary?.select(photo: photo)
-            //                         }
-            //                     }
-            //                 }
-            //                 .highPriorityGesture(
-            //                     LongPressGesture(minimumDuration: 0.3)
-            //                         .onEnded { _ in
-            //                             withAnimation {
-            //                                 photoLibrary?.select(photo: photo)
-            //                             }
-            //                         }
-            //                 )
-            //         }
-            //     }
-            //     .scrollTargetLayout()
-            // }
-            // .scrollClipDisabled(true)
-            // .scrollTargetBehavior(.viewAligned)
         }
         .fullScreenCover(item: $selectedPhoto) { photo in
             PhotoDetailView(photos: group.photos, currentItem: photo, namespace: namespace)
