@@ -5,11 +5,12 @@ struct VideoPlayerCard: View {
     let video: VideoModel
     let isSelected: Bool
     
+    @State private var player: AVPlayer?
     @State private var loopObserver: NSObjectProtocol?
     
     var body: some View {
         Group {
-            if let player = video.player {
+            if let player {
                 VideoPlayer(player: player)
                     .aspectRatio(contentMode: .fit)
                     .ignoresSafeArea()
@@ -18,8 +19,9 @@ struct VideoPlayerCard: View {
             }
         }
         .task {
-            guard let player = await video.loadVideo() else { return }
-            setupLoop(for: player)
+            guard let loadedPlayer = await video.loadVideo() else { return }
+            player = loadedPlayer
+            setupLoop(for: loadedPlayer)
             video.play()
         }
         .onDisappear {
