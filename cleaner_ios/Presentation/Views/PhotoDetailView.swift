@@ -19,7 +19,7 @@ struct PhotoDetailView: View {
             TabView(selection: $selectedItem) {
                 ForEach(photos, id: \.id) { photo in
                     GeometryReader { geometry in
-                        Photo(photo: photo, quality: .high, contentMode: .fit)
+                        Photo(photo: photo, quality: .high, contentMode: .fit, useAnimation: true)
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .clipped()
                     }
@@ -37,7 +37,7 @@ struct PhotoDetailView: View {
         .overlay(
             VStack {
                 PhotoDetailHeader(photos: $photos, selectedItem: $selectedItem)
-                
+
                 Spacer()
 
                 ThumbnailIndicator(items: photos, selectedItem: $selectedItem) { photo in

@@ -5,16 +5,18 @@ struct Photo: View {
     let photo: PhotoModel
     let quality: PhotoQuality
     let contentMode: ContentMode
+    let useAnimation: Bool
 
     @State private var image: UIImage?
     @State private var isLoading = false
     
     private let manager = PHCachingImageManager()
     
-    init(photo: PhotoModel, quality: PhotoQuality, contentMode: ContentMode) {
+    init(photo: PhotoModel, quality: PhotoQuality, contentMode: ContentMode, useAnimation: Bool = false) {
         self.photo = photo
         self.quality = quality
         self.contentMode = contentMode
+        self.useAnimation = useAnimation
     }
 
     var body: some View {
@@ -33,16 +35,7 @@ struct Photo: View {
     }
     
     private func loadImageIfNeeded() {
-        guard !isLoading else { return }
-
-        // if let cachedImage = ImageCache.shared.getImage(for: photo.id, quality: quality) {
-        //     image = cachedImage
-        //     return
-        // }
-
-        // if let bestAvailableImage = ImageCache.shared.getBestAvailableImage(for: photo.id, startingFrom: quality) {
-        //     image = bestAvailableImage.image
-        // }
+        guard !isLoading && image == nil else { return }
 
         isLoading = true
 
@@ -78,15 +71,13 @@ struct Photo: View {
                     return
                 }
 
-                if (self.image == nil) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
+                if self.useAnimation {
+                    withAnimation(.easeInOut(duration: 0.1)) {
                         self.image = image
                     }
                 } else {
                     self.image = image
                 }
-                
-                // ImageCache.shared.setImage(image, for: self.photo.id, quality: quality)
             }
         }
     }
