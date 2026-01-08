@@ -20,19 +20,11 @@ struct VideoPlayerCard: View {
         .task {
             guard let player = await video.loadVideo() else { return }
             setupLoop(for: player)
-            if isSelected {
-                video.play()
-            }
+            video.play()
         }
         .onDisappear {
             removeLoop()
-        }
-        .onChange(of: isSelected) { _, newValue in
-            if newValue {
-                video.play()
-            } else {
-                video.stop()
-            }
+            video.stop()
         }
     }
     
