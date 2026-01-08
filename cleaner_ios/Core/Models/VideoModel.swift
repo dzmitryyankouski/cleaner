@@ -1,6 +1,7 @@
 import SwiftData
 import Photos
 import AVFoundation
+import UIKit
 
 @Model
 final class VideoModel: Identifiable {
@@ -15,12 +16,138 @@ final class VideoModel: Identifiable {
     var fileSize: Int64?
     var isModified: Bool = false
     var isFavorite: Bool = false
+    
+    // MARK: - Transient (not saved to database)
+    @Transient var previewImage: UIImage?
+    @Transient var isLoadingPreview: Bool = false
+    @Transient var player: AVPlayer?
+    @Transient var isLoadingVideo: Bool = false
+    @Transient var isPlaying: Bool = false
+    
+    // MARK: - Static
+    private static let imageManager = PHCachingImageManager()
 
     init(asset: PHAsset) {
         self.id = asset.localIdentifier
         self.duration = asset.duration
         self.creationDate = asset.creationDate
         self.modificationDate = asset.modificationDate
+    }
+    
+    // MARK: - Preview Loading
+    
+    @MainActor
+    func loadPreview() async -> UIImage? {
+        if let cached = previewImage {
+            return cached
+        }
+        
+        if isLoadingPreview {
+            return previewImage
+        }
+        
+        isLoadingPreview = true
+        
+        let videoId = self.id
+        
+        let loadedImage: UIImage? = await withCheckedContinuation { continuation in
+            Task.detached(priority: .userInitiated) {
+                let assets = PHAsset.fetchAssets(withLocalIdentifiers: [videoId], options: nil)
+                guard let asset = assets.firstObject else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let options = PHImageRequestOptions()
+                options.isSynchronous = false
+                options.isNetworkAccessAllowed = true
+                options.resizeMode = .exact
+                options.deliveryMode = .opportunistic
+                
+                let targetSize = CGSize(width: 300, height: 400)
+                
+                Self.imageManager.requestImage(
+                    for: asset,
+                    targetSize: targetSize,
+                    contentMode: .aspectFill,
+                    options: options
+                ) { image, info in
+                    let isDegraded = (info?[PHImageResultIsDegradedKey] as? Bool) ?? false
+                    if !isDegraded {
+                        continuation.resume(returning: image)
+                    }
+                }
+            }
+        }
+        
+        previewImage = loadedImage
+        isLoadingPreview = false
+        
+        return previewImage
+    }
+    
+    // MARK: - Video Loading & Playback
+    
+    @MainActor
+    func loadVideo() async -> AVPlayer? {
+        if let player {
+            return player
+        }
+        
+        if isLoadingVideo {
+            return player
+        }
+        
+        isLoadingVideo = true
+        
+        let videoId = self.id
+        
+        let loadedPlayer: AVPlayer? = await withCheckedContinuation { continuation in
+            Task.detached(priority: .userInitiated) {
+                let assets = PHAsset.fetchAssets(withLocalIdentifiers: [videoId], options: nil)
+                guard let asset = assets.firstObject else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let options = PHVideoRequestOptions()
+                options.isNetworkAccessAllowed = true
+                options.deliveryMode = .automatic
+                
+                PHImageManager.default().requestPlayerItem(forVideo: asset, options: options) { playerItem, _ in
+                    if let playerItem {
+                        let player = AVPlayer(playerItem: playerItem)
+                        continuation.resume(returning: player)
+                    } else {
+                        continuation.resume(returning: nil)
+                    }
+                }
+            }
+        }
+        
+        player = loadedPlayer
+        isLoadingVideo = false
+        
+        return player
+    }
+    
+    @MainActor
+    func play() {
+        player?.play()
+        isPlaying = true
+    }
+    
+    @MainActor
+    func pause() {
+        player?.pause()
+        isPlaying = false
+    }
+    
+    @MainActor
+    func stop() {
+        player?.pause()
+        player?.seek(to: .zero)
+        isPlaying = false
     }
 
     static var similar: FetchDescriptor<VideoModel> {
