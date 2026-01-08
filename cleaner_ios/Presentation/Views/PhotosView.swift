@@ -214,11 +214,11 @@ struct SimilarPhotosView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCard(statistics: [
-                    .init(label: "Найдено групп", value: "\(photoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(photoLibrary?.similarPhotosCount ?? 0)", alignment: .center),
-                    .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.similarPhotosFileSize ?? 0).formatted, alignment: .trailing),
-                ])
+                StatisticCard {
+                    StatisticItem(label: "Найдено групп", value: "\(photoLibrary?.similarGroups.count ?? 0)", alignment: .leading)
+                    StatisticItem(label: "Фото в группах", value: "\(photoLibrary?.similarPhotosCount ?? 0)", alignment: .center)
+                    StatisticItem(label: "Общий размер", value: FileSize(bytes: photoLibrary?.similarPhotosFileSize ?? 0).formatted, alignment: .trailing)
+                }
                 .padding(.horizontal)
 
                 LazyVStack(spacing: 20) {
@@ -252,11 +252,11 @@ struct DuplicatesView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCard(statistics: [
-                    .init(label: "Найдено групп", value: "\(photoLibrary?.duplicatesGroups.count ?? 0)", alignment: .leading),
-                    .init(label: "Фото в группах", value: "\(photoLibrary?.duplicatesPhotosCount ?? 0)", alignment: .center),
-                    .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.duplicatesPhotosFileSize ?? 0).formatted, alignment: .trailing),
-                ])
+                StatisticCard {
+                    StatisticItem(label: "Найдено групп", value: "\(photoLibrary?.duplicatesGroups.count ?? 0)", alignment: .leading)
+                    StatisticItem(label: "Фото в группах", value: "\(photoLibrary?.duplicatesPhotosCount ?? 0)", alignment: .center)
+                    StatisticItem(label: "Общий размер", value: FileSize(bytes: photoLibrary?.duplicatesPhotosFileSize ?? 0).formatted, alignment: .trailing)
+                }
                 .padding(.horizontal)
 
                 LazyVStack(spacing: 20) {
@@ -291,10 +291,10 @@ struct AllPhotosView: View {
                     )
                     .padding(.horizontal)
                 } else {
-                    StatisticCard(statistics: [
-                        .init(label: "Всего фотографий", value: "\(photoLibrary?.photos.count ?? 0)", alignment: .leading),
-                        .init(label: "Общий размер", value: FileSize(bytes: photoLibrary?.photosFileSize ?? 0).formatted, alignment: .trailing),
-                    ])
+                    StatisticCard {
+                        StatisticItem(label: "Всего фотографий", value: "\(photoLibrary?.photos.count ?? 0)", alignment: .leading)
+                        StatisticItem(label: "Общий размер", value: FileSize(bytes: photoLibrary?.photosFileSize ?? 0).formatted, alignment: .trailing)
+                    }
                     .padding(.horizontal)
                 }
 

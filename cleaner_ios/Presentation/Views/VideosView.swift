@@ -179,10 +179,10 @@ struct AllVideosView: View {
                     )
                     .padding(.horizontal)
                 } else {
-                    StatisticCard(statistics: [
-                        .init(label: "Всего видео", value: "\(videoLibrary?.videos.count ?? 0)", alignment: .leading),
-                        .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.videosFileSize ?? 0).formatted, alignment: .trailing),
-                    ])
+                    StatisticCard {
+                        StatisticItem(label: "Всего видео", value: "\(videoLibrary?.videos.count ?? 0)", alignment: .leading)
+                        StatisticItem(label: "Общий размер", value: FileSize(bytes: videoLibrary?.videosFileSize ?? 0).formatted, alignment: .trailing)
+                    }
                     .padding(.horizontal)
                 }
 
@@ -212,11 +212,11 @@ struct SimilarVideosView: View {
             )
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
-                StatisticCard(statistics: [
-                    .init(label: "Найдено групп", value: "\(videoLibrary?.similarGroups.count ?? 0)", alignment: .leading),
-                    .init(label: "Видео в группах", value: "\(videoLibrary?.similarVideos.count ?? 0)", alignment: .center),
-                    .init(label: "Общий размер", value: FileSize(bytes: videoLibrary?.similarVideosFileSize ?? 0).formatted, alignment: .trailing),
-                ])
+                StatisticCard {
+                    StatisticItem(label: "Найдено групп", value: "\(videoLibrary?.similarGroups.count ?? 0)", alignment: .leading)
+                    StatisticItem(label: "Видео в группах", value: "\(videoLibrary?.similarVideos.count ?? 0)", alignment: .center)
+                    StatisticItem(label: "Общий размер", value: FileSize(bytes: videoLibrary?.similarVideosFileSize ?? 0).formatted, alignment: .trailing)
+                }
                 .padding(.horizontal)
 
                 LazyVStack(spacing: 20) {
