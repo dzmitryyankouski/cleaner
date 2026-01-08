@@ -48,6 +48,6 @@ struct RowItems<Item: Identifiable & Equatable, Content: View>: View {
             .scrollTargetLayout()
         }
         .scrollClipDisabled(true)
-        .scrollTargetBehavior(.viewAligned)
+        .scrollTargetBehavior(.viewAligned(limitBehavior: .never))
     }
 }
