@@ -16,11 +16,7 @@ struct VideoPlayerCard: View {
                     PlayerView(player: player)
                         .aspectRatio(aspectRatio, contentMode: .fit)
                         .frame(width: geometry.size.width, height: geometry.size.height)
-                } else {
-                    VideoThumbnail(video: video)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-               }
+                }
             }
         }
         .ignoresSafeArea()
@@ -52,9 +48,11 @@ struct VideoPlayerCard: View {
         guard player == nil else { return }
         guard let loadedPlayer = await video.loadVideo() else { return }
 
-        player = loadedPlayer
-        aspectRatio = getAspectRatio(from: loadedPlayer)
-        setupLoop(for: loadedPlayer)
+        withAnimation {
+            player = loadedPlayer
+            aspectRatio = getAspectRatio(from: loadedPlayer)
+            setupLoop(for: loadedPlayer)
+        }
     }
     
     private func getAspectRatio(from player: AVPlayer) -> CGFloat? {

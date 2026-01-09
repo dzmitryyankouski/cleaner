@@ -38,17 +38,26 @@ struct PhotoDetailView: View {
             .tabViewStyle(.page(indexDisplayMode: .never))
             .ignoresSafeArea()
         }
-        .overlay(
-            VStack {
-                PhotoDetailHeader(photos: $photos, selectedItem: $selectedItem)
-
-                Spacer()
-
-                ThumbnailIndicator(items: photos, selectedItem: $selectedItem) { photo in
-                    Photo(photo: photo, quality: .low, contentMode: .fill)
-                }
+        .overlay(alignment: .top) {
+            PhotoDetailHeader(photos: $photos, selectedItem: $selectedItem)
+        }
+        .overlay(alignment: .bottom) {
+            ThumbnailIndicator(items: photos, selectedItem: $selectedItem) { photo in
+                Photo(photo: photo, quality: .low, contentMode: .fill)
             }
-        )
+            .padding(.vertical, 20)
+            .background(
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        .white
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+        .ignoresSafeArea(edges: .bottom)
         .navigationTransition(.zoom(sourceID: selectedItem?.id ?? currentItem.id, in: namespace))
     }
     

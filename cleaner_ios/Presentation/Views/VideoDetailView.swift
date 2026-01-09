@@ -31,18 +31,28 @@ struct VideoDetailView: View {
             .onAppear {
                 selectedItem = currentItem
             }
+            .ignoresSafeArea()
         }
-        .overlay(
-            VStack {
-                VideoDetailHeader(videos: $videos, selectedItem: $selectedItem)
-
-                Spacer()
-
-                ThumbnailIndicator(items: videos, selectedItem: $selectedItem) { video in
-                    VideoThumbnail(video: video)
-                }
+        .overlay(alignment: .top) {
+            VideoDetailHeader(videos: $videos, selectedItem: $selectedItem)
+        }
+        .overlay(alignment: .bottom) {
+            ThumbnailIndicator(items: videos, selectedItem: $selectedItem) { video in
+                VideoThumbnail(video: video)
             }
-        )
+            .padding(.vertical, 20)
+            .background(
+                LinearGradient(
+                    colors: [
+                        .clear,
+                        .white
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+        }
+        .ignoresSafeArea(edges: .bottom)
         .navigationTransition(.zoom(sourceID: selectedItem?.id ?? currentItem.id, in: namespace))
     }
 }
