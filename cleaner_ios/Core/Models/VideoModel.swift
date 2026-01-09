@@ -117,6 +117,15 @@ final class VideoModel: Identifiable {
                 PHImageManager.default().requestPlayerItem(forVideo: asset, options: options) { playerItem, _ in
                     if let playerItem {
                         let player = AVPlayer(playerItem: playerItem)
+                        player.isMuted = false
+                        
+                        do {
+                            try AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+                            try AVAudioSession.sharedInstance().setActive(true)
+                        } catch {
+                            print("❌ Ошибка настройки AVAudioSession: \(error)")
+                        }
+                        
                         continuation.resume(returning: player)
                     } else {
                         continuation.resume(returning: nil)
@@ -133,7 +142,9 @@ final class VideoModel: Identifiable {
     
     @MainActor
     func play() {
-        player?.play()
+        guard let player else { return }
+        
+        player.play()
         isPlaying = true
     }
     
