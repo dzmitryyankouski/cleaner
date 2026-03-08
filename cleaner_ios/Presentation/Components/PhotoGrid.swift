@@ -22,50 +22,58 @@ struct PhotoGrid: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            let availableWidth = geometry.size.width
-            let cellSize = (availableWidth - spacing * CGFloat(columns - 1)) / CGFloat(columns)
-            let gridColumns = Array(repeating: GridItem(.flexible(), spacing: spacing), count: columns)
+        Group {
+            if photos.isEmpty {
+                EmptyView()
+            } else {
+                GeometryReader { geometry in
+                    let availableWidth = geometry.size.width
+                    let cellSize = (availableWidth - spacing * CGFloat(columns - 1)) / CGFloat(columns)
+                    let gridColumns = Array(repeating: GridItem(.flexible(), spacing: spacing), count: columns)
 
-            LazyVGrid(columns: gridColumns, spacing: spacing) {
-                ForEach(photos, id: \.id) { photo in
-                    Photo(photo: photo, quality: .medium, contentMode: .fill)
-                        .frame(width: cellSize, height: cellSize)
-                        .clipShape(RoundedRectangle(cornerRadius: 14))
-                        .overlay(
-                            Group {
-                                if photoLibrary?.selectedPhotos.contains(photo) ?? false {
-                                    Color.white.opacity(0.5)
-                                }
-                            }
-                            .transaction { $0.animation = nil }
-                        )
-                        .onTapGesture {
-                            if photoLibrary?.selectedPhotos.isEmpty ?? true {
-                                selectedPhoto = photo
-                            } else {
-                                withAnimation {
-                                    photoLibrary?.select(photo: photo)
-                                }
-                                print("selected photos: \(photoLibrary?.selectedPhotos.count ?? 0)")
-                            }
-                        }
-                        .highPriorityGesture(
-                            LongPressGesture(minimumDuration: 0.3)
-                                .onEnded { _ in
-                                    withAnimation {
-                                        photoLibrary?.select(photo: photo)
+                    LazyVGrid(columns: gridColumns, spacing: spacing) {
+                        ForEach(photos, id: \.id) { photo in
+                            Photo(photo: photo, quality: .medium, contentMode: .fill)
+                                .frame(width: cellSize, height: cellSize)
+                                .clipShape(RoundedRectangle(cornerRadius: 14))
+                                .overlay(
+                                    Group {
+                                        if photoLibrary?.selectedPhotos.contains(photo) ?? false {
+                                            Color.white.opacity(0.5)
+                                        }
+                                    }
+                                    .transaction { $0.animation = nil }
+                                )
+                                .onTapGesture {
+                                    if photoLibrary?.selectedPhotos.isEmpty ?? true {
+                                        selectedPhoto = photo
+                                    } else {
+                                        withAnimation {
+                                            photoLibrary?.select(photo: photo)
+                                        }
+                                        print(
+                                            "selected photos: \(photoLibrary?.selectedPhotos.count ?? 0)"
+                                        )
                                     }
                                 }
-                        )
-                        .id(photo.id)
-                        .matchedTransitionSource(id: photo.id, in: namespace)
+                                .highPriorityGesture(
+                                    LongPressGesture(minimumDuration: 0.3)
+                                        .onEnded { _ in
+                                            withAnimation {
+                                                photoLibrary?.select(photo: photo)
+                                            }
+                                        }
+                                )
+                                .id(photo.id)
+                                .matchedTransitionSource(id: photo.id, in: namespace)
+                        }
+                    }
+                }
+                .aspectRatio(aspectRatio, contentMode: .fit)
+                .fullScreenCover(item: $selectedPhoto) { photo in
+                    PhotoDetailView(photos: photos, currentItem: photo, namespace: namespace)
                 }
             }
-        }
-        .aspectRatio(aspectRatio, contentMode: .fit)
-        .fullScreenCover(item: $selectedPhoto) { photo in
-            PhotoDetailView(photos: photos, currentItem: photo, namespace: namespace)
         }
     }
 }
@@ -86,10 +94,10 @@ struct PhotoGridPreview: View {
 
     var body: some View {
         LazyVStack(spacing: 6) {
-             HStack(spacing: 6) {
-                 PhotoGrid(photos: leftPhotos, columns: 1, namespace: namespace)
-                 PhotoGrid(photos: rightPhotos, columns: 2, namespace: namespace)
-             }
+            HStack(alignment: .top, spacing: 6) {
+                PhotoGrid(photos: leftPhotos, columns: 1, namespace: namespace)
+                PhotoGrid(photos: rightPhotos, columns: 2, namespace: namespace)
+            }
             PhotoGrid(photos: bottomPhotos, columns: 4, namespace: namespace)
         }
     }

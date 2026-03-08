@@ -223,7 +223,7 @@ struct SimilarPhotosView: View {
 
                 LazyVStack(spacing: 20) {
                     ForEach(photoLibrary?.similarGroups ?? [], id: \.id) { group in
-                        PhotoGroupRowView(group: group, namespace: namespace)
+                        PhotoGridPreview(photos: group.photos, namespace: namespace)
                     }
                 }
                 .padding(.top)
