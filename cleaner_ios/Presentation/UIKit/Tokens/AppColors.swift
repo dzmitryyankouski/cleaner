@@ -21,6 +21,12 @@ enum AppColors {
     static let sectionHeaderTitle    = Color.black
     static let sectionHeaderSubtitle = Color(red: 0.463, green: 0.427, blue: 0.651)
 
+    // MARK: - ProgressBar
+    static let progressBarFill        = Color.white
+    static let progressBarTrack       = Color.white.opacity(0.3)
+    static let progressBarText        = Color.white
+    static let progressBarTrackText   = Color.white.opacity(0.3)  // inactive: "/ 58 GB"
+
     // MARK: - General / Background
     static let background = Color(.systemBackground)
     static let surface    = Color(.secondarySystemBackground)

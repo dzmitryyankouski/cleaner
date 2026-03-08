@@ -3,12 +3,17 @@ import SwiftUI
 // MARK: - All text styles in one place.
 
 enum AppFonts {
-    /// Button label — 16 semibold
-    static let button = Font.system(size: 16, weight: .semibold)
+
+    // MARK: - Button
+    static let button = Font.custom("Geologica", size: 16).weight(.semibold)
 
     // MARK: - SectionHeader
     static let sectionHeaderTitle    = Font.custom("Geologica", size: 28).weight(.medium)
     static let sectionHeaderSubtitle = Font.custom("Geologica", size: 14).weight(.light)
+
+    // MARK: - ProgressBar
+    /// Geologica 20pt / Medium (500) — label + value text
+    static let progressBarLabel = Font.custom("Geologica", size: 20).weight(.medium)
 
     // MARK: - Fallbacks (system)
     /// Section title — 20 bold
