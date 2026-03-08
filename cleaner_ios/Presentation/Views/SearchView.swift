@@ -9,6 +9,7 @@ struct SearchView: View {
     @State private var searchText: String = ""
     @State private var searchResultsPhotos: [PhotoModel] = []
     @State private var searchResultsVideos: [VideoModel] = []
+    @State private var selectedPhoto: PhotoModel? = nil
     @State private var navigationPath = NavigationPath()
     @State private var selectedTab = 0
     
@@ -23,7 +24,10 @@ struct SearchView: View {
                 case 0:
                     if !searchResultsPhotos.isEmpty {
                         ScrollView {
-                            PhotoGrid(photos: searchResultsPhotos, namespace: navigationTransitionNamespace)
+                            PhotoGrid(photos: searchResultsPhotos, selectedPhoto: $selectedPhoto, namespace: navigationTransitionNamespace)
+                        }
+                        .fullScreenCover(item: $selectedPhoto) { photo in
+                            PhotoDetailView(photos: searchResultsPhotos, currentItem: photo, namespace: navigationTransitionNamespace)
                         }
                     } else {
                         EmptyState(

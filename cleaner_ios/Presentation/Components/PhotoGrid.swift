@@ -3,10 +3,9 @@ import SwiftUI
 struct PhotoGrid: View {
     let photos: [PhotoModel]
     var columns: Int = 3
+    @Binding var selectedPhoto: PhotoModel?
 
     @Environment(\.photoLibrary) var photoLibrary
-
-    @State private var selectedPhoto: PhotoModel? = nil
 
     var namespace: Namespace.ID
 
@@ -70,9 +69,6 @@ struct PhotoGrid: View {
                     }
                 }
                 .aspectRatio(aspectRatio, contentMode: .fit)
-                .fullScreenCover(item: $selectedPhoto) { photo in
-                    PhotoDetailView(photos: photos, currentItem: photo, namespace: namespace)
-                }
             }
         }
     }
@@ -81,11 +77,15 @@ struct PhotoGrid: View {
 struct PhotoGridPreview: View {
     var namespace: Namespace.ID
 
+    @State private var selectedPhoto: PhotoModel? = nil
+
+    private let allPhotos: [PhotoModel]
     private var leftPhotos: [PhotoModel]
     private var rightPhotos: [PhotoModel]
     private var bottomPhotos: [PhotoModel]
 
     init(photos: [PhotoModel], namespace: Namespace.ID) {
+        self.allPhotos = photos
         self.leftPhotos = Array(photos.prefix(1))
         self.rightPhotos = Array(photos.dropFirst(1).prefix(4))
         self.bottomPhotos = Array(photos.dropFirst(5))
@@ -95,10 +95,13 @@ struct PhotoGridPreview: View {
     var body: some View {
         LazyVStack(spacing: 6) {
             HStack(alignment: .top, spacing: 6) {
-                PhotoGrid(photos: leftPhotos, columns: 1, namespace: namespace)
-                PhotoGrid(photos: rightPhotos, columns: 2, namespace: namespace)
+                PhotoGrid(photos: leftPhotos, columns: 1, selectedPhoto: $selectedPhoto, namespace: namespace)
+                PhotoGrid(photos: rightPhotos, columns: 2, selectedPhoto: $selectedPhoto, namespace: namespace)
             }
-            PhotoGrid(photos: bottomPhotos, columns: 4, namespace: namespace)
+            PhotoGrid(photos: bottomPhotos, columns: 4, selectedPhoto: $selectedPhoto, namespace: namespace)
+        }
+        .fullScreenCover(item: $selectedPhoto) { photo in
+            PhotoDetailView(photos: allPhotos, currentItem: photo, namespace: namespace)
         }
     }
 }
