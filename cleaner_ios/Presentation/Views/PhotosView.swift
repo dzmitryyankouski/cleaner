@@ -298,7 +298,7 @@ struct AllPhotosView: View {
                     .padding(.horizontal)
                 }
 
-                PhotoGrid(photos: photoLibrary?.photos ?? [], namespace: namespace)
+                PhotoGridPreview(photos: photoLibrary?.photos ?? [], namespace: namespace)
             }
         }
     }
