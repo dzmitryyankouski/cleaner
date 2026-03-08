@@ -1,11 +1,36 @@
 import SwiftUI
 
-private struct PhotoSelectionOverlay: View {
-    let isSelected: Bool
+private struct BestOneBadge: View {
+    let show: Bool
 
     var body: some View {
         Group {
-            if isSelected {
+            if show {
+                HStack(spacing: 4) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 11))
+                    Text("best one")
+                        .font(.system(size: 12, weight: .semibold))
+                }
+                .frame(height: 22)
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 21)
+                        .fill(Color(red: 0.2, green: 0.8, blue: 0.4))
+                )
+                .padding(6)
+            }
+        }
+    }
+}
+
+private struct PhotoSelectionOverlay: View {
+    let show: Bool
+
+    var body: some View {
+        Group {
+            if show {
                 Color.white.opacity(0.3)
                     .overlay(selectionCheckmark)
             }
@@ -31,6 +56,7 @@ struct PhotoGrid: View {
     let photos: [PhotoModel]
     var columns: Int = 3
     @Binding var selectedPhoto: PhotoModel?
+    var bestPhoto: PhotoModel? = nil
 
     @Environment(\.photoLibrary) var photoLibrary
 
@@ -64,9 +90,12 @@ struct PhotoGrid: View {
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                                 .overlay(
                                     PhotoSelectionOverlay(
-                                        isSelected: photoLibrary?.selectedPhotos.contains(photo) ?? false
+                                        show: photoLibrary?.selectedPhotos.contains(photo) ?? false
                                     )
                                 )
+                                .overlay(alignment: .topLeading) {
+                                    BestOneBadge(show: bestPhoto?.id == photo.id)
+                                }
                                 .onTapGesture {
                                     if photoLibrary?.selectedPhotos.isEmpty ?? true {
                                         selectedPhoto = photo
@@ -119,7 +148,7 @@ struct PhotoGridPreview: View {
     var body: some View {
         LazyVStack(spacing: 6) {
             HStack(alignment: .top, spacing: 6) {
-                PhotoGrid(photos: leftPhotos, columns: 1, selectedPhoto: $selectedPhoto, namespace: namespace)
+                PhotoGrid(photos: leftPhotos, columns: 1, selectedPhoto: $selectedPhoto, bestPhoto: allPhotos.first, namespace: namespace)
                 PhotoGrid(photos: rightPhotos, columns: 2, selectedPhoto: $selectedPhoto, namespace: namespace)
             }
             PhotoGrid(photos: bottomPhotos, columns: 4, selectedPhoto: $selectedPhoto, namespace: namespace)
