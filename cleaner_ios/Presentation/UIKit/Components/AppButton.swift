@@ -14,16 +14,16 @@ struct AppButton: View {
 
         var backgroundColor: Color {
             switch self {
-            case .primary:           return AppColors.primary
-            case .secondary:         return AppColors.secondary
+            case .primary:           return AppColors.buttonPrimaryBackground
+            case .secondary:         return AppColors.buttonSecondaryBackground
             case .custom(let color): return color
             }
         }
 
         var foregroundColor: Color {
             switch self {
-            case .primary:           return .white
-            case .secondary:         return .white
+            case .primary:           return AppColors.buttonPrimaryText
+            case .secondary:         return AppColors.buttonSecondaryText
             case .custom:            return .white
             }
         }
