@@ -226,7 +226,7 @@ struct SimilarPhotosView: View {
                         PhotoGridPreview(photos: group.photos, namespace: namespace)
                     }
                 }
-                .padding(.top)
+                .padding()
             }
         }
     }
@@ -299,6 +299,7 @@ struct AllPhotosView: View {
                 }
 
                 PhotoGridPreview(photos: photoLibrary?.photos ?? [], namespace: namespace)
+                    .padding(.horizontal)
             }
         }
     }

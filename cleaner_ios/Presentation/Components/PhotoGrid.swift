@@ -1,5 +1,32 @@
 import SwiftUI
 
+private struct PhotoSelectionOverlay: View {
+    let isSelected: Bool
+
+    var body: some View {
+        Group {
+            if isSelected {
+                Color.white.opacity(0.3)
+                    .overlay(selectionCheckmark)
+            }
+        }
+        .transaction { $0.animation = nil }
+    }
+
+    private var selectionCheckmark: some View {
+        ZStack {
+            Circle()
+                .fill(Color(red: 69 / 255, green: 36 / 255, blue: 255 / 255))
+                .frame(width: 22, height: 22)
+            Image(systemName: "checkmark")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundColor(.white)
+        }
+        .padding(6)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+    }
+}
+
 struct PhotoGrid: View {
     let photos: [PhotoModel]
     var columns: Int = 3
@@ -36,12 +63,9 @@ struct PhotoGrid: View {
                                 .frame(width: cellSize, height: cellSize)
                                 .clipShape(RoundedRectangle(cornerRadius: 14))
                                 .overlay(
-                                    Group {
-                                        if photoLibrary?.selectedPhotos.contains(photo) ?? false {
-                                            Color.white.opacity(0.5)
-                                        }
-                                    }
-                                    .transaction { $0.animation = nil }
+                                    PhotoSelectionOverlay(
+                                        isSelected: photoLibrary?.selectedPhotos.contains(photo) ?? false
+                                    )
                                 )
                                 .onTapGesture {
                                     if photoLibrary?.selectedPhotos.isEmpty ?? true {
