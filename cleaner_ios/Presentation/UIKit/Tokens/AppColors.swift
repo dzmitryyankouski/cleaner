@@ -17,6 +17,10 @@ enum AppColors {
     static let toggleInactiveBackground  = Color(red: 0.796, green: 0.777, blue: 0.903)
     static let toggleThumb               = Color.white
 
+    // MARK: - SectionHeader
+    static let sectionHeaderTitle    = Color.black
+    static let sectionHeaderSubtitle = Color(red: 0.463, green: 0.427, blue: 0.651)
+
     // MARK: - General / Background
     static let background = Color(.systemBackground)
     static let surface    = Color(.secondarySystemBackground)
