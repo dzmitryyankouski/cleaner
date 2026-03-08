@@ -98,3 +98,4 @@ config.env
 .env
 
 .vscode/
+.idea/
