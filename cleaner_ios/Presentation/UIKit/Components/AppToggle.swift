@@ -1,40 +1,25 @@
 import SwiftUI
 
 // MARK: - AppToggle
-/// Reusable pill-shaped toggle
-///
-/// Usage:
-/// ```swift
-/// @State private var isOn = false
-/// AppToggle(isOn: $isOn)
-/// ```
+/// Custom ToggleStyle for pill-shaped toggle
+struct PillToggleStyle: ToggleStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let trackWidth: CGFloat  = 64
+        let trackHeight: CGFloat = 28
+        let thumbWidth: CGFloat  = 39
+        let thumbHeight: CGFloat = 24
+        let padding: CGFloat     = 2
+        let thumbOffset: CGFloat = configuration.isOn ? (trackWidth / 2 - thumbWidth / 2 - padding) : -(trackWidth / 2 - thumbWidth / 2 - padding)
 
-struct AppToggle: View {
-
-    @Binding var isOn: Bool
-
-    private let trackWidth: CGFloat  = 64
-    private let trackHeight: CGFloat = 28
-    private let thumbWidth: CGFloat  = 39
-    private let thumbHeight: CGFloat = 24
-    private let padding: CGFloat     = 2
-
-    private var thumbOffset: CGFloat {
-        let base = trackWidth / 2 - thumbWidth / 2 - padding
-        return isOn ? base : -base
-    }
-
-    var body: some View {
-        Button {
+        Button(action: {
             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isOn.toggle()
+                configuration.isOn.toggle()
             }
-        } label: {
-            ZStack {
+        }) {
+            ZStack(alignment: .center) {
                 Capsule()
-                    .fill(isOn ? AppColors.toggleActiveBackground : AppColors.toggleInactiveBackground)
+                    .fill(configuration.isOn ? AppColors.toggleActiveBackground : AppColors.toggleInactiveBackground)
                     .frame(width: trackWidth, height: trackHeight)
-
                 RoundedRectangle(cornerRadius: 100)
                     .fill(AppColors.toggleThumb)
                     .frame(width: thumbWidth, height: thumbHeight)
@@ -42,6 +27,20 @@ struct AppToggle: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Toggle")
+        .accessibilityValue(configuration.isOn ? "On" : "Off")
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
+// MARK: - Reusable pill-shaped toggle (using Toggle with custom style)
+struct AppToggle: View {
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Toggle("", isOn: $isOn)
+            .toggleStyle(PillToggleStyle())
+            .labelsHidden()
     }
 }
 
@@ -53,7 +52,6 @@ struct AppToggle: View {
         var body: some View {
             ZStack {
                 Color.white.ignoresSafeArea()
-
                 HStack(spacing: 24) {
                     AppToggle(isOn: $first)
                     AppToggle(isOn: $second)
