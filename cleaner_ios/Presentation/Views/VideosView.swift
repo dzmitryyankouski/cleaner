@@ -162,6 +162,8 @@ struct AllVideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
     var namespace: Namespace.ID
 
+    @State private var selectedItem: MediaItem?
+
     var body: some View {
         if videoLibrary?.videos.isEmpty ?? true && !(videoLibrary?.indexing ?? false) {
             EmptyState(
@@ -188,6 +190,14 @@ struct AllVideosView: View {
 
                 MediaGrid(
                     items: (videoLibrary?.videos ?? []).map { .video($0) },
+                    selectedItem: $selectedItem,
+                    namespace: namespace
+                )
+            }
+            .fullScreenCover(item: $selectedItem) { item in
+                MediaDetailView(
+                    items: (videoLibrary?.videos ?? []).map { .video($0) },
+                    currentItem: item,
                     namespace: namespace
                 )
             }

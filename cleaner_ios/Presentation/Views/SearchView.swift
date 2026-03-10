@@ -10,6 +10,7 @@ struct SearchView: View {
     @State private var searchResultsVideos: [VideoModel] = []
     @State private var navigationPath = NavigationPath()
     @State private var selectedTab = 0
+    @State private var selectedItem: MediaItem?
     
     private var tabs = ["Фотографии", "Видео"]
 
@@ -24,6 +25,7 @@ struct SearchView: View {
                         ScrollView {
                             MediaGrid(
                                 items: searchResultsPhotos.map { .photo($0) },
+                                selectedItem: $selectedItem,
                                 namespace: navigationTransitionNamespace
                             )
                         }
@@ -39,6 +41,7 @@ struct SearchView: View {
                         ScrollView {
                             MediaGrid(
                                 items: searchResultsVideos.map { .video($0) },
+                                selectedItem: $selectedItem,
                                 namespace: navigationTransitionNamespace
                             )
                         }
@@ -54,6 +57,13 @@ struct SearchView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .fullScreenCover(item: $selectedItem) { item in
+                let items: [MediaItem] = switch item {
+                case .photo: searchResultsPhotos.map { .photo($0) }
+                case .video: searchResultsVideos.map { .video($0) }
+                }
+                MediaDetailView(items: items, currentItem: item, namespace: navigationTransitionNamespace)
+            }
             .searchable(text: $searchText, prompt: "Поиск фотографий и видео")
             .searchPresentationToolbarBehavior(.avoidHidingContent)
             .toolbar(.hidden, for: .navigationBar)
