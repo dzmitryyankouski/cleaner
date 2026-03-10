@@ -186,7 +186,10 @@ struct AllVideosView: View {
                     .padding(.horizontal)
                 }
 
-                VideoGrid(videos: videoLibrary?.videos ?? [], namespace: namespace)
+                MediaGrid(
+                    items: (videoLibrary?.videos ?? []).map { .video($0) },
+                    namespace: namespace
+                )
             }
         }
     }
@@ -253,7 +256,11 @@ struct VideoGroupRowView: View {
             }
         }
         .fullScreenCover(item: $selectedVideo) { video in
-            VideoDetailView(videos: group.videos, currentItem: video, namespace: namespace)
+            MediaDetailView(
+                items: group.videos.map { .video($0) },
+                currentItem: .video(video),
+                namespace: namespace
+            )
         }
     }
 }

@@ -21,6 +21,10 @@ struct VideoLibraryKey: EnvironmentKey {
     static let defaultValue: VideoLibrary? = nil
 }
 
+struct MediaLibraryKey: EnvironmentKey {
+    static let defaultValue: MediaLibrary? = nil
+}
+
 struct SettingsKey: EnvironmentKey {
     static let defaultValue: Settings? = nil
 }
@@ -36,6 +40,11 @@ extension EnvironmentValues {
         set { self[VideoLibraryKey.self] = newValue }
     }
 
+    var mediaLibrary: MediaLibrary? {
+        get { self[MediaLibraryKey.self] }
+        set { self[MediaLibraryKey.self] = newValue }
+    }
+
     var settings: Settings? {
         get { self[SettingsKey.self] }
         set { self[SettingsKey.self] = newValue }
@@ -46,6 +55,7 @@ struct AppRootView: View {
     let container: AppDependencyContainer
     @State private var photoLibrary: PhotoLibrary?
     @State private var videoLibrary: VideoLibrary?
+    @State private var mediaLibrary: MediaLibrary?
     @State private var settings: Settings?
     @State private var isInitialized = false
     
@@ -55,6 +65,7 @@ struct AppRootView: View {
                 MainView()
                     .environment(\.photoLibrary, photoLibrary)
                     .environment(\.videoLibrary, videoLibrary)
+                    .environment(\.mediaLibrary, mediaLibrary)
                     .environment(\.settings, settings)
             } else {
                 InitialView()
@@ -70,6 +81,9 @@ struct AppRootView: View {
         settings = container.makeSettings()
         photoLibrary = container.makePhotoLibrary()
         videoLibrary = container.makeVideoLibrary()
+        if let photoLibrary, let videoLibrary {
+            mediaLibrary = MediaLibrary(photoLibrary: photoLibrary, videoLibrary: videoLibrary)
+        }
 
         isInitialized = true
     }

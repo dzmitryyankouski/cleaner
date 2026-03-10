@@ -7,12 +7,17 @@ struct PhotoDetailHeader: View {
     @Environment(\.dismiss) var dismiss
     
     // MARK: - Bindings
-    @Binding var photos: [PhotoModel]
-    @Binding var selectedItem: PhotoModel?
+    @Binding var items: [MediaItem]
+    @Binding var selectedItem: MediaItem?
     
     // MARK: - Private State
     @State private var isProcessing = false
     @State private var showRemoveLiveConfirmation = false
+
+    private var selectedPhoto: PhotoModel? {
+        guard case .photo(let photo) = selectedItem else { return nil }
+        return photo
+    }
 
     var body: some View {
         HStack {
@@ -33,13 +38,13 @@ struct PhotoDetailHeader: View {
                 Button(
                     role: .destructive,
                     action: {
-                        guard let photo = selectedItem else { return }
+                        guard let photo = selectedPhoto else { return }
                         handleDelete(photo: photo)
                     }
                 ) {
                     Label("Remove", systemImage: "trash")
                 }
-                .disabled(selectedItem == nil || isProcessing)
+                .disabled(selectedPhoto == nil || isProcessing)
 
                 Button(action: {
                     showRemoveLiveConfirmation = true
@@ -47,15 +52,15 @@ struct PhotoDetailHeader: View {
                     Label("Remove Live", systemImage: "livephoto")
                 }
                 .disabled(
-                    selectedItem == nil || isProcessing || selectedItem?.isLivePhoto != true)
+                    selectedPhoto == nil || isProcessing || selectedPhoto?.isLivePhoto != true)
 
                 Button(action: {
-                    guard let photo = selectedItem else { return }
+                    guard let photo = selectedPhoto else { return }
                     handleCompress(photo: photo)
                 }) {
                     Label("Compress", systemImage: "arrow.down.to.line")
                 }
-                .disabled(selectedItem == nil || isProcessing || selectedItem?.isCompressed == true)
+                .disabled(selectedPhoto == nil || isProcessing || selectedPhoto?.isCompressed == true)
             } label: {
                 Image(systemName: "ellipsis")
                     .frame(width: 45, height: 45)
@@ -69,7 +74,7 @@ struct PhotoDetailHeader: View {
                 titleVisibility: .visible
             ) {
                 Button("Удалить", role: .destructive) {
-                    guard let photo = selectedItem else { return }
+                    guard let photo = selectedPhoto else { return }
                     handleRemoveLive(photo: photo)
                 }
             } message: {
@@ -84,7 +89,7 @@ struct PhotoDetailHeader: View {
         isProcessing = true
 
         Task {
-            let index = photos.firstIndex { $0.id == photo.id }
+            let index = items.firstIndex { $0.id == photo.id }
             guard let result = await photoLibrary?.delete(photos: [photo]) else {
                 await MainActor.run {
                     isProcessing = false
@@ -97,20 +102,20 @@ struct PhotoDetailHeader: View {
                 await MainActor.run {
                     if let index = index {
                         isProcessing = false
-                        photos.remove(at: index)
+                        items.remove(at: index)
 
-                        if photos.isEmpty {
+                        if items.isEmpty {
                             dismiss()
-                        } else if index < photos.count {
-                            selectedItem = photos[index]
+                        } else if index < items.count {
+                            selectedItem = items[index]
                         } else if index > 0 {
-                            selectedItem = photos[index - 1]
+                            selectedItem = items[index - 1]
                         } else {
-                            selectedItem = photos.first
+                            selectedItem = items.first
                         }
                     }
                 }
-            case .failure(let error):
+            case .failure:
                 await MainActor.run {
                     isProcessing = false
                 }

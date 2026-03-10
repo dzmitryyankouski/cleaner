@@ -7,11 +7,16 @@ struct VideoDetailHeader: View {
     @Environment(\.dismiss) var dismiss
     
     // MARK: - Bindings
-    @Binding var videos: [VideoModel]
-    @Binding var selectedItem: VideoModel?
+    @Binding var items: [MediaItem]
+    @Binding var selectedItem: MediaItem?
     
     // MARK: - Private State
     @State private var isProcessing = false
+
+    private var selectedVideo: VideoModel? {
+        guard case .video(let video) = selectedItem else { return nil }
+        return video
+    }
 
     var body: some View {
         HStack {
@@ -31,13 +36,13 @@ struct VideoDetailHeader: View {
                 Button(
                     role: .destructive,
                     action: {
-                        guard let video = selectedItem else { return }
+                        guard let video = selectedVideo else { return }
                         handleDelete(video: video)
                     }
                 ) {
                     Label("Remove", systemImage: "trash")
                 }
-                .disabled(selectedItem == nil || isProcessing)
+                .disabled(selectedVideo == nil || isProcessing)
             } label: {
                 Image(systemName: "ellipsis")
                     .frame(width: 45, height: 45)
@@ -56,7 +61,7 @@ struct VideoDetailHeader: View {
         isProcessing = true
 
         Task {
-            let index = videos.firstIndex { $0.id == video.id }
+            let index = items.firstIndex { $0.id == video.id }
             guard let result = await videoLibrary?.delete(videos: [video]) else {
                 await MainActor.run {
                     isProcessing = false
@@ -69,20 +74,20 @@ struct VideoDetailHeader: View {
                 await MainActor.run {
                     if let index = index {
                         isProcessing = false
-                        videos.remove(at: index)
+                        items.remove(at: index)
 
-                        if videos.isEmpty {
+                        if items.isEmpty {
                             dismiss()
-                        } else if index < videos.count {
-                            selectedItem = videos[index]
+                        } else if index < items.count {
+                            selectedItem = items[index]
                         } else if index > 0 {
-                            selectedItem = videos[index - 1]
+                            selectedItem = items[index - 1]
                         } else {
-                            selectedItem = videos.first
+                            selectedItem = items.first
                         }
                     }
                 }
-            case .failure(let error):
+            case .failure:
                 await MainActor.run {
                     isProcessing = false
                 }

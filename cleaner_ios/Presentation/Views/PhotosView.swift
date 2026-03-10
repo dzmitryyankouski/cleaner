@@ -328,7 +328,11 @@ struct PhotoGroupRowView: View {
             }
         }
         .fullScreenCover(item: $selectedPhoto) { photo in
-            PhotoDetailView(photos: group.photos, currentItem: photo, namespace: namespace)
+            MediaDetailView(
+                items: group.photos.map { .photo($0) },
+                currentItem: .photo(photo),
+                namespace: namespace
+            )
         }
     }
 }
