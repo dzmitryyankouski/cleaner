@@ -36,7 +36,6 @@ struct Grid<Content: View>: View {
 
     var onTap: (MediaItem) -> Void
     var onLongPress: (MediaItem) -> Void
-    var cellAspectRatio: (MediaItem) -> CGFloat
 
     @ViewBuilder let content: (MediaItem) -> Content
 
@@ -50,12 +49,6 @@ struct Grid<Content: View>: View {
         selectedItem: Binding<MediaItem?>,
         onTap: @escaping (MediaItem) -> Void,
         onLongPress: @escaping (MediaItem) -> Void,
-        cellAspectRatio: @escaping (MediaItem) -> CGFloat = { item in
-            switch item {
-            case .photo: return 1
-            case .video: return 0.5
-            }
-        },
         @ViewBuilder content: @escaping (MediaItem) -> Content
     ) {
         self.items = items
@@ -65,7 +58,6 @@ struct Grid<Content: View>: View {
         _selectedItem = selectedItem
         self.onTap = onTap
         self.onLongPress = onLongPress
-        self.cellAspectRatio = cellAspectRatio
         self.content = content
     }
 

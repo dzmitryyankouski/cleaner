@@ -37,8 +37,7 @@ struct MediaGrid: View {
                 withAnimation {
                     mediaLibrary?.select(item)
                 }
-            },
-            cellAspectRatio: { _ in 1 }
+            }
         ) { item in
             switch item {
             case .photo(let photo):
