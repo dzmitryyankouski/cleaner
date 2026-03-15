@@ -3,15 +3,14 @@ import Photos
 
 
 struct SearchView: View {
-    @Environment(\.photoLibrary) var photoLibrary
-    @Environment(\.videoLibrary) var videoLibrary
+    @Environment(\.mediaLibrary) var mediaLibrary
 
     @State private var searchText: String = ""
     @State private var searchResultsPhotos: [PhotoModel] = []
     @State private var searchResultsVideos: [VideoModel] = []
-    @State private var selectedPhoto: PhotoModel? = nil
     @State private var navigationPath = NavigationPath()
     @State private var selectedTab = 0
+    @State private var selectedItem: MediaItem?
     
     private var tabs = ["Фотографии", "Видео"]
 
@@ -24,10 +23,11 @@ struct SearchView: View {
                 case 0:
                     if !searchResultsPhotos.isEmpty {
                         ScrollView {
-                            PhotoGrid(photos: searchResultsPhotos, selectedPhoto: $selectedPhoto, namespace: navigationTransitionNamespace)
-                        }
-                        .fullScreenCover(item: $selectedPhoto) { photo in
-                            PhotoDetailView(photos: searchResultsPhotos, currentItem: photo, namespace: navigationTransitionNamespace)
+                            MediaGrid(
+                                items: searchResultsPhotos.map { .photo($0) },
+                                selectedItem: $selectedItem,
+                                namespace: navigationTransitionNamespace
+                            )
                         }
                     } else {
                         EmptyState(
@@ -39,7 +39,11 @@ struct SearchView: View {
                 case 1:
                     if !searchResultsVideos.isEmpty {
                         ScrollView {
-                            VideoGrid(videos: searchResultsVideos, namespace: navigationTransitionNamespace)
+                            MediaGrid(
+                                items: searchResultsVideos.map { .video($0) },
+                                selectedItem: $selectedItem,
+                                namespace: navigationTransitionNamespace
+                            )
                         }
                     } else {
                         EmptyState(
@@ -53,12 +57,18 @@ struct SearchView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .fullScreenCover(item: $selectedItem) { item in
+                let items: [MediaItem] = switch item {
+                case .photo: searchResultsPhotos.map { .photo($0) }
+                case .video: searchResultsVideos.map { .video($0) }
+                }
+                MediaDetailView(items: items, currentItem: item, namespace: navigationTransitionNamespace)
+            }
             .searchable(text: $searchText, prompt: "Поиск фотографий и видео")
             .searchPresentationToolbarBehavior(.avoidHidingContent)
             .toolbar(.hidden, for: .navigationBar)
             .onSubmit(of: .search) {
-                searchPhotos()
-                searchVideos()
+                searchMedia()
             }
             .overlay(alignment: .top) {
                 VStack {
@@ -69,45 +79,31 @@ struct SearchView: View {
         }
     }
     
-    private func searchPhotos() {
+    private func searchMedia() {
         Task {
-            let result = await photoLibrary?.search(query: searchText)
-            switch result {
-            case .success(let results):
-                await MainActor.run {
-                    searchResultsPhotos = results.map { $0.item }
-                }
-            case .failure(let error):
-                print("❌ Ошибка поиска: \(error)")
+            let result = await mediaLibrary?.search(query: searchText)
+            guard case .success(let results) = result else {
                 await MainActor.run {
                     searchResultsPhotos = []
+                    searchResultsVideos = []
                 }
-            case .none:
-                await MainActor.run {
-                    searchResultsPhotos = []
-                }
+                return
+            }
+
+            let photos = results.compactMap { result -> PhotoModel? in
+                guard case .photo(let photo) = result.item else { return nil }
+                return photo
+            }
+            let videos = results.compactMap { result -> VideoModel? in
+                guard case .video(let video) = result.item else { return nil }
+                return video
+            }
+
+            await MainActor.run {
+                searchResultsPhotos = photos
+                searchResultsVideos = videos
             }
         }
     }
 
-    private func searchVideos() {
-        Task {
-            let result = await videoLibrary?.search(query: searchText)
-            switch result {
-            case .success(let results):
-                await MainActor.run {
-                    searchResultsVideos = results.map { $0.item }
-                }
-            case .failure(let error):
-                print("❌ Ошибка поиска: \(error)")
-                await MainActor.run {
-                    searchResultsVideos = []
-                }
-            case .none:
-                await MainActor.run {
-                    searchResultsVideos = []
-                }
-            }
-        }
-    }
 }

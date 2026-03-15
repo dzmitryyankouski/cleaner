@@ -162,6 +162,8 @@ struct AllVideosView: View {
     @Environment(\.videoLibrary) var videoLibrary
     var namespace: Namespace.ID
 
+    @State private var selectedItem: MediaItem?
+
     var body: some View {
         if videoLibrary?.videos.isEmpty ?? true && !(videoLibrary?.indexing ?? false) {
             EmptyState(
@@ -186,7 +188,18 @@ struct AllVideosView: View {
                     .padding(.horizontal)
                 }
 
-                VideoGrid(videos: videoLibrary?.videos ?? [], namespace: namespace)
+                MediaGrid(
+                    items: (videoLibrary?.videos ?? []).map { .video($0) },
+                    selectedItem: $selectedItem,
+                    namespace: namespace
+                )
+            }
+            .fullScreenCover(item: $selectedItem) { item in
+                MediaDetailView(
+                    items: (videoLibrary?.videos ?? []).map { .video($0) },
+                    currentItem: item,
+                    namespace: namespace
+                )
             }
         }
     }
@@ -253,7 +266,11 @@ struct VideoGroupRowView: View {
             }
         }
         .fullScreenCover(item: $selectedVideo) { video in
-            VideoDetailView(videos: group.videos, currentItem: video, namespace: namespace)
+            MediaDetailView(
+                items: group.videos.map { .video($0) },
+                currentItem: .video(video),
+                namespace: namespace
+            )
         }
     }
 }
