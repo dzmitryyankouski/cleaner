@@ -4,7 +4,7 @@ import SwiftData
 @main
 struct CleanerApp: App {
     private let appContainer = AppDependencyContainer.shared
-        
+
     var body: some Scene {
         WindowGroup {
             AppRootView(container: appContainer)
@@ -58,11 +58,12 @@ struct AppRootView: View {
     @State private var mediaLibrary: MediaLibrary?
     @State private var settings: Settings?
     @State private var isInitialized = false
-    
+
     var body: some View {
         Group {
             if isInitialized {
                 MainView()
+//                     MainScreen()
                     .environment(\.photoLibrary, photoLibrary)
                     .environment(\.videoLibrary, videoLibrary)
                     .environment(\.mediaLibrary, mediaLibrary)
@@ -75,7 +76,7 @@ struct AppRootView: View {
             await initializeViewModels()
         }
     }
-    
+
     @MainActor
     private func initializeViewModels() {
         settings = container.makeSettings()

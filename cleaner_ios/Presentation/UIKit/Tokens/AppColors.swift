@@ -23,6 +23,7 @@ enum AppColors {
 
     // MARK: - ProgressBar
     static let progressBarFill        = Color.white
+    static let progressBarFillGreen   = Color(red: 0.0, green: 0.772, blue: 0.164)
     static let progressBarTrack       = Color.white.opacity(0.3)
     static let progressBarText        = Color.white
     static let progressBarTrackText   = Color.white.opacity(0.3)  // inactive: "/ 58 GB"
