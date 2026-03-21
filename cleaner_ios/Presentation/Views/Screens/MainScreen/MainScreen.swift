@@ -11,6 +11,7 @@ private struct AlbumCategory {
 /// MainScreen mockup
 struct MainScreen: View {
     @State var selectedTab = 0
+    @State var isPro: Bool = false // Toggle for demo; set to true for PRO, false for TRIAL
 
     // Mock data — swap out for real data when ready
     private let albumCategories: [AlbumCategory] = [
@@ -38,12 +39,31 @@ struct MainScreen: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     // Block 1: Statistics card
-                    StorageStatisticsCard(
-                        usedGB: 125,
-                        totalGB: 256,
-                        onRecover: {},
-                        onSeeReport: {}
-                    )
+                    if isPro {
+                        StorageStatisticsCard(
+                            usedGB: 125,
+                            totalGB: 256,
+                            onRecover: {},
+                            onSeeReport: {}
+                        )
+                        .padding(.top, 61)
+                    } else {
+                        StorageStatisticsTrialCard(
+                            usedGB: 68,
+                            totalGB: 256,
+                            recoverGB: 34,
+                            onRecover: {},
+                            onGetPro: {},
+                            features: [
+                                TrialFeature(text: "Activate trial mode", isActive: true),
+                                TrialFeature(text: "Clean up to 200 MB manually", isActive: true),
+                                TrialFeature(text: "Run your first 500 MB AI cleanup", isActive: true),
+                                TrialFeature(text: "Compress up to 100 MB", isActive: true),
+                                TrialFeature(text: "Get PRO for unlimited cleanup", isActive: false)
+                            ]
+                        )
+                        .padding(.top, 61)
+                    }
 
                     // Block 2: Manual cleanup
                     VStack(alignment: .leading, spacing: 16) {
