@@ -1,8 +1,6 @@
 import SwiftUI
 
 struct SmartCleanupSelector: View {
-    @State private var navigationPath = NavigationPath()
-
     @State private var largeFilesSelected = false
     @State private var duplicatesSelected = false
     @State private var blurryPhotosSelected = false

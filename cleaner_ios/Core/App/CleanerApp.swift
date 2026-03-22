@@ -29,6 +29,10 @@ struct SettingsKey: EnvironmentKey {
     static let defaultValue: Settings? = nil
 }
 
+struct AppRouterKey: EnvironmentKey {
+    static let defaultValue = AppRouter()
+}
+
 extension EnvironmentValues {
     var photoLibrary: PhotoLibrary? {
         get { self[PhotoLibraryKey.self] }
@@ -49,10 +53,16 @@ extension EnvironmentValues {
         get { self[SettingsKey.self] }
         set { self[SettingsKey.self] = newValue }
     }
+
+    var appRouter: AppRouter {
+        get { self[AppRouterKey.self] }
+        set { self[AppRouterKey.self] = newValue }
+    }
 }
 
 struct AppRootView: View {
     let container: AppDependencyContainer
+    @State private var appRouter = AppRouter()
     @State private var photoLibrary: PhotoLibrary?
     @State private var videoLibrary: VideoLibrary?
     @State private var mediaLibrary: MediaLibrary?
@@ -63,6 +73,7 @@ struct AppRootView: View {
         Group {
             if isInitialized {
                 MainView()
+                    .environment(\.appRouter, appRouter)
                     .environment(\.photoLibrary, photoLibrary)
                     .environment(\.videoLibrary, videoLibrary)
                     .environment(\.mediaLibrary, mediaLibrary)

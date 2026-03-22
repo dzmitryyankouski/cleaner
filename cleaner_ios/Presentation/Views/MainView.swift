@@ -1,8 +1,12 @@
 import SwiftUI
 
 struct MainView: View {
+    @Environment(\.appRouter) private var appRouter
+
     var body: some View {
-        ZStack {
+        @Bindable var appRouter = appRouter
+
+        NavigationStack(path: $appRouter.path) {
             TabView {
                 Tab {
                     PhotosView()
@@ -15,7 +19,7 @@ struct MainView: View {
                 } label: {
                     Label("Видео", systemImage: "video")
                 }
-                
+
                 Tab(role: .search) {
                     SearchView()
                 } label: {
@@ -23,6 +27,12 @@ struct MainView: View {
                 }
             }
             .accentColor(.green)
+            .navigationDestination(for: AppRoute.self) { route in
+                switch route {
+                case .smartCleanup:
+                    SmartCleanupSelector()
+                }
+            }
         }
     }
 }

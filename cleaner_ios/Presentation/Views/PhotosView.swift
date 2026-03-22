@@ -29,180 +29,168 @@ enum SortPhoto: String, CaseIterable {
     }
 }
 
-private enum SmartCleanupNavigationPath: Hashable {
-    case smartCleanup
-}
-
 struct PhotosView: View {
     @Namespace private var navigationTransitionNamespace
 
+    @Environment(\.appRouter) var appRouter
     @Environment(\.photoLibrary) var photoLibrary
 
     @State private var selectedTab = 0
     @State private var showSettings: Bool = false
-    @State private var navigationPath = NavigationPath()
 
     private let tabs = ["Все", "Серии", "Копии"]
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
-            ZStack(alignment: .top) {
-                ScrollView {
-                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
-                        AppButton(title: "Smart cleanup", style: .primary, icon: "wand.and.stars") {
-                            navigationPath.append(SmartCleanupNavigationPath.smartCleanup)
-                        }
-                        .padding(.horizontal)
+        ZStack(alignment: .top) {
+            ScrollView {
+                LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                    AppButton(title: "Smart cleanup", style: .primary, icon: "wand.and.stars") {
+                        appRouter.push(.smartCleanup)
+                    }
+                    .padding(.horizontal)
 
+                    Section {
+                        switch selectedTab {
+                        case 0:
+                            AllPhotosView(namespace: navigationTransitionNamespace)
+                        case 1:
+                            SimilarPhotosView(namespace: navigationTransitionNamespace)
+                        case 2:
+                            DuplicatesView(namespace: navigationTransitionNamespace)
+                        default:
+                            SimilarPhotosView(namespace: navigationTransitionNamespace)
+                        }
+                    } header: {
+                        PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                    }
+                }
+                .padding(.vertical)
+            }
+        }
+        .navigationTitle("Фотографии")
+        .toolbar {
+
+            if !(photoLibrary?.selectedPhotos.isEmpty ?? true) {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", systemImage: "xmark") {
+                        withAnimation {
+                            photoLibrary?.selectedPhotos.removeAll()
+                        }
+                    }
+                }
+            }
+
+            if photoLibrary?.selectedPhotos.isEmpty ?? true {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
                         Section {
-                            switch selectedTab {
-                            case 0:
-                                AllPhotosView(namespace: navigationTransitionNamespace)
-                            case 1:
-                                SimilarPhotosView(namespace: navigationTransitionNamespace)
-                            case 2:
-                                DuplicatesView(namespace: navigationTransitionNamespace)
-                            default:
-                                SimilarPhotosView(namespace: navigationTransitionNamespace)
-                            }
-                        } header: {
-                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
-                        }
-                    }
-                    .padding(.vertical)
-                }
-            }
-            .navigationTitle("Фотографии")
-            .toolbar {
-
-                if !(photoLibrary?.selectedPhotos.isEmpty ?? true) {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel", systemImage: "xmark") {
-                            withAnimation {
-                                photoLibrary?.selectedPhotos.removeAll()
-                            }
-                        }
-                    }
-                }
-
-                if photoLibrary?.selectedPhotos.isEmpty ?? true {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Section {
-                                ForEach(FilterPhoto.allCases, id: \.self) { filter in
-                                    Toggle(isOn: Binding(get: { photoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
-                                        if value {
-                                            photoLibrary?.selectedFilter.insert(filter)
-                                        } else {
-                                            photoLibrary?.selectedFilter.remove(filter)
-                                        }
-                                    })) {
-                                        Label(filter.rawValue, systemImage: filter.icon)
+                            ForEach(FilterPhoto.allCases, id: \.self) { filter in
+                                Toggle(isOn: Binding(get: { photoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
+                                    if value {
+                                        photoLibrary?.selectedFilter.insert(filter)
+                                    } else {
+                                        photoLibrary?.selectedFilter.remove(filter)
                                     }
-                                }
-                            }
-                            Section {
-                                Picker("Sort", selection: Binding(get: { photoLibrary?.selectedSort ?? .date }, set: { value in
-                                    photoLibrary?.selectedSort = value
                                 })) {
-                                    ForEach(SortPhoto.allCases, id: \.self) { sort in
-                                        Label(sort.rawValue, systemImage: sort.icon)
-                                            .tag(sort)
-                                    }
+                                    Label(filter.rawValue, systemImage: filter.icon)
                                 }
                             }
-                        } label: {
-                            Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                         }
+                        Section {
+                            Picker("Sort", selection: Binding(get: { photoLibrary?.selectedSort ?? .date }, set: { value in
+                                photoLibrary?.selectedSort = value
+                            })) {
+                                ForEach(SortPhoto.allCases, id: \.self) { sort in
+                                    Label(sort.rawValue, systemImage: sort.icon)
+                                        .tag(sort)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
-                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: {
-                            showSettings.toggle()
+                }
+                ToolbarSpacer(.fixed, placement: .topBarTrailing)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(action: {
+                        showSettings.toggle()
+                    }) {
+                        Image(systemName: "gearshape")
+                    }
+                    .popover(isPresented: $showSettings) {
+                        SettingsView(isPresented: $showSettings)
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(role: .destructive, action: {
+                            Task {
+                                guard let result = await photoLibrary?.delete(photos: photoLibrary?.selectedPhotos ?? []) else {
+                                    return
+                                }
+
+                                guard case .success = result else {
+                                    return
+                                }
+
+                                await photoLibrary?.refresh()
+
+                                withAnimation {
+                                    photoLibrary?.selectedPhotos.removeAll()
+                                }
+                            }
                         }) {
-                            Image(systemName: "gearshape")
+                            Label("Remove", systemImage: "trash")
                         }
-                        .popover(isPresented: $showSettings) {
-                            SettingsView(isPresented: $showSettings)
+
+                        Button(action: {
+                            Task {
+                                print("🔍 Удаляем живое фото: \(photoLibrary?.selectedPhotos.count ?? 0)")
+                                guard let result = await photoLibrary?.removeLive(photos: photoLibrary?.selectedPhotos ?? []) else {
+                                    print("❌ Не удалось удалить живое фото")
+                                    return
+                                }
+
+                                guard case .success = result else {
+                                    print("❌ Не удалось удалить живое фото")
+                                    return
+                                }
+
+                                withAnimation {
+                                    photoLibrary?.selectedPhotos.removeAll()
+                                }
+                            }
+                        }) {
+                            Label("Remove Live", systemImage: "livephoto")
                         }
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button(role: .destructive, action: {
-                                Task {
-                                    guard let result = await photoLibrary?.delete(photos: photoLibrary?.selectedPhotos ?? []) else {
-                                        return
-                                    }
 
-                                    guard case .success = result else {
-                                        return
-                                    }
-
-                                    await photoLibrary?.refresh()
-
-                                    withAnimation {
-                                        photoLibrary?.selectedPhotos.removeAll()
-                                    }
+                        Button(action: {
+                            Task {
+                                guard let result = await photoLibrary?.compress(photos: photoLibrary?.selectedPhotos ?? []) else {
+                                    return
                                 }
-                            }) {
-                                Label("Remove", systemImage: "trash")
-                            }
 
-                            Button(action: {
-                                Task {
-                                    print("🔍 Удаляем живое фото: \(photoLibrary?.selectedPhotos.count ?? 0)")
-                                    guard let result = await photoLibrary?.removeLive(photos: photoLibrary?.selectedPhotos ?? []) else {
-                                        print("❌ Не удалось удалить живое фото")
-                                        return
-                                    }
-
-                                    guard case .success = result else {
-                                        print("❌ Не удалось удалить живое фото")
-                                        return
-                                    }
-
-                                    withAnimation {
-                                        photoLibrary?.selectedPhotos.removeAll()
-                                    }
+                                guard case .success = result else {
+                                    return
                                 }
-                            }) {
-                                Label("Remove Live", systemImage: "livephoto")
-                            }
 
-                            Button(action: {
-                                Task {
-                                    guard let result = await photoLibrary?.compress(photos: photoLibrary?.selectedPhotos ?? []) else {
-                                        return
-                                    }
-
-                                    guard case .success = result else {
-                                        return
-                                    }
-
-                                    withAnimation {
-                                        photoLibrary?.selectedPhotos.removeAll()
-                                    }
+                                withAnimation {
+                                    photoLibrary?.selectedPhotos.removeAll()
                                 }
-                            }) {
-                                Label("Compress", systemImage: "arrow.down.to.line")
                             }
-                        } label: {
-                            Image(systemName: "ellipsis")
+                        }) {
+                            Label("Compress", systemImage: "arrow.down.to.line")
                         }
+                    } label: {
+                        Image(systemName: "ellipsis")
                     }
                 }
             }
-            .refreshable {
-                Task {
-                    await photoLibrary?.reset()
-                }
-            }
-            .navigationDestination(for: SmartCleanupNavigationPath.self) { destination in
-                switch destination {
-                case .smartCleanup:
-                    SmartCleanupSelector()
-                }
+        }
+        .refreshable {
+            Task {
+                await photoLibrary?.reset()
             }
         }
     }
