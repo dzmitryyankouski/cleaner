@@ -2,13 +2,30 @@ import SwiftUI
 
 /// High-level component: the "Storage used" statistics card shown on the Main screen.
 /// Displays used/total storage, a progress bar, and action buttons.
+/// When `isEmpty` is true (clean gallery), shows a smaller card with only "See full report".
 struct StorageStatisticsCard: View {
     let usedGB: Double
     let totalGB: Double
+    let isEmpty: Bool
     let onRecover: () -> Void
     let onSeeReport: () -> Void
 
+    init(
+        usedGB: Double,
+        totalGB: Double,
+        isEmpty: Bool = false,
+        onRecover: @escaping () -> Void,
+        onSeeReport: @escaping () -> Void
+    ) {
+        self.usedGB = usedGB
+        self.totalGB = totalGB
+        self.isEmpty = isEmpty
+        self.onRecover = onRecover
+        self.onSeeReport = onSeeReport
+    }
+
     private var progress: Double { usedGB / totalGB }
+    private var cardHeight: CGFloat { isEmpty ? 274 : 340 }
 
     var body: some View {
         ZStack {
@@ -56,9 +73,11 @@ struct StorageStatisticsCard: View {
 
                 Spacer(minLength: 30)
 
-                AppButton(title: "Recover \(Int(totalGB - usedGB)) GB", icon: "plus.circle", action: onRecover)
-                    .padding(.horizontal, 24)
-                    .padding(.top, 8)
+                if !isEmpty {
+                    AppButton(title: "Recover \(Int(totalGB - usedGB)) GB", icon: "plus.circle", action: onRecover)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 8)
+                }
 
                 AppButton(title: "See full report", style: .secondary, action: onSeeReport)
                     .padding(.horizontal, 24)
@@ -66,21 +85,29 @@ struct StorageStatisticsCard: View {
 
                 Spacer()
             }
-            .frame(width: 358, height: 340)
+            .frame(width: 358, height: cardHeight)
         }
-        .frame(width: 358, height: 340)
+        .frame(width: 358, height: cardHeight)
     }
 }
 
 #Preview {
     ZStack {
         Color.gray.opacity(0.3).ignoresSafeArea()
-        StorageStatisticsCard(
-            usedGB: 125,
-            totalGB: 256,
-            onRecover: {},
-            onSeeReport: {}
-        )
+        VStack(spacing: 24) {
+            StorageStatisticsCard(
+                usedGB: 125,
+                totalGB: 256,
+                onRecover: {},
+                onSeeReport: {}
+            )
+            StorageStatisticsCard(
+                usedGB: 125,
+                totalGB: 256,
+                isEmpty: true,
+                onRecover: {},
+                onSeeReport: {}
+            )
+        }
     }
 }
-

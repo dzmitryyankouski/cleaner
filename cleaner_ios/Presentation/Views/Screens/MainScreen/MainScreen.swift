@@ -11,7 +11,8 @@ private struct AlbumCategory {
 /// MainScreen mockup
 struct MainScreen: View {
     @State var selectedTab = 0
-    @State var isPro: Bool = false // Toggle for demo; set to true for PRO, false for TRIAL
+    @State var isPro: Bool = true // Toggle for demo; set to true for PRO, false for TRIAL
+    @State var isGalleryEmpty: Bool = true // Toggle for demo; set true when gallery has nothing to clean
 
     // Mock data — swap out for real data when ready
     private let albumCategories: [AlbumCategory] = [
@@ -43,6 +44,7 @@ struct MainScreen: View {
                         StorageStatisticsCard(
                             usedGB: 125,
                             totalGB: 256,
+                            isEmpty: isGalleryEmpty,
                             onRecover: {},
                             onSeeReport: {}
                         )
@@ -69,23 +71,38 @@ struct MainScreen: View {
                     VStack(alignment: .leading, spacing: 16) {
                         SectionHeader(
                             title: "Manual cleanup",
-                            subtitle: "Review and delete files by category"
+                            subtitle: isGalleryEmpty ? nil : "Review and delete files by category"
                         )
 
-                        LazyVGrid(
-                            columns: [GridItem(.fixed(172)), GridItem(.fixed(172))],
-                            spacing: 14
-                        ) {
-                            ForEach(albumCategories, id: \.title) { category in
-                                AlbumPreviewCard(
-                                    title: category.title,
-                                    itemCount: category.itemCount,
-                                    storageBadge: category.storageBadge,
-                                    hasAttention: category.hasAttention
-                                )
+                        if isGalleryEmpty {
+                            // Clean gallery state — sparkle icon + message
+                            VStack(spacing: 16) {
+                                SparkleIcon()
+                                    .frame(width: 46, height: 46)
+
+                                Text("Your gallery looks clean. We really\ncouldn't find anything to clean")
+                                    .font(AppFonts.body)
+                                    .foregroundColor(AppColors.sectionHeaderSubtitle)
+                                    .multilineTextAlignment(.center)
                             }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 48)
+                        } else {
+                            LazyVGrid(
+                                columns: [GridItem(.fixed(172)), GridItem(.fixed(172))],
+                                spacing: 14
+                            ) {
+                                ForEach(albumCategories, id: \.title) { category in
+                                    AlbumPreviewCard(
+                                        title: category.title,
+                                        itemCount: category.itemCount,
+                                        storageBadge: category.storageBadge,
+                                        hasAttention: category.hasAttention
+                                    )
+                                }
+                            }
+                            .padding(.top, 16)
                         }
-                        .padding(.top, 16)
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 32)
