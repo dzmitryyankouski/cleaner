@@ -29,7 +29,7 @@ enum SortPhoto: String, CaseIterable {
     }
 }
 
-private enum PhotosNavigationDestination: Hashable {
+private enum SmartCleanupNavigationPath: Hashable {
     case smartCleanup
 }
 
@@ -50,7 +50,7 @@ struct PhotosView: View {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
                         AppButton(title: "Smart cleanup", style: .primary, icon: "wand.and.stars") {
-                            navigationPath.append(PhotosNavigationDestination.smartCleanup)
+                            navigationPath.append(SmartCleanupNavigationPath.smartCleanup)
                         }
                         .padding(.horizontal)
 
@@ -198,7 +198,7 @@ struct PhotosView: View {
                     await photoLibrary?.reset()
                 }
             }
-            .navigationDestination(for: PhotosNavigationDestination.self) { destination in
+            .navigationDestination(for: SmartCleanupNavigationPath.self) { destination in
                 switch destination {
                 case .smartCleanup:
                     SmartCleanupSelector()

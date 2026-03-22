@@ -1,19 +1,30 @@
 import SwiftUI
+import UIKit
+import CoreText
 
 // MARK: - All text styles in one place.
 
 enum AppFonts {
 
+    private static let geologicaWghtAxis = NSNumber(value: 2003265652) // 'wght'
+
+    private static func geologica(size: CGFloat, wght: CGFloat) -> Font {
+        let variation: [NSNumber: NSNumber] = [geologicaWghtAxis: NSNumber(value: Double(wght))]
+        let variationKey = UIFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String)
+        let base = UIFontDescriptor(name: "Geologica-Thin", size: size)
+        let descriptor = base.addingAttributes([variationKey: variation])
+        return Font(UIFont(descriptor: descriptor, size: size))
+    }
+
     // MARK: - Button
-    static let button = Font.custom("Geologica", size: 16).weight(.semibold)
+    static let button = geologica(size: 16, wght: 600)
 
     // MARK: - SectionHeader
-    static let sectionHeaderTitle    = Font.custom("Geologica", size: 28).weight(.medium)
-    static let sectionHeaderSubtitle = Font.custom("Geologica", size: 14).weight(.light)
+    static let sectionHeaderTitle    = geologica(size: 28, wght: 600)
+    static let sectionHeaderSubtitle = geologica(size: 14, wght: 300)
 
     // MARK: - ProgressBar
-    /// Geologica 20pt / Medium (500) — label + value text
-    static let progressBarLabel = Font.custom("Geologica", size: 20).weight(.medium)
+    static let progressBarLabel = geologica(size: 20, wght: 500)
 
     // MARK: - Fallbacks (system)
     /// Section title — 20 bold

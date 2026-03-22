@@ -509,6 +509,7 @@
 				DEVELOPMENT_TEAM = U49M59ZU78;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Supporting/AppInfo.plist;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Приложению необходим доступ к галерее для сохранения изображений";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Приложению необходим доступ к галерее для выбора изображений";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -543,6 +544,7 @@
 				DEVELOPMENT_TEAM = U49M59ZU78;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Supporting/AppInfo.plist;
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Приложению необходим доступ к галерее для сохранения изображений";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Приложению необходим доступ к галерее для выбора изображений";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
