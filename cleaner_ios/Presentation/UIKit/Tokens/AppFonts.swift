@@ -8,7 +8,7 @@ enum AppFonts {
 
     private static let geologicaWghtAxis = NSNumber(value: 2003265652) // 'wght'
 
-    private static func geologica(size: CGFloat, wght: CGFloat) -> Font {
+    static func geologica(size: CGFloat, wght: CGFloat) -> Font {
         let variation: [NSNumber: NSNumber] = [geologicaWghtAxis: NSNumber(value: Double(wght))]
         let variationKey = UIFontDescriptor.AttributeName(rawValue: kCTFontVariationAttribute as String)
         let base = UIFontDescriptor(name: "Geologica-Thin", size: size)
