@@ -10,7 +10,3 @@ enum AppSpacing {
     static let lg: CGFloat  = 24
     static let xl: CGFloat  = 32
 }
-
-enum AppSizes {
-    static let buttonHeight: CGFloat = 58
-}

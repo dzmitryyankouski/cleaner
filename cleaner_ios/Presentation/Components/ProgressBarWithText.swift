@@ -1,23 +1,24 @@
 import SwiftUI
 
-// MARK: - Reusable progress bar with text and values
-/// Usage:
-/// ```swift
-/// ProgressBarWithText(
-///     label: "You will recover",
-///     currentValue: 54,
-///     totalValue: 58,
-///     unit: "GB",
-///     progress: 54.0 / 58.0
-/// )
-/// ```
-
-public struct ProgressBarWithText: View {
+public struct ProgressBarWithText<Content: View>: View {
     let label: String
-    let currentValue: Double
-    let totalValue: Double
-    var unit: String = "GB"
-    let progress: Double
+    let current: Double
+    let total: Double
+    let content: Content
+
+    private var unit: String = "GB"
+
+    public init(
+        label: String,
+        current: Double,
+        total: Double,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.label = label
+        self.current = current
+        self.total = total
+        self.content = content()
+    }
 
     private func formatValue(_ v: Double) -> String {
         v.truncatingRemainder(dividingBy: 1) == 0
@@ -25,66 +26,53 @@ public struct ProgressBarWithText: View {
             : String(format: "%.1f", v)
     }
 
+    var backgroundGradient: LinearGradient {
+        let degrees = 49.0
+        let radians = (degrees - 90) * Double.pi / 180
+        let x = cos(radians)
+        let y = sin(radians)
+        let start = UnitPoint(x: 0.5 - 0.5 * x, y: 0.5 - 0.5 * y)
+        let end = UnitPoint(x: 0.5 + 0.5 * x, y: 0.5 + 0.5 * y)
+        let span = 98.66 - (-14.78)
+        let mid = (41.94 - (-14.78)) / span
+        return LinearGradient(
+            stops: [
+                .init(color: Color(red: 128 / 255, green: 152 / 255, blue: 247 / 255), location: 0),
+                .init(color: Color(red: 182 / 255, green: 183 / 255, blue: 216 / 255), location: mid),
+                .init(color: Color(red: 118 / 255, green: 115 / 255, blue: 213 / 255), location: 1),
+            ],
+            startPoint: start,
+            endPoint: end
+        )
+    }
+
     public var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text(label)
-                    .font(AppFonts.progressBarLabel)
-                    .foregroundColor(AppColors.progressBarText)
-                    .tracking(-0.2)
-                Spacer()
-                HStack(spacing: 0) {
-                    Text("\(formatValue(currentValue)) \(unit) ")
-                        .font(AppFonts.progressBarLabel)
+        VStack(spacing: 30) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack {
+                    Text(label)
+                        .font(AppFonts.geologica(size: 20, wght: 500))
                         .foregroundColor(AppColors.progressBarText)
                         .tracking(-0.2)
-                    Text("/ \(formatValue(totalValue)) \(unit)")
-                        .font(AppFonts.progressBarLabel)
-                        .foregroundColor(AppColors.progressBarTrackText)
-                        .tracking(-0.2)
+                    Spacer()
+                    HStack(spacing: 0) {
+                        Text("\(formatValue(current)) \(unit) ")
+                            .font(AppFonts.geologica(size: 20, wght: 500))
+                            .foregroundColor(AppColors.progressBarText)
+                            .tracking(-0.2)
+                        Text("/ \(formatValue(total)) \(unit)")
+                            .font(AppFonts.geologica(size: 20, wght: 500))
+                            .foregroundColor(AppColors.progressBarTrackText)
+                            .tracking(-0.2)
+                    }
                 }
+                ProgressBar(progress: current / total)
             }
-            ProgressBar(progress: progress)
-        }
-    }
-}
 
-// MARK: - Preview
-#Preview {
-    ZStack {
-        LinearGradient(
-            colors: [
-                Color(red: 0.42, green: 0.35, blue: 0.82),
-                Color(red: 0.60, green: 0.55, blue: 0.90)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .ignoresSafeArea()
-
-        VStack(spacing: 32) {
-            ProgressBarWithText(
-                label: "You will recover",
-                currentValue: 54,
-                totalValue: 58,
-                unit: "GB",
-                progress: 54.0 / 58.0
-            )
-            ProgressBarWithText(
-                label: "Photos",
-                currentValue: 12,
-                totalValue: 20,
-                unit: "GB",
-                progress: 12.0 / 20.0
-            )
-            ProgressBarWithText(
-                label: "Videos",
-                currentValue: 1,
-                totalValue: 10,
-                unit: "GB",
-                progress: 0.1
-            )
+            content
         }
-        .padding(.horizontal, 24)
+        .padding(24)
+        .background(backgroundGradient)
+        .clipShape(RoundedRectangle(cornerRadius: 32, style: .continuous))
     }
 }

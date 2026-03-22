@@ -11,7 +11,7 @@ struct SmartCleanupSelector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScrollView {
+            VStack {
                 SectionHeader(
                     title: "Smart recommendations",
                     subtitle: "Pick the options you'd like us to use to free up space on your iPhone"
@@ -55,6 +55,10 @@ struct SmartCleanupSelector: View {
                 .padding(.top, 30)
 
                 Spacer()
+
+                ProgressBarWithText(label: "You will recover", current: 54, total: 58) {
+                    AppButton(title: "See recommendations", style: .primary, icon: "eye") {}
+                }
             }
             .padding(.horizontal)
         }

@@ -23,8 +23,6 @@ enum AppFonts {
     static let sectionHeaderTitle    = geologica(size: 28, wght: 600)
     static let sectionHeaderSubtitle = geologica(size: 14, wght: 300)
 
-    // MARK: - ProgressBar
-    static let progressBarLabel = geologica(size: 20, wght: 500)
 
     // MARK: - Fallbacks (system)
     /// Section title — 20 bold
