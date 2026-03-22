@@ -29,6 +29,10 @@ enum SortPhoto: String, CaseIterable {
     }
 }
 
+private enum PhotosNavigationDestination: Hashable {
+    case smartCleanup
+}
+
 struct PhotosView: View {
     @Namespace private var navigationTransitionNamespace
 
@@ -45,6 +49,11 @@ struct PhotosView: View {
             ZStack(alignment: .top) {
                 ScrollView {
                     LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                        AppButton(title: "Smart cleanup", style: .primary, icon: "wand.and.stars") {
+                            navigationPath.append(PhotosNavigationDestination.smartCleanup)
+                        }
+                        .padding(.horizontal)
+
                         Section {
                             switch selectedTab {
                             case 0:
@@ -187,6 +196,12 @@ struct PhotosView: View {
             .refreshable {
                 Task {
                     await photoLibrary?.reset()
+                }
+            }
+            .navigationDestination(for: PhotosNavigationDestination.self) { destination in
+                switch destination {
+                case .smartCleanup:
+                    SmartCleanupSelector()
                 }
             }
         }
