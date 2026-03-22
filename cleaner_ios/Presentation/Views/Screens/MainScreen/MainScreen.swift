@@ -11,8 +11,9 @@ private struct AlbumCategory {
 /// MainScreen mockup
 struct MainScreen: View {
     @State var selectedTab = 0
-    @State var isPro: Bool = true // Toggle for demo; set to true for PRO, false for TRIAL
-    @State var isGalleryEmpty: Bool = true // Toggle for demo; set true when gallery has nothing to clean
+    @State var isPro: Bool = true    // Toggle for demo; set to true for PRO, false for TRIAL
+    @State var isGalleryEmpty: Bool = false // Toggle for demo; set true when gallery has nothing to clean
+    @State var isScanning: Bool = false     // Toggle for demo; set true while scan is in progress
 
     // Mock data — swap out for real data when ready
     private let albumCategories: [AlbumCategory] = [
@@ -40,9 +41,12 @@ struct MainScreen: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 0) {
                     // Block 1: Statistics card
-                    if isPro {
+                    if isScanning {
+                        StorageStatisticsCardScanning(usedGB: 46, totalGB: 256)
+                            .padding(.top, 61)
+                    } else if isPro {
                         StorageStatisticsCard(
-                            usedGB: 125,
+                            usedGB: 20,
                             totalGB: 256,
                             isEmpty: isGalleryEmpty,
                             onRecover: {},
@@ -71,10 +75,23 @@ struct MainScreen: View {
                     VStack(alignment: .leading, spacing: 16) {
                         SectionHeader(
                             title: "Manual cleanup",
-                            subtitle: isGalleryEmpty ? nil : "Review and delete files by category"
+                            subtitle: (!isScanning && !isGalleryEmpty) ? "Review and delete files by category" : nil
                         )
 
-                        if isGalleryEmpty {
+                        if isScanning {
+                            // Scanning state — search/eye icon + message
+                            VStack(spacing: 16) {
+                                ScanningIcon()
+                                    .frame(width: 46, height: 46)
+
+                                Text("We're getting things ready. Files for manual\ncleanup will show up here shortly")
+                                    .font(AppFonts.body)
+                                    .foregroundColor(AppColors.sectionHeaderSubtitle)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 48)
+                        } else if isGalleryEmpty {
                             // Clean gallery state — sparkle icon + message
                             VStack(spacing: 16) {
                                 SparkleIcon()
