@@ -37,122 +37,109 @@ struct VideosView: View {
     private let tabs = ["Все", "Похожие"]
 
     var body: some View {
-        NavigationStack {
-            ZStack(alignment: .top) {
-                ScrollView {
-                    LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+        ZStack(alignment: .top) {
+            ScrollView {
+                LazyVStack(spacing: 16, pinnedViews: [.sectionHeaders]) {
+                    Section {
+                        switch selectedTab {
+                        case 0:
+                            AllVideosView(namespace: navigationTransitionNamespace)
+                        case 1:
+                            SimilarVideosView(namespace: navigationTransitionNamespace)
+                        default:
+                            AllVideosView(namespace: navigationTransitionNamespace)
+                        }
+                    } header: {
+                        PickerHeader(selectedTab: $selectedTab, tabs: tabs)
+                    }
+                }
+                .padding(.vertical)
+            }
+        }
+        .navigationTitle("Видео")
+        .toolbar {
+
+            if !(videoLibrary?.selectedVideos.isEmpty ?? true) {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel", systemImage: "xmark") {
+                        withAnimation {
+                            videoLibrary?.selectedVideos.removeAll()
+                        }
+                    }
+                }
+            }
+
+            if videoLibrary?.selectedVideos.isEmpty ?? true {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
                         Section {
-                            switch selectedTab {
-                            case 0:
-                                AllVideosView(namespace: navigationTransitionNamespace)
-                            case 1:
-                                SimilarVideosView(namespace: navigationTransitionNamespace)
-                            default:
-                                AllVideosView(namespace: navigationTransitionNamespace)
-                            }
-                        } header: {
-                            PickerHeader(selectedTab: $selectedTab, tabs: tabs)
-                        }
-                    }
-                    .padding(.vertical)
-                }
-            }
-            .navigationTitle("Видео")
-            .toolbar {
-
-                if !(videoLibrary?.selectedVideos.isEmpty ?? true) {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button("Cancel", systemImage: "xmark") {
-                            withAnimation {
-                                videoLibrary?.selectedVideos.removeAll()
-                            }
-                        }
-                    }
-                }
-
-                if videoLibrary?.selectedVideos.isEmpty ?? true {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Section {
-                                ForEach(FilterVideo.allCases, id: \.self) { filter in
-                                    Toggle(isOn: Binding(get: { videoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
-                                        if value {
-                                            videoLibrary?.selectedFilter.insert(filter)
-                                        } else {
-                                            videoLibrary?.selectedFilter.remove(filter)
-                                        }
-                                    })) {
-                                        Label(filter.rawValue, systemImage: filter.icon)
+                            ForEach(FilterVideo.allCases, id: \.self) { filter in
+                                Toggle(isOn: Binding(get: { videoLibrary?.selectedFilter.contains(filter) ?? false }, set: { value in
+                                    if value {
+                                        videoLibrary?.selectedFilter.insert(filter)
+                                    } else {
+                                        videoLibrary?.selectedFilter.remove(filter)
                                     }
-                                }
-                            }
-                            Section {
-                                Picker("Sort", selection: Binding(get: { videoLibrary?.selectedSort ?? .date }, set: { value in
-                                    videoLibrary?.selectedSort = value
                                 })) {
-                                    ForEach(SortVideo.allCases, id: \.self) { sort in
-                                        Label(sort.rawValue, systemImage: sort.icon)
-                                            .tag(sort)
-                                    }
+                                    Label(filter.rawValue, systemImage: filter.icon)
                                 }
                             }
-                        } label: {
-                            Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                         }
+                        Section {
+                            Picker("Sort", selection: Binding(get: { videoLibrary?.selectedSort ?? .date }, set: { value in
+                                videoLibrary?.selectedSort = value
+                            })) {
+                                ForEach(SortVideo.allCases, id: \.self) { sort in
+                                    Label(sort.rawValue, systemImage: sort.icon)
+                                        .tag(sort)
+                                }
+                            }
+                        }
+                    } label: {
+                        Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
-                    ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button(action: {
-                            showSettings.toggle()
+                }
+            } else {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
+                        Button(role: .destructive, action: {
+                            Task {
+                                guard let result = await videoLibrary?.delete(videos: videoLibrary?.selectedVideos ?? []) else {
+                                    return
+                                }
+
+                                guard case .success = result else {
+                                    return
+                                }
+
+                                await videoLibrary?.filter()
+
+                                withAnimation {
+                                    videoLibrary?.selectedVideos.removeAll()
+                                }
+                            }
                         }) {
-                            Image(systemName: "gearshape")
+                            Label("Remove", systemImage: "trash")
                         }
-                        .popover(isPresented: $showSettings) {
-                            SettingsView(isPresented: $showSettings)
-                        }
-                    }
-                } else {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Menu {
-                            Button(role: .destructive, action: {
-                                Task {
-                                    guard let result = await videoLibrary?.delete(videos: videoLibrary?.selectedVideos ?? []) else {
-                                        return
-                                    }
-
-                                    guard case .success = result else {
-                                        return
-                                    }
-
-                                    await videoLibrary?.filter()
-
-                                    withAnimation {
-                                        videoLibrary?.selectedVideos.removeAll()
-                                    }
-                                }
-                            }) {
-                                Label("Remove", systemImage: "trash")
-                            }
-                        } label: {
-                            Image(systemName: "ellipsis")
-                        }
+                    } label: {
+                        Image(systemName: "ellipsis")
                     }
                 }
             }
-            .refreshable {
-                Task {
-                    await videoLibrary?.reset()
-                }
+        }
+        .refreshable {
+            Task {
+                await videoLibrary?.reset()
             }
-            .onChange(of: videoLibrary?.selectedFilter) { _, _ in
-                Task {
-                    await videoLibrary?.filter()
-                }
+        }
+        .onChange(of: videoLibrary?.selectedFilter) { _, _ in
+            Task {
+                await videoLibrary?.filter()
             }
-            .onChange(of: videoLibrary?.selectedSort) { _, _ in
-                Task {
-                    await videoLibrary?.filter()
-                }
+        }
+        .onChange(of: videoLibrary?.selectedSort) { _, _ in
+            Task {
+                await videoLibrary?.filter()
             }
         }
     }

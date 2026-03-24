@@ -1,9 +1,10 @@
 import SwiftUI
 
-// MARK: - AppButton
-/// Reusable pill-shaped button
-///
-/// Usage examples: under the #Preview
+private struct AppButtonNoHighlightStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+    }
+}
 
 struct AppButton: View {
 
@@ -67,7 +68,7 @@ struct AppButton: View {
         Button(action: action) {
             HStack(spacing: AppSpacing.sm) {
                 Text(title)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(AppFonts.geologica(size: 20, wght: 500))
 
                 if let customIcon {
                     customIcon
@@ -78,10 +79,11 @@ struct AppButton: View {
             }
             .foregroundColor(style.foregroundColor)
             .frame(maxWidth: .infinity)
-            .frame(height: AppSizes.buttonHeight)
-            .background(style.backgroundColor)
-            .clipShape(Capsule())
+            .padding(16)
+            .contentShape(Rectangle())
+            .glassEffect(.regular.tint(style.backgroundColor).interactive())
         }
+        .buttonStyle(AppButtonNoHighlightStyle())
     }
 }
 
