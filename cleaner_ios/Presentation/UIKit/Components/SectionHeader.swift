@@ -14,7 +14,12 @@ import SwiftUI
 struct SectionHeader: View {
 
     let title: String
-    let subtitle: String
+    let subtitle: String?
+
+    init(title: String, subtitle: String? = nil) {
+        self.title = title
+        self.subtitle = subtitle
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -24,10 +29,12 @@ struct SectionHeader: View {
                 .tracking(-0.28)
                 .lineSpacing(30 - 28)
 
-            Text(subtitle)
-                .font(AppFonts.sectionHeaderSubtitle)
-                .foregroundColor(AppColors.sectionHeaderSubtitle)
-                .lineSpacing(18 - 14)
+            if let subtitle {
+                Text(subtitle)
+                    .font(AppFonts.sectionHeaderSubtitle)
+                    .foregroundColor(AppColors.sectionHeaderSubtitle)
+                    .lineSpacing(18 - 14)
+            }
         }
         .frame(maxWidth: 340, alignment: .leading)
     }
