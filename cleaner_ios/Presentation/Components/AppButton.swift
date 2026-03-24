@@ -33,8 +33,10 @@ struct AppButton: View {
     let title: String
     let style: Style
     let icon: String?        // SF Symbol name; nil = text-only button
+    let customIcon: AnyView? // Custom SwiftUI view used as icon
     let action: () -> Void
 
+    // Standard init with optional SF Symbol icon
     init(
         title: String,
         style: Style = .primary,
@@ -44,6 +46,21 @@ struct AppButton: View {
         self.title = title
         self.style = style
         self.icon = icon
+        self.customIcon = nil
+        self.action = action
+    }
+
+    // Init with a custom icon view
+    init<Icon: View>(
+        title: String,
+        style: Style = .primary,
+        action: @escaping () -> Void,
+        @ViewBuilder iconView: () -> Icon
+    ) {
+        self.title = title
+        self.style = style
+        self.icon = nil
+        self.customIcon = AnyView(iconView())
         self.action = action
     }
 
@@ -53,7 +70,9 @@ struct AppButton: View {
                 Text(title)
                     .font(AppFonts.geologica(size: 20, wght: 500))
 
-                if let icon {
+                if let customIcon {
+                    customIcon
+                } else if let icon {
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .semibold))
                 }
