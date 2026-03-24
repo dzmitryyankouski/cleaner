@@ -3,7 +3,7 @@ import SwiftUI
 struct SectionHeader: View {
 
     let title: String
-    let subtitle: String
+    let subtitle: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -11,9 +11,11 @@ struct SectionHeader: View {
                 .font(AppFonts.sectionHeaderTitle)
                 .foregroundColor(AppColors.sectionHeaderTitle)
 
-            Text(subtitle)
-                .font(AppFonts.sectionHeaderSubtitle)
-                .foregroundColor(AppColors.sectionHeaderSubtitle)
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle)
+                    .font(AppFonts.sectionHeaderSubtitle)
+                    .foregroundColor(AppColors.sectionHeaderSubtitle)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
