@@ -12,8 +12,6 @@ struct SettingsView: View {
     @State private var videoSimilarityThreshold: Float = 0.93
     @State private var hasChanged: Bool = false
 
-    @Binding var isPresented: Bool
-
     func reset() {
         photoSimilarityThreshold = 0.95
         searchSimilarityThreshold = 0.188
@@ -32,8 +30,6 @@ struct SettingsView: View {
             await photoLibrary?.regroup()
             await videoLibrary?.regroup()
         }
-
-        isPresented = false
     }
 
     private func checkHasChanged() -> Bool {
@@ -43,9 +39,8 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
+        ScrollView {
+            VStack(spacing: 20) {
                     SettingSliderCard(
                         title: "Процент похожести фотографий",
                         description: "Настройте порог схожести для группировки фотографий",
@@ -109,30 +104,12 @@ struct SettingsView: View {
                     }
                     .padding(.horizontal)
                     .padding(.top, 10)
-                }
-                .padding(.top)
-                .onAppear {
-                    photoSimilarityThreshold = settings?.values.photoSimilarityThreshold ?? 0.95
-                    searchSimilarityThreshold = settings?.values.searchSimilarityThreshold ?? 0.188
-                    videoSimilarityThreshold = settings?.values.videoSimilarityThreshold ?? 0.93
-                }
             }
-            .navigationTitle("Настройки")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                if hasChanged {
-                    ToolbarItem(placement: .confirmationAction) {
-                        Button("Done", systemImage: "checkmark") {
-                            save()
-                        }
-                    }
-                }
-
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Close", systemImage: "xmark") {
-                        isPresented = false
-                    }
-                }
+            .padding(.top)
+            .onAppear {
+                photoSimilarityThreshold = settings?.values.photoSimilarityThreshold ?? 0.95
+                searchSimilarityThreshold = settings?.values.searchSimilarityThreshold ?? 0.188
+                videoSimilarityThreshold = settings?.values.videoSimilarityThreshold ?? 0.93
             }
         }
     }

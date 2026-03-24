@@ -99,17 +99,6 @@ struct VideosView: View {
                         Label("Фильтры", systemImage: "line.3.horizontal.decrease")
                     }
                 }
-                ToolbarSpacer(.fixed, placement: .topBarTrailing)
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(action: {
-                        showSettings.toggle()
-                    }) {
-                        Image(systemName: "gearshape")
-                    }
-                    .popover(isPresented: $showSettings) {
-                        SettingsView(isPresented: $showSettings)
-                    }
-                }
             } else {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {

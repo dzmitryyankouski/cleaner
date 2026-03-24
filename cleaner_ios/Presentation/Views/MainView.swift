@@ -3,6 +3,8 @@ import SwiftUI
 struct MainView: View {
     @Environment(\.appRouter) private var appRouter
 
+    private static let tabAccent = Color(red: 69 / 255, green: 36 / 255, blue: 1)
+
     var body: some View {
         @Bindable var appRouter = appRouter
 
@@ -11,22 +13,28 @@ struct MainView: View {
                 Tab {
                     PhotosView()
                 } label: {
-                    Label("Фотографии", systemImage: "photo.stack")
+                    Label("Main", image: "menu.main")
                 }
 
                 Tab {
                     VideosView()
                 } label: {
-                    Label("Видео", systemImage: "video")
+                    Label("Compress", image: "menu.compress")
+                }
+
+                Tab {
+                    SettingsView()
+                } label: {
+                    Label("Settings", image: "menu.gear")
                 }
 
                 Tab(role: .search) {
                     SearchView()
                 } label: {
-                    Label("Поиск", systemImage: "magnifyingglass")
+                    Label("Search", systemImage: "magnifyingglass")
                 }
             }
-            .accentColor(.green)
+            .accentColor(Self.tabAccent)
             .navigationDestination(for: AppRoute.self) { route in
                 switch route {
                 case .smartCleanup:
