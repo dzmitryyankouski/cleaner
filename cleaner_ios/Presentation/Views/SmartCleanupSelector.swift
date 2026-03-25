@@ -56,7 +56,11 @@ struct SmartCleanupSelector: View {
 
                 Spacer()
 
-                ProgressBarWithText(label: "You will recover", current: 10, total: mediaLibrary?.usedGB ?? 0) {
+                ProgressBarWithText(
+                    label: "You will recover",
+                    current: mediaLibrary?.selectedStorageGB ?? 0,
+                    total: mediaLibrary?.usedGB ?? 0
+                ) {
                     AppButton(title: "See recommendations", style: .primary, icon: "eye") {}
                 }
             }
@@ -68,6 +72,21 @@ struct SmartCleanupSelector: View {
         }
         .navigationTitle("Smart cleanup")
         .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: largeFilesSelected) { _, new in
+            mediaLibrary?.setLargeFilesSelection(new)
+        }
+        .onChange(of: duplicatesSelected) { _, new in
+            print("duplicatesSelected: \(new)")
+        }
+        .onChange(of: blurryPhotosSelected) { _, new in
+            print("blurryPhotosSelected: \(new)")
+        }
+        .onChange(of: oldFilesSelected) { _, new in
+            print("oldFilesSelected: \(new)")
+        }
+        .onChange(of: optimizeLivePhotosSelected) { _, new in
+            print("optimizeLivePhotosSelected: \(new)")
+        }
     }
 }
 

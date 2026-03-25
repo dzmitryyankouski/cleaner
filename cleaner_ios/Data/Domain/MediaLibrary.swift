@@ -3,11 +3,17 @@ import Observation
 
 @Observable
 final class MediaLibrary {
+    /// Порог «большого» файла (200 MiB), в байтах.
+    static let largeFileThresholdBytes: Int64 = 200 * 1024 * 1024
+
     private let photoLibrary: PhotoLibrary
     private let videoLibrary: VideoLibrary
 
     var totalGB: Double = 0
     var usedGB: Double = 0
+
+    /// Кэш суммы `fileSize` выбранных фото и видео; обновляется через `refreshSelectedStorage()`.
+    var selectedStorageBytes: Int64 = 0
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
@@ -21,6 +27,8 @@ final class MediaLibrary {
             usedGB = Double(usedBytes) / 1_000_000_000
             totalGB = Double(total?.uint64Value ?? 0) / 1_000_000_000
         }
+
+        refreshSelectedStorage()
     }
 
     var items: [MediaItem] {
@@ -35,6 +43,16 @@ final class MediaLibrary {
     var selectedItems: [MediaItem] {
         photoLibrary.selectedPhotos.map { MediaItem.photo($0) }
             + videoLibrary.selectedVideos.map { MediaItem.video($0) }
+    }
+
+    var selectedStorageGB: Double {
+        Double(selectedStorageBytes) / 1_000_000_000
+    }
+
+    func refreshSelectedStorage() {
+        let photoBytes = photoLibrary.selectedPhotos.reduce(Int64(0)) { $0 + ($1.fileSize ?? 0) }
+        let videoBytes = videoLibrary.selectedVideos.reduce(Int64(0)) { $0 + ($1.fileSize ?? 0) }
+        selectedStorageBytes = photoBytes + videoBytes
     }
 
     var hasSelection: Bool {
@@ -57,11 +75,42 @@ final class MediaLibrary {
         case .video(let video):
             videoLibrary.select(video: video)
         }
+        refreshSelectedStorage()
     }
 
     func clearSelection() {
         photoLibrary.selectedPhotos.removeAll()
         videoLibrary.selectedVideos.removeAll()
+        refreshSelectedStorage()
+    }
+
+    /// Добавляет в выбор все фото и видео с известным размером больше `Self.largeFileThresholdBytes`, либо снимает такие элементы с выбора.
+    func setLargeFilesSelection(_ selected: Bool) {
+        if selected {
+            for item in items {
+                let bytes: Int64?
+                switch item {
+                case .photo(let photo): bytes = photo.fileSize
+                case .video(let video): bytes = video.fileSize
+                }
+                guard let bytes, bytes > Self.largeFileThresholdBytes else { continue }
+
+                switch item {
+                case .photo(let photo):
+                    if !photoLibrary.selectedPhotos.contains(where: { $0.id == photo.id }) {
+                        photoLibrary.selectedPhotos.append(photo)
+                    }
+                case .video(let video):
+                    if !videoLibrary.selectedVideos.contains(where: { $0.id == video.id }) {
+                        videoLibrary.selectedVideos.append(video)
+                    }
+                }
+            }
+        } else {
+            photoLibrary.selectedPhotos.removeAll { ($0.fileSize ?? 0) > Self.largeFileThresholdBytes }
+            videoLibrary.selectedVideos.removeAll { ($0.fileSize ?? 0) > Self.largeFileThresholdBytes }
+        }
+        refreshSelectedStorage()
     }
 
     func delete(_ items: [MediaItem]) async -> Result<Void, AssetError> {

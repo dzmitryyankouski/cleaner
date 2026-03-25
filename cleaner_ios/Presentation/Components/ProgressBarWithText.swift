@@ -66,7 +66,10 @@ public struct ProgressBarWithText<Content: View>: View {
                             .tracking(-0.2)
                     }
                 }
-                ProgressBar(progress: current / total, fillColor: .white)
+                ProgressBar(
+                    progress: total > 0 ? min(current / total, 1) : 0,
+                    fillColor: .white
+                )
             }
 
             content

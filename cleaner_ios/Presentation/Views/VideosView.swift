@@ -232,7 +232,8 @@ struct SimilarVideosView: View {
 
 struct VideoGroupRowView: View {
     @Environment(\.videoLibrary) var videoLibrary
-    
+    @Environment(\.mediaLibrary) var mediaLibrary
+
     let group: VideoGroupModel
     var namespace: Namespace.ID
 
@@ -247,7 +248,7 @@ struct VideoGroupRowView: View {
             RowItems(items: group.videos, selectedItems: videoLibrary?.selectedVideos ?? [], namespace: namespace) { video in
                 VideoThumbnail(video: video)
             } onSelect: { video in
-                videoLibrary?.select(video: video)
+                mediaLibrary?.select(.video(video))
             } onTap: { video in
                 selectedVideo = video
             }

@@ -299,6 +299,7 @@ struct AllPhotosView: View {
 
 struct PhotoGroupRowView: View {
     @Environment(\.photoLibrary) var photoLibrary
+    @Environment(\.mediaLibrary) var mediaLibrary
 
     let group: PhotoGroupModel
     var namespace: Namespace.ID
@@ -314,7 +315,7 @@ struct PhotoGroupRowView: View {
             RowItems(items: group.photos, selectedItems: photoLibrary?.selectedPhotos ?? [], namespace: namespace) { photo in
                 Photo(photo: photo, quality: .medium, contentMode: .fill)
             } onSelect: { photo in
-                photoLibrary?.select(photo: photo)
+                mediaLibrary?.select(.photo(photo))
             } onTap: { photo in
                 selectedPhoto = photo
             }
