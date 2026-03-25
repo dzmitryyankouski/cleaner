@@ -26,6 +26,10 @@ public struct ProgressBarWithText<Content: View>: View {
             : String(format: "%.1f", v)
     }
 
+    private var fillProgress: Double {
+        total > 0 ? min(current / total, 1) : 0
+    }
+
     var backgroundGradient: LinearGradient {
         let degrees = 49.0
         let radians = (degrees - 90) * Double.pi / 180
@@ -60,16 +64,16 @@ public struct ProgressBarWithText<Content: View>: View {
                             .font(AppFonts.geologica(size: 20, wght: 500))
                             .foregroundColor(AppColors.progressBarText)
                             .tracking(-0.2)
+                            .contentTransition(.numericText())
                         Text("/ \(formatValue(total)) \(unit)")
                             .font(AppFonts.geologica(size: 20, wght: 500))
                             .foregroundColor(AppColors.progressBarTrackText)
                             .tracking(-0.2)
                     }
+                    .animation(.easeInOut(duration: 0.35), value: current)
                 }
-                ProgressBar(
-                    progress: total > 0 ? min(current / total, 1) : 0,
-                    fillColor: .white
-                )
+                ProgressBar(progress: fillProgress, fillColor: .white)
+                    .animation(.easeInOut(duration: 0.35), value: fillProgress)
             }
 
             content

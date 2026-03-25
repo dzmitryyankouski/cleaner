@@ -3,7 +3,6 @@ import Observation
 
 @Observable
 final class MediaLibrary {
-    /// Порог «большого» файла (200 MiB), в байтах.
     static let largeFileThresholdBytes: Int64 = 200 * 1024 * 1024
 
     private let photoLibrary: PhotoLibrary
@@ -18,7 +17,6 @@ final class MediaLibrary {
     var oldFilesSelected: Bool = false
     var optimizeLivePhotosSelected: Bool = false
 
-    /// Кэш суммы `fileSize` выбранных фото и видео; обновляется через `refreshSelectedStorage()`.
     var selectedStorageBytes: Int64 = 0
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
@@ -58,6 +56,7 @@ final class MediaLibrary {
     func refreshSelectedStorage() {
         let photoBytes = photoLibrary.selectedPhotos.values.reduce(Int64(0)) { $0 + ($1.fileSize ?? 0) }
         let videoBytes = videoLibrary.selectedVideos.values.reduce(Int64(0)) { $0 + ($1.fileSize ?? 0) }
+
         selectedStorageBytes = photoBytes + videoBytes
     }
 
