@@ -7,6 +7,8 @@ struct SmartCleanupSelector: View {
     @State private var oldFilesSelected = false
     @State private var optimizeLivePhotosSelected = false
 
+    @Environment(\.mediaLibrary) private var mediaLibrary
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack {
@@ -54,7 +56,7 @@ struct SmartCleanupSelector: View {
 
                 Spacer()
 
-                ProgressBarWithText(label: "You will recover", current: 54, total: 58) {
+                ProgressBarWithText(label: "You will recover", current: 10, total: mediaLibrary?.usedGB ?? 0) {
                     AppButton(title: "See recommendations", style: .primary, icon: "eye") {}
                 }
             }

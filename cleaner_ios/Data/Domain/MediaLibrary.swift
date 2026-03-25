@@ -6,9 +6,21 @@ final class MediaLibrary {
     private let photoLibrary: PhotoLibrary
     private let videoLibrary: VideoLibrary
 
+    var totalGB: Double = 0
+    var usedGB: Double = 0
+
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
         self.videoLibrary = videoLibrary
+
+        if let attrs = try? FileManager.default.attributesOfFileSystem(forPath: NSHomeDirectory()) {
+            let total = attrs[.systemSize] as? NSNumber
+            let free = attrs[.systemFreeSize] as? NSNumber
+            let usedBytes = (total?.uint64Value ?? 0) - (free?.uint64Value ?? 0)
+
+            usedGB = Double(usedBytes) / 1_000_000_000
+            totalGB = Double(total?.uint64Value ?? 0) / 1_000_000_000
+        }
     }
 
     var items: [MediaItem] {
