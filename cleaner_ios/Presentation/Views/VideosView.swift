@@ -104,18 +104,15 @@ struct VideosView: View {
                     Menu {
                         Button(role: .destructive, action: {
                             Task {
-                                guard let result = await videoLibrary?.delete(videos: videoLibrary?.selectedVideos ?? []) else {
-                                    return
-                                }
+                                guard let videoLibrary else { return }
+                                let result = await videoLibrary.delete(videos: Array(videoLibrary.selectedVideos.values))
 
-                                guard case .success = result else {
-                                    return
-                                }
+                                guard case .success = result else { return }
 
-                                await videoLibrary?.filter()
+                                await videoLibrary.filter()
 
                                 withAnimation {
-                                    videoLibrary?.selectedVideos.removeAll()
+                                    videoLibrary.selectedVideos.removeAll()
                                 }
                             }
                         }) {
@@ -245,7 +242,7 @@ struct VideoGroupRowView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            RowItems(items: group.videos, selectedItems: videoLibrary?.selectedVideos ?? [], namespace: namespace) { video in
+            RowItems(items: group.videos, selectedItems: videoLibrary.map { Array($0.selectedVideos.values) } ?? [], namespace: namespace) { video in
                 VideoThumbnail(video: video)
             } onSelect: { video in
                 mediaLibrary?.select(.video(video))

@@ -22,7 +22,7 @@ class PhotoLibrary {
     var photos: [PhotoModel] = []
     var photosFileSize: Int64 = 0
 
-    var selectedPhotos: [PhotoModel] = []
+    var selectedPhotos: [String: PhotoModel] = [:]
 
     var selectedSort: SortPhoto = .date {
         didSet {
@@ -244,10 +244,10 @@ class PhotoLibrary {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
 
-        if selectedPhotos.contains(photo) {
-            selectedPhotos.removeAll { $0.id == photo.id }
+        if selectedPhotos[photo.id] != nil {
+            selectedPhotos.removeValue(forKey: photo.id)
         } else {
-            selectedPhotos.append(photo)
+            selectedPhotos[photo.id] = photo
         }
     }
 
