@@ -241,6 +241,7 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
                     newPhotoModel.groups = photo.groups
                     newPhotoModel.isLivePhoto = false
                     newPhotoModel.isScreenshot = photo.isScreenshot
+                    newPhotoModel.isBlurry = photo.isBlurry
                     newPhotoModel.isModified = true
                     
                     self.context.insert(newPhotoModel)

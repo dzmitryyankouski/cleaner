@@ -16,6 +16,8 @@ final class PhotoModel: Identifiable {
     var isModified: Bool = false
     var isFavorite: Bool = false
     var isCompressed: Bool = false
+    /// Рассчитывается при индексации: косинусная похожесть эмбеддинга фото на текст «blurry» ≥ порога.
+    var isBlurry: Bool = false
     
     // MARK: - Transient (not saved to database)
     @Transient var image: UIImage?

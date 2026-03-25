@@ -50,6 +50,8 @@ class PhotoLibrary {
     private let context: ModelContext
     private let settings: Settings
 
+    private static let blurryTextSimilarityThreshold: Float = 0.20
+
     init(
         photoAssetRepository: PhotoRepositoryProtocol,
         embeddingService: EmbeddingServiceProtocol,
@@ -262,7 +264,14 @@ class PhotoLibrary {
             print("❌ Нет фото для индексации")
             return
         }
+
+        let blurryTextEmbedding: [Float] = []
+        let blurryEmbeddingResult = await embeddingService.generateTextEmbedding(from: "blur photo where the subject is out of focus")
         
+        if case .success(let embedding) = blurryEmbeddingResult {
+            blurryTextEmbedding = embedding
+        }
+
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
             
@@ -275,6 +284,7 @@ class PhotoLibrary {
                 group.addTask { [weak self] in
                     guard let self = self else { return }
                     let photoId = photo.id
+                    let blurryRef = blurryTextEmbedding
 
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
                     guard let asset = assets.firstObject else { return }
@@ -288,12 +298,17 @@ class PhotoLibrary {
                     let isFavorite = self.photoAssetRepository.isFavorite(for: asset)
 
                     if case .success(let fileSize) = fileSize, case .success(let embedding) = embedding {
+                        let isBlurry = blurryRef.map { blurry in
+                            self.embeddingService.calculateSimilarity(blurry, embedding) >= Self.blurryTextSimilarityThreshold
+                        } ?? false
+
                         await MainActor.run {
                             photo.embedding = embedding
                             photo.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
                             photo.isModified = isModified
                             photo.fileSize = fileSize
                             photo.isFavorite = isFavorite
+                            photo.isBlurry = isBlurry
                             self.indexed += 1
 
                             do {

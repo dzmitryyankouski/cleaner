@@ -102,6 +102,7 @@ final class MediaLibrary {
             let shouldSelect =
                 (largeFilesSelected && isLargeFile(item))
                 || (duplicatesSelected && isInDuplicateGroups(item))
+                || (blurryPhotosSelected && isBlurryPhoto(item))
                 || (oldFilesSelected && isOldFile(item))
 
             if shouldSelect {
@@ -112,6 +113,15 @@ final class MediaLibrary {
         }
 
         refreshSelectedStorage()
+    }
+
+    private func isBlurryPhoto(_ item: MediaItem) -> Bool {
+        switch item {
+        case .photo(let photo):
+            return photo.isBlurry
+        case .video:
+            return false
+        }
     }
 
     private func isInDuplicateGroups(_ item: MediaItem) -> Bool {
