@@ -12,6 +12,12 @@ final class MediaLibrary {
     var totalGB: Double = 0
     var usedGB: Double = 0
 
+    var largeFilesSelected: Bool = false
+    var duplicatesSelected: Bool = false
+    var blurryPhotosSelected: Bool = false
+    var oldFilesSelected: Bool = false
+    var optimizeLivePhotosSelected: Bool = false
+
     /// Кэш суммы `fileSize` выбранных фото и видео; обновляется через `refreshSelectedStorage()`.
     var selectedStorageBytes: Int64 = 0
 
@@ -71,11 +77,19 @@ final class MediaLibrary {
     func select(_ item: MediaItem) {
         switch item {
         case .photo(let photo):
-            photoLibrary.select(photo: photo)
+            photoLibrary.selectedPhotos.append(photo)
         case .video(let video):
-            videoLibrary.select(video: video)
+            videoLibrary.selectedVideos.append(video)
         }
-        refreshSelectedStorage()
+    }
+
+    func deselect(_ item: MediaItem) {
+        switch item {
+        case .photo(let photo):
+            photoLibrary.selectedPhotos.removeAll { $0.id == photo.id }
+        case .video(let video):
+            videoLibrary.selectedVideos.removeAll { $0.id == video.id }
+        }
     }
 
     func clearSelection() {
@@ -84,33 +98,50 @@ final class MediaLibrary {
         refreshSelectedStorage()
     }
 
-    /// Добавляет в выбор все фото и видео с известным размером больше `Self.largeFileThresholdBytes`, либо снимает такие элементы с выбора.
-    func setLargeFilesSelection(_ selected: Bool) {
-        if selected {
-            for item in items {
-                let bytes: Int64?
-                switch item {
-                case .photo(let photo): bytes = photo.fileSize
-                case .video(let video): bytes = video.fileSize
-                }
-                guard let bytes, bytes > Self.largeFileThresholdBytes else { continue }
-
-                switch item {
-                case .photo(let photo):
-                    if !photoLibrary.selectedPhotos.contains(where: { $0.id == photo.id }) {
-                        photoLibrary.selectedPhotos.append(photo)
-                    }
-                case .video(let video):
-                    if !videoLibrary.selectedVideos.contains(where: { $0.id == video.id }) {
-                        videoLibrary.selectedVideos.append(video)
-                    }
-                }
+    func reconcile(largeFiles: Bool, duplicates: Bool, blurryPhotos: Bool, oldFiles: Bool, optimizeLivePhotos: Bool) {
+        for item in items {
+            if (largeFiles && isLargeFile(item)) || (duplicates && isInDuplicateGroups(item)) || (oldFiles && isOldFile(item)) {
+                if !isSelected(item) { select(item) }
+            } else {
+                deselect(item)
             }
-        } else {
-            photoLibrary.selectedPhotos.removeAll { ($0.fileSize ?? 0) > Self.largeFileThresholdBytes }
-            videoLibrary.selectedVideos.removeAll { ($0.fileSize ?? 0) > Self.largeFileThresholdBytes }
         }
+
         refreshSelectedStorage()
+    }
+
+    private func isInDuplicateGroups(_ item: MediaItem) -> Bool {
+        switch item {
+        case .photo(let photo):
+            return photoLibrary.duplicatesGroups.contains { group in
+                guard let index = group.photos.firstIndex(where: { $0.id == photo.id }) else { return false }
+                return index > 0
+            }
+        case .video:
+            return false
+        }
+    }
+
+    private func isLargeFile(_ item: MediaItem) -> Bool {
+        switch item {
+        case .photo(let photo):
+            return photo.fileSize ?? 0 > Self.largeFileThresholdBytes
+        case .video(let video):
+            return video.fileSize ?? 0 > Self.largeFileThresholdBytes
+        }
+    }
+
+    private func isOldFile(_ item: MediaItem) -> Bool {
+        let threshold = Date().addingTimeInterval(-180 * 24 * 60 * 60)
+        
+        switch item {
+        case .photo(let photo):
+            guard let date = photo.creationDate else { return false }
+            return date < threshold
+        case .video(let video):
+            guard let date = video.creationDate else { return false }
+            return date < threshold
+        }
     }
 
     func delete(_ items: [MediaItem]) async -> Result<Void, AssetError> {

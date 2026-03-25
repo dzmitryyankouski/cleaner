@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct SmartCleanupSelector: View {
-    @State private var largeFilesSelected = false
-    @State private var duplicatesSelected = false
-    @State private var blurryPhotosSelected = false
-    @State private var oldFilesSelected = false
-    @State private var optimizeLivePhotosSelected = false
-
     @Environment(\.mediaLibrary) private var mediaLibrary
+
+    @State private var largeFilesSelected: Bool = false
+    @State private var duplicatesSelected: Bool = false
+    @State private var blurryPhotosSelected: Bool = false
+    @State private var oldFilesSelected: Bool = false
+    @State private var optimizeLivePhotosSelected: Bool = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -73,19 +73,13 @@ struct SmartCleanupSelector: View {
         .navigationTitle("Smart cleanup")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: largeFilesSelected) { _, new in
-            mediaLibrary?.setLargeFilesSelection(new)
+            mediaLibrary?.reconcile(largeFiles: new, duplicates: duplicatesSelected, blurryPhotos: blurryPhotosSelected, oldFiles: oldFilesSelected, optimizeLivePhotos: optimizeLivePhotosSelected)
         }
         .onChange(of: duplicatesSelected) { _, new in
-            print("duplicatesSelected: \(new)")
-        }
-        .onChange(of: blurryPhotosSelected) { _, new in
-            print("blurryPhotosSelected: \(new)")
+            mediaLibrary?.reconcile(largeFiles: largeFilesSelected, duplicates: new, blurryPhotos: blurryPhotosSelected, oldFiles: oldFilesSelected, optimizeLivePhotos: optimizeLivePhotosSelected)
         }
         .onChange(of: oldFilesSelected) { _, new in
-            print("oldFilesSelected: \(new)")
-        }
-        .onChange(of: optimizeLivePhotosSelected) { _, new in
-            print("optimizeLivePhotosSelected: \(new)")
+            mediaLibrary?.reconcile(largeFiles: largeFilesSelected, duplicates: duplicatesSelected, blurryPhotos: blurryPhotosSelected, oldFiles: new, optimizeLivePhotos: optimizeLivePhotosSelected)
         }
     }
 }
