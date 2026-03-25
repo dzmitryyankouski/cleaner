@@ -98,9 +98,14 @@ final class MediaLibrary {
         refreshSelectedStorage()
     }
 
-    func reconcile(largeFiles: Bool, duplicates: Bool, blurryPhotos: Bool, oldFiles: Bool, optimizeLivePhotos: Bool) {
+    func reconcile() {
         for item in items {
-            if (largeFiles && isLargeFile(item)) || (duplicates && isInDuplicateGroups(item)) || (oldFiles && isOldFile(item)) {
+            let shouldSelect =
+                (largeFilesSelected && isLargeFile(item))
+                || (duplicatesSelected && isInDuplicateGroups(item))
+                || (oldFilesSelected && isOldFile(item))
+
+            if shouldSelect {
                 if !isSelected(item) { select(item) }
             } else {
                 deselect(item)

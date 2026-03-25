@@ -3,12 +3,6 @@ import SwiftUI
 struct SmartCleanupSelector: View {
     @Environment(\.mediaLibrary) private var mediaLibrary
 
-    @State private var largeFilesSelected: Bool = false
-    @State private var duplicatesSelected: Bool = false
-    @State private var blurryPhotosSelected: Bool = false
-    @State private var oldFilesSelected: Bool = false
-    @State private var optimizeLivePhotosSelected: Bool = false
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack {
@@ -22,31 +16,31 @@ struct SmartCleanupSelector: View {
                         title: "Large files",
                         description: "Files that take up the most space",
                         icon: .system("square.stack.3d.up"),
-                        isOn: $largeFilesSelected
+                        isOn: toggleBinding(for: \.largeFilesSelected)
                     )
                     SmartCleanupSelectorItem(
                         title: "Duplicates",
                         description: "Exact copies of the same file",
                         icon: .system("square.on.square"),
-                        isOn: $duplicatesSelected
+                        isOn: toggleBinding(for: \.duplicatesSelected)
                     )
                     SmartCleanupSelectorItem(
                         title: "Blurry photos",
                         description: "Photos that are out of focus",
                         icon: .asset("photo.blur"),
-                        isOn: $blurryPhotosSelected
+                        isOn: toggleBinding(for: \.blurryPhotosSelected)
                     )
                     SmartCleanupSelectorItem(
                         title: "Old files",
                         description: "Files you haven't used recently",
                         icon: .system("clock"),
-                        isOn: $oldFilesSelected
+                        isOn: toggleBinding(for: \.oldFilesSelected)
                     )
                     SmartCleanupSelectorItem(
                         title: "Optimize Live Photos",
                         description: "Remove the video, keep the photo",
                         icon: .system("livephoto"),
-                        isOn: $optimizeLivePhotosSelected
+                        isOn: toggleBinding(for: \.optimizeLivePhotosSelected)
                     )
                 }
                 .padding(16)
@@ -72,15 +66,16 @@ struct SmartCleanupSelector: View {
         }
         .navigationTitle("Smart cleanup")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: largeFilesSelected) { _, new in
-            mediaLibrary?.reconcile(largeFiles: new, duplicates: duplicatesSelected, blurryPhotos: blurryPhotosSelected, oldFiles: oldFilesSelected, optimizeLivePhotos: optimizeLivePhotosSelected)
-        }
-        .onChange(of: duplicatesSelected) { _, new in
-            mediaLibrary?.reconcile(largeFiles: largeFilesSelected, duplicates: new, blurryPhotos: blurryPhotosSelected, oldFiles: oldFilesSelected, optimizeLivePhotos: optimizeLivePhotosSelected)
-        }
-        .onChange(of: oldFilesSelected) { _, new in
-            mediaLibrary?.reconcile(largeFiles: largeFilesSelected, duplicates: duplicatesSelected, blurryPhotos: blurryPhotosSelected, oldFiles: new, optimizeLivePhotos: optimizeLivePhotosSelected)
-        }
+    }
+
+    private func toggleBinding(for keyPath: ReferenceWritableKeyPath<MediaLibrary, Bool>) -> Binding<Bool> {
+        Binding(
+            get: { mediaLibrary?[keyPath: keyPath] ?? false },
+            set: { newValue in
+                mediaLibrary?[keyPath: keyPath] = newValue
+                mediaLibrary?.reconcile()
+            }
+        )
     }
 }
 
