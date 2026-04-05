@@ -14,7 +14,6 @@ final class MediaLibrary {
     var largeFilesSelected: Bool = false
     var duplicatesSelected: Bool = false
     var blurryPhotosSelected: Bool = false
-    var oldFilesSelected: Bool = false
     var optimizeLivePhotosSelected: Bool = false
 
     var selectedStorageBytes: Int64 = 0
@@ -103,7 +102,6 @@ final class MediaLibrary {
                 (largeFilesSelected && isLargeFile(item))
                 || (duplicatesSelected && isInDuplicateGroups(item))
                 || (blurryPhotosSelected && isBlurryPhoto(item))
-                || (oldFilesSelected && isOldFile(item))
 
             if shouldSelect {
                 if !isSelected(item) { select(item) }
@@ -142,19 +140,6 @@ final class MediaLibrary {
             return photo.fileSize ?? 0 > Self.largeFileThresholdBytes
         case .video(let video):
             return video.fileSize ?? 0 > Self.largeFileThresholdBytes
-        }
-    }
-
-    private func isOldFile(_ item: MediaItem) -> Bool {
-        let threshold = Date().addingTimeInterval(-180 * 24 * 60 * 60)
-
-        switch item {
-        case .photo(let photo):
-            guard let date = photo.creationDate else { return false }
-            return date < threshold
-        case .video(let video):
-            guard let date = video.creationDate else { return false }
-            return date < threshold
         }
     }
 

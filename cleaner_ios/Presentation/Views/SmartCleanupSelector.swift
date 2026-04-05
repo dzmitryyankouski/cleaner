@@ -31,12 +31,6 @@ struct SmartCleanupSelector: View {
                         isOn: toggleBinding(for: \.blurryPhotosSelected)
                     )
                     SmartCleanupSelectorItem(
-                        title: "Old files",
-                        description: "Files you haven't used recently",
-                        icon: .system("clock"),
-                        isOn: toggleBinding(for: \.oldFilesSelected)
-                    )
-                    SmartCleanupSelectorItem(
                         title: "Optimize Live Photos",
                         description: "Remove the video, keep the photo",
                         icon: .system("livephoto"),
