@@ -18,3 +18,4 @@ struct SmartCleanupBrowse: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 }
+
