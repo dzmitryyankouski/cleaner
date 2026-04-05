@@ -31,6 +31,12 @@ struct SmartCleanupSelector: View {
                         isOn: toggleBinding(for: \.blurryPhotosSelected)
                     )
                     SmartCleanupSelectorItem(
+                        title: "Short videos",
+                        description: "Clips shorter than 6 seconds",
+                        icon: .system("video"),
+                        isOn: toggleBinding(for: \.shortVideosSelected)
+                    )
+                    SmartCleanupSelectorItem(
                         title: "Optimize Live Photos",
                         description: "Remove the video, keep the photo",
                         icon: .system("livephoto"),

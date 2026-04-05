@@ -4,6 +4,7 @@ import Observation
 @Observable
 final class MediaLibrary {
     static let largeFileThresholdBytes: Int64 = 200 * 1024 * 1024
+    static let shortVideoMaxDurationSeconds: TimeInterval = 6
 
     private let photoLibrary: PhotoLibrary
     private let videoLibrary: VideoLibrary
@@ -14,6 +15,7 @@ final class MediaLibrary {
     var largeFilesSelected: Bool = false
     var duplicatesSelected: Bool = false
     var blurryPhotosSelected: Bool = false
+    var shortVideosSelected: Bool = false
     var optimizeLivePhotosSelected: Bool = false
 
     var selectedStorageBytes: Int64 = 0
@@ -102,6 +104,7 @@ final class MediaLibrary {
                 (largeFilesSelected && isLargeFile(item))
                 || (duplicatesSelected && isInDuplicateGroups(item))
                 || (blurryPhotosSelected && isBlurryPhoto(item))
+                || (shortVideosSelected && isShortVideo(item))
 
             if shouldSelect {
                 if !isSelected(item) { select(item) }
@@ -140,6 +143,15 @@ final class MediaLibrary {
             return photo.fileSize ?? 0 > Self.largeFileThresholdBytes
         case .video(let video):
             return video.fileSize ?? 0 > Self.largeFileThresholdBytes
+        }
+    }
+
+    private func isShortVideo(_ item: MediaItem) -> Bool {
+        switch item {
+        case .photo:
+            return false
+        case .video(let video):
+            return video.duration > 0 && video.duration < Self.shortVideoMaxDurationSeconds
         }
     }
 
