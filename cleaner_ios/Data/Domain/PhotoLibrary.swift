@@ -23,6 +23,7 @@ class PhotoLibrary {
     var photosFileSize: Int64 = 0
 
     var selectedPhotos: [String: PhotoModel] = [:]
+    var selectedForLiveOptimization: [String: PhotoModel] = [:]
 
     var selectedSort: SortPhoto = .date {
         didSet {

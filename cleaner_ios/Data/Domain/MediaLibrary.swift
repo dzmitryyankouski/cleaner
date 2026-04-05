@@ -57,8 +57,11 @@ final class MediaLibrary {
     func refreshSelectedStorage() {
         let photoBytes = photoLibrary.selectedPhotos.values.reduce(Int64(0)) { $0 + ($1.fileSize ?? 0) }
         let videoBytes = videoLibrary.selectedVideos.values.reduce(Int64(0)) { $0 + ($1.fileSize ?? 0) }
+        let livePhotoBytes = photoLibrary.selectedForLiveOptimization.values.reduce(Int64(0)) {
+            $0 + ($1.livePhotoVideoFileSize ?? 0)
+        }
 
-        selectedStorageBytes = photoBytes + videoBytes
+        selectedStorageBytes = photoBytes + videoBytes + livePhotoBytes
     }
 
     var hasSelection: Bool {
@@ -106,14 +109,27 @@ final class MediaLibrary {
                 || (blurryPhotosSelected && isBlurryPhoto(item))
                 || (shortVideosSelected && isShortVideo(item))
 
-            if shouldSelect {
-                if !isSelected(item) { select(item) }
-            } else {
-                deselect(item)
+            shouldSelect ? select(item) : deselect(item)
+
+            if case .photo(let photo) = item {
+                if optimizeLivePhotosSelected && !isSelected(item) && isLivePhoto(item) {
+                    photoLibrary.selectedForLiveOptimization[photo.id] = photo
+                } else {
+                    photoLibrary.selectedForLiveOptimization.removeValue(forKey: photo.id)
+                }
             }
         }
 
         refreshSelectedStorage()
+    }
+
+    private func isLivePhoto(_ item: MediaItem) -> Bool {
+        switch item {
+        case .photo(let photo):
+            return photo.isLivePhoto
+        case .video:
+            return false
+        }
     }
 
     private func isBlurryPhoto(_ item: MediaItem) -> Bool {
