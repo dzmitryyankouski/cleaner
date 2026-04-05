@@ -115,18 +115,15 @@ struct PhotosView: View {
                     Menu {
                         Button(role: .destructive, action: {
                             Task {
-                                guard let result = await photoLibrary?.delete(photos: photoLibrary?.selectedPhotos ?? []) else {
-                                    return
-                                }
+                                guard let photoLibrary else { return }
+                                let result = await photoLibrary.delete(photos: Array(photoLibrary.selectedPhotos.values))
 
-                                guard case .success = result else {
-                                    return
-                                }
+                                guard case .success = result else { return }
 
-                                await photoLibrary?.refresh()
+                                await photoLibrary.refresh()
 
                                 withAnimation {
-                                    photoLibrary?.selectedPhotos.removeAll()
+                                    photoLibrary.selectedPhotos.removeAll()
                                 }
                             }
                         }) {
@@ -136,10 +133,8 @@ struct PhotosView: View {
                         Button(action: {
                             Task {
                                 print("🔍 Удаляем живое фото: \(photoLibrary?.selectedPhotos.count ?? 0)")
-                                guard let result = await photoLibrary?.removeLive(photos: photoLibrary?.selectedPhotos ?? []) else {
-                                    print("❌ Не удалось удалить живое фото")
-                                    return
-                                }
+                                guard let photoLibrary else { return }
+                                let result = await photoLibrary.removeLive(photos: Array(photoLibrary.selectedPhotos.values))
 
                                 guard case .success = result else {
                                     print("❌ Не удалось удалить живое фото")
@@ -147,7 +142,7 @@ struct PhotosView: View {
                                 }
 
                                 withAnimation {
-                                    photoLibrary?.selectedPhotos.removeAll()
+                                    photoLibrary.selectedPhotos.removeAll()
                                 }
                             }
                         }) {
@@ -156,16 +151,13 @@ struct PhotosView: View {
 
                         Button(action: {
                             Task {
-                                guard let result = await photoLibrary?.compress(photos: photoLibrary?.selectedPhotos ?? []) else {
-                                    return
-                                }
+                                guard let photoLibrary else { return }
+                                let result = await photoLibrary.compress(photos: Array(photoLibrary.selectedPhotos.values))
 
-                                guard case .success = result else {
-                                    return
-                                }
+                                guard case .success = result else { return }
 
                                 withAnimation {
-                                    photoLibrary?.selectedPhotos.removeAll()
+                                    photoLibrary.selectedPhotos.removeAll()
                                 }
                             }
                         }) {
@@ -299,6 +291,7 @@ struct AllPhotosView: View {
 
 struct PhotoGroupRowView: View {
     @Environment(\.photoLibrary) var photoLibrary
+    @Environment(\.mediaLibrary) var mediaLibrary
 
     let group: PhotoGroupModel
     var namespace: Namespace.ID
@@ -311,10 +304,10 @@ struct PhotoGroupRowView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            RowItems(items: group.photos, selectedItems: photoLibrary?.selectedPhotos ?? [], namespace: namespace) { photo in
+            RowItems(items: group.photos, selectedItems: photoLibrary.map { Array($0.selectedPhotos.values) } ?? [], namespace: namespace) { photo in
                 Photo(photo: photo, quality: .medium, contentMode: .fill)
             } onSelect: { photo in
-                photoLibrary?.select(photo: photo)
+                mediaLibrary?.select(.photo(photo))
             } onTap: { photo in
                 selectedPhoto = photo
             }

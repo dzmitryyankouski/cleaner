@@ -104,18 +104,15 @@ struct VideosView: View {
                     Menu {
                         Button(role: .destructive, action: {
                             Task {
-                                guard let result = await videoLibrary?.delete(videos: videoLibrary?.selectedVideos ?? []) else {
-                                    return
-                                }
+                                guard let videoLibrary else { return }
+                                let result = await videoLibrary.delete(videos: Array(videoLibrary.selectedVideos.values))
 
-                                guard case .success = result else {
-                                    return
-                                }
+                                guard case .success = result else { return }
 
-                                await videoLibrary?.filter()
+                                await videoLibrary.filter()
 
                                 withAnimation {
-                                    videoLibrary?.selectedVideos.removeAll()
+                                    videoLibrary.selectedVideos.removeAll()
                                 }
                             }
                         }) {
@@ -232,7 +229,8 @@ struct SimilarVideosView: View {
 
 struct VideoGroupRowView: View {
     @Environment(\.videoLibrary) var videoLibrary
-    
+    @Environment(\.mediaLibrary) var mediaLibrary
+
     let group: VideoGroupModel
     var namespace: Namespace.ID
 
@@ -244,10 +242,10 @@ struct VideoGroupRowView: View {
                 .font(.headline)
                 .padding(.horizontal)
 
-            RowItems(items: group.videos, selectedItems: videoLibrary?.selectedVideos ?? [], namespace: namespace) { video in
+            RowItems(items: group.videos, selectedItems: videoLibrary.map { Array($0.selectedVideos.values) } ?? [], namespace: namespace) { video in
                 VideoThumbnail(video: video)
             } onSelect: { video in
-                videoLibrary?.select(video: video)
+                mediaLibrary?.select(.video(video))
             } onTap: { video in
                 selectedVideo = video
             }

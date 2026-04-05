@@ -11,11 +11,13 @@ final class PhotoModel: Identifiable {
     var embedding: [Float]?
     var creationDate: Date?
     var fileSize: Int64?
+    var livePhotoVideoFileSize: Int64?
     var isScreenshot: Bool = false
     var isLivePhoto: Bool = false
     var isModified: Bool = false
     var isFavorite: Bool = false
     var isCompressed: Bool = false
+    var isBlurry: Bool = false
     
     // MARK: - Transient (not saved to database)
     @Transient var image: UIImage?
