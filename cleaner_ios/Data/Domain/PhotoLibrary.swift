@@ -265,9 +265,9 @@ class PhotoLibrary {
             return
         }
 
-        let blurryTextEmbedding: [Float] = []
+        var blurryTextEmbedding: [Float]? = nil
         let blurryEmbeddingResult = await embeddingService.generateTextEmbedding(from: "blur photo where the subject is out of focus")
-        
+
         if case .success(let embedding) = blurryEmbeddingResult {
             blurryTextEmbedding = embedding
         }
