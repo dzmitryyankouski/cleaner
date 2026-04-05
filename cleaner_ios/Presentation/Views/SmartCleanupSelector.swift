@@ -54,7 +54,7 @@ struct SmartCleanupSelector: View {
                 ProgressBarWithText(
                     label: "You will recover",
                     current: mediaLibrary?.selectedStorageGB ?? 0,
-                    total: mediaLibrary?.usedGB ?? 0
+                    total: mediaLibrary?.totalGB ?? 0
                 ) {
                     AppButton(title: "See recommendations", style: .primary, icon: "eye") {
                         appRouter.push(.smartCleanupBrowse)
