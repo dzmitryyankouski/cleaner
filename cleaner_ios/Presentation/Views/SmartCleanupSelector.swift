@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SmartCleanupSelector: View {
+    @Environment(\.appRouter) private var appRouter
     @Environment(\.mediaLibrary) private var mediaLibrary
 
     var body: some View {
@@ -55,7 +56,9 @@ struct SmartCleanupSelector: View {
                     current: mediaLibrary?.selectedStorageGB ?? 0,
                     total: mediaLibrary?.usedGB ?? 0
                 ) {
-                    AppButton(title: "See recommendations", style: .primary, icon: "eye") {}
+                    AppButton(title: "See recommendations", style: .primary, icon: "eye") {
+                        appRouter.push(.smartCleanupBrowse)
+                    }
                 }
             }
             .padding(.horizontal)

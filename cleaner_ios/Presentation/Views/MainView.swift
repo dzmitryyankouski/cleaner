@@ -39,6 +39,8 @@ struct MainView: View {
                 switch route {
                 case .smartCleanup:
                     SmartCleanupSelector()
+                case .smartCleanupBrowse:
+                    SmartCleanupBrowse()
                 }
             }
         }
