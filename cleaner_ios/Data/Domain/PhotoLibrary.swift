@@ -289,15 +289,15 @@ class PhotoLibrary {
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
                     guard let asset = assets.firstObject else { return }
 
-                    async let fileSizeAsync = self.photoAssetRepository.getFileSize(for: asset)
+                    async let sizesAsync = self.photoAssetRepository.getResourceSizes(for: asset)
                     async let embeddingAsync = self.embeddingService.generateEmbeddingFromAsset(asset)
 
-                    let (fileSize, embedding) = await (fileSizeAsync, embeddingAsync)
+                    let (sizes, embedding) = await (sizesAsync, embeddingAsync)
 
                     let isModified = self.photoAssetRepository.isModified(for: asset)
                     let isFavorite = self.photoAssetRepository.isFavorite(for: asset)
 
-                    if case .success(let fileSize) = fileSize, case .success(let embedding) = embedding {
+                    if case .success(let sizes) = sizes, case .success(let embedding) = embedding {
                         let isBlurry = blurryRef.map { blurry in
                             self.embeddingService.calculateSimilarity(blurry, embedding) >= Self.blurryTextSimilarityThreshold
                         } ?? false
@@ -306,9 +306,14 @@ class PhotoLibrary {
                             photo.embedding = embedding
                             photo.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
                             photo.isModified = isModified
-                            photo.fileSize = fileSize
+                            photo.fileSize = sizes.total
                             photo.isFavorite = isFavorite
                             photo.isBlurry = isBlurry
+
+                            if asset.mediaSubtypes.contains(.photoLive) {
+                                photo.livePhotoVideoFileSize = sizes.liveVideo
+                            }
+
                             self.indexed += 1
 
                             do {
