@@ -83,8 +83,9 @@ struct StorageStatisticsTrialCard: View {
                 if isProUpsellMode {
                     // 4+ active: PRO is the primary CTA (top), Recover is secondary with lock icon
                     AppButton(title: "Get PRO version", style: .primary, action: onGetPro) {
-                        DiamondShape()
-                            .fill(Color.white, style: FillStyle(eoFill: true))
+                        Image("button.diamond")
+                            .resizable()
+                            .scaledToFit()
                             .frame(width: 22, height: 22)
                     }
                     .padding(.horizontal, 24)
@@ -105,8 +106,9 @@ struct StorageStatisticsTrialCard: View {
                         .padding(.top, 8)
 
                     AppButton(title: "Get PRO version", style: .secondary, action: onGetPro) {
-                        DiamondShape()
-                            .fill(Color.white, style: FillStyle(eoFill: true))
+                        Image("button.diamond")
+                            .resizable()
+                            .scaledToFit()
                             .frame(width: 22, height: 22)
                     }
                     .padding(.horizontal, 24)
@@ -133,9 +135,9 @@ private struct TrialFeatureRow: View {
                     .frame(width: 16, height: 16)
                     .opacity(isActive ? 0.6 : 1.0)
                 if isActive {
-                    TickShape()
-                        .stroke(Color.white, style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
-                        .frame(width: 7, height: 6)
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundColor(.white)
                         .opacity(0.6)
                 }
             }
