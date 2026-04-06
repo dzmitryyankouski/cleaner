@@ -12,7 +12,7 @@ private struct AlbumCategory {
 struct MainScreen: View {
     @State var selectedTab = 0
     @State var isPro: Bool = true    // Toggle for demo; set to true for PRO, false for TRIAL
-    @State var isGalleryEmpty: Bool = false // Toggle for demo; set true when gallery has nothing to clean
+    @State var isGalleryEmpty: Bool = true // Toggle for demo; set true when gallery has nothing to clean
     @State var isScanning: Bool = false     // Toggle for demo; set true while scan is in progress
 
     // Mock data — swap out for real data when ready
@@ -81,7 +81,9 @@ struct MainScreen: View {
                         if isScanning {
                             // Scanning state — search/eye icon + message
                             VStack(spacing: 16) {
-                                ScanningIcon()
+                                Image("mainScreen.scanning")
+                                    .resizable()
+                                    .scaledToFit()
                                     .frame(width: 46, height: 46)
 
                                 Text("We're getting things ready. Files for manual\ncleanup will show up here shortly")
@@ -94,7 +96,9 @@ struct MainScreen: View {
                         } else if isGalleryEmpty {
                             // Clean gallery state — sparkle icon + message
                             VStack(spacing: 16) {
-                                SparkleIcon()
+                                Image("mainScreen.clean-gallery")
+                                    .resizable()
+                                    .scaledToFit()
                                     .frame(width: 46, height: 46)
 
                                 Text("Your gallery looks clean. We really\ncouldn't find anything to clean")
