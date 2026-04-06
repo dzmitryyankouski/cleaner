@@ -11,7 +11,7 @@ struct MainView: View {
         NavigationStack(path: $appRouter.path) {
             TabView {
                 Tab {
-                    PhotosView()
+                    MainScreen()
                 } label: {
                     Label("Main", image: "menu.main")
                 }
@@ -44,3 +44,13 @@ struct MainView: View {
         }
     }
 }
+
+#Preview {
+    MainView()
+        .environment(\.appRouter,    AppRouter())
+        .environment(\.photoLibrary, nil)
+        .environment(\.videoLibrary, nil)
+        .environment(\.mediaLibrary, nil)
+        .environment(\.settings,     nil)
+}
+

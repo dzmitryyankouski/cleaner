@@ -43,7 +43,7 @@ struct MainScreen: View {
                     // Block 1: Statistics card
                     if isScanning {
                         StorageStatisticsCardScanning(usedGB: 46, totalGB: 256)
-                            .padding(.top, 61)
+                            .padding(.top, 16)
                     } else if isPro {
                         StorageStatisticsCard(
                             usedGB: 20,
@@ -52,7 +52,7 @@ struct MainScreen: View {
                             onRecover: {},
                             onSeeReport: {}
                         )
-                        .padding(.top, 61)
+                        .padding(.top, 16)
                     } else {
                         StorageStatisticsTrialCard(
                             usedGB: 68,
@@ -68,7 +68,7 @@ struct MainScreen: View {
                                 TrialFeature(text: "Get PRO for unlimited cleanup", isActive: false)
                             ]
                         )
-                        .padding(.top, 61)
+                        .padding(.top, 16)
                     }
 
                     // Block 2: Manual cleanup
