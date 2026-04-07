@@ -54,7 +54,7 @@ struct SmartCleanupSelector: View {
                 ProgressBarWithText(
                     label: "You will recover",
                     current: mediaLibrary?.selectedStorageGB ?? 0,
-                    total: mediaLibrary?.totalGB ?? 0
+                    total: mediaLibrary?.recoverableStorageGB ?? 0
                 ) {
                     AppButton(title: "See recommendations", style: .primary, icon: "eye") {
                         appRouter.push(.smartCleanupBrowse)
@@ -69,6 +69,9 @@ struct SmartCleanupSelector: View {
         }
         .navigationTitle("Smart cleanup")
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            mediaLibrary?.calculateRecoverableStorageBytes()
+        }
     }
 
     private func toggleBinding(for keyPath: ReferenceWritableKeyPath<MediaLibrary, Bool>) -> Binding<Bool> {

@@ -18,6 +18,20 @@ enum MediaItem: Identifiable, Equatable, Hashable {
         }
     }
 
+    var fileSize: Int64? {
+        switch self {
+        case .photo(let p): return p.fileSize
+        case .video(let v): return v.fileSize
+        }
+    }
+
+    var livePhotoVideoFileSize: Int64? {
+        switch self {
+        case .photo(let p): return p.livePhotoVideoFileSize
+        case .video: return nil
+        }
+    }
+
     static func == (lhs: MediaItem, rhs: MediaItem) -> Bool {
         switch (lhs, rhs) {
         case (.photo(let l), .photo(let r)):
