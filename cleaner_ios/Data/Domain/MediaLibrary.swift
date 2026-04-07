@@ -19,6 +19,7 @@ final class MediaLibrary {
     var optimizeLivePhotosSelected: Bool = false
 
     var selectedStorageBytes: Int64 = 0
+    var recoverableStorageBytes: Int64 = 0
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
@@ -52,6 +53,10 @@ final class MediaLibrary {
 
     var selectedStorageGB: Double {
         Double(selectedStorageBytes) / 1_000_000_000
+    }
+
+    var recoverableStorageGB: Double {
+        Double(recoverableStorageBytes) / 1_000_000_000
     }
 
     func refreshSelectedStorage() {
@@ -121,6 +126,20 @@ final class MediaLibrary {
         }
 
         refreshSelectedStorage()
+    }
+
+    func calculateRecoverableStorageBytes() {
+        var total: Int64 = 0
+
+        for item in items {
+            if (isLargeFile(item) || isInDuplicateGroups(item) || isBlurryPhoto(item) || isShortVideo(item)) {
+                total += item.fileSize ?? 0
+            } else if (isLivePhoto(item)) {
+                total += item.livePhotoVideoFileSize ?? 0
+            }
+        }
+
+        recoverableStorageBytes = total
     }
 
     private func isLivePhoto(_ item: MediaItem) -> Bool {

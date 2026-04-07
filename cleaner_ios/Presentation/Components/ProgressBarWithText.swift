@@ -65,10 +65,6 @@ public struct ProgressBarWithText<Content: View>: View {
                             .foregroundColor(AppColors.progressBarText)
                             .tracking(-0.2)
                             .contentTransition(.numericText())
-                        Text("/ \(formatValue(total)) \(unit)")
-                            .font(AppFonts.geologica(size: 20, wght: 500))
-                            .foregroundColor(AppColors.progressBarTrackText)
-                            .tracking(-0.2)
                     }
                     .animation(.easeInOut(duration: 0.35), value: current)
                 }
