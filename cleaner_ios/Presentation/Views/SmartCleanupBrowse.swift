@@ -7,7 +7,17 @@ struct SmartCleanupBrowse: View {
                 title: "Files you can remove",
                 subtitle: "Review suggested files before removing them from your device"
             )
-            Spacer(minLength: 0)
+            
+            ExpandableGroup(title: "Duplicates", subTitle: "6 groups", badgeText: "+ 100 GB") {
+                Text("Large files")
+            }
+            .padding(.top, 30)
+
+            ExpandableGroup(title: "Large files", subTitle: "6 groups", badgeText: "+ 100 GB") {
+                Text("Large files")
+            }
+            .padding(.top, 20)
+
         }
         .padding(.horizontal)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
