@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MainView: View {
     @Environment(\.appRouter) private var appRouter
+    @Namespace private var navigationTransitionNamespace
 
     private static let tabAccent = Color(red: 69 / 255, green: 36 / 255, blue: 1)
 
@@ -40,7 +41,7 @@ struct MainView: View {
                 case .smartCleanup:
                     SmartCleanupSelector()
                 case .smartCleanupBrowse:
-                    SmartCleanupBrowse()
+                    SmartCleanupBrowse(namespace: navigationTransitionNamespace)
                 }
             }
         }

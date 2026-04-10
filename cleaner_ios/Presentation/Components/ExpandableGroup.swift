@@ -38,7 +38,7 @@ public struct ExpandableGroup<Content: View>: View {
             }
         }
         .padding(16)
-        .background(Color.white.opacity(0.3))
+        .background(isExpanded ? Color.white : Color.white.opacity(0.3))
         .clipShape(RoundedRectangle(cornerRadius: 34, style: .continuous))
     }
 
