@@ -12,7 +12,7 @@ private struct AlbumCategory {
 struct MainScreen: View {
     @State var selectedTab = 0
     @State var isPro: Bool = true    // Toggle for demo; set to true for PRO, false for TRIAL
-    @State var isGalleryEmpty: Bool = false // Toggle for demo; set true when gallery has nothing to clean
+    @State var isGalleryEmpty: Bool = true // Toggle for demo; set true when gallery has nothing to clean
     @State var isScanning: Bool = false     // Toggle for demo; set true while scan is in progress
     @State private var showStorageReport: Bool = false
 
