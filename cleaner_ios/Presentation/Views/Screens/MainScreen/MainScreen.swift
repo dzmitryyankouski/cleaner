@@ -12,8 +12,9 @@ private struct AlbumCategory {
 struct MainScreen: View {
     @State var selectedTab = 0
     @State var isPro: Bool = true    // Toggle for demo; set to true for PRO, false for TRIAL
-    @State var isGalleryEmpty: Bool = true // Toggle for demo; set true when gallery has nothing to clean
+    @State var isGalleryEmpty: Bool = false // Toggle for demo; set true when gallery has nothing to clean
     @State var isScanning: Bool = false     // Toggle for demo; set true while scan is in progress
+    @State private var showStorageReport: Bool = false
 
     // Mock data — swap out for real data when ready
     private let albumCategories: [AlbumCategory] = [
@@ -50,7 +51,7 @@ struct MainScreen: View {
                             totalGB: 256,
                             isEmpty: isGalleryEmpty,
                             onRecover: {},
-                            onSeeReport: {}
+                            onSeeReport: { showStorageReport = true }
                         )
                         .padding(.top, 16)
                     } else {
@@ -130,6 +131,45 @@ struct MainScreen: View {
                     .padding(.bottom, 32)
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showStorageReport) {
+            StorageUsageReportView(
+                usedGB: 20,
+                totalGB: 256,
+                optimizeMB: 246,
+                categories: [
+                    StorageCategoryItem(
+                        name: "Photos and Live Photos",
+                        iconAsset: "storage-report.photos",
+                        sizeGB: 23.5,
+                        badgeColor: Color(hex: "#4524FF"),
+                        subItems: [
+                            StorageSubItem(name: "Blurry photos",  color: Color(hex: "#6600FF"), sizeGB: 5.0),
+                            StorageSubItem(name: "Similar photos", color: Color(hex: "#CC00FF"), sizeGB: 4.5),
+                            StorageSubItem(name: "Duplicates",     color: Color(hex: "#FF9500"), sizeGB: 6.0),
+                            StorageSubItem(name: "Screenshots",    color: Color(hex: "#0099FF"), sizeGB: 4.0),
+                            StorageSubItem(name: "Live Photos",    color: Color(hex: "#00C07A"), sizeGB: 4.0),
+                        ]
+                    ),
+                    StorageCategoryItem(
+                        name: "Videos",
+                        iconAsset: "storage-report.videos",
+                        sizeGB: 44.5,
+                        badgeColor: Color(hex: "#4524FF"),
+                        subItems: [
+                            StorageSubItem(name: "Similar videos", color: Color(hex: "#A6C700"), sizeGB: 34.5),
+                            StorageSubItem(name: "Screen records", color: Color(hex: "#FF0073"), sizeGB: 10.0),
+                        ]
+                    ),
+                    StorageCategoryItem(
+                        name: "Other",
+                        iconAsset: "storage-report.other",
+                        sizeGB: 88.6,
+                        badgeColor: Color(hex: "#A3A9DB"),
+                        subItems: []
+                    ),
+                ]
+            )
         }
     }
 }
