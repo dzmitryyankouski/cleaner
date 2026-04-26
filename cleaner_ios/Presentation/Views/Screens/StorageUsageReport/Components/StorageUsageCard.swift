@@ -161,8 +161,10 @@ struct StorageUsageCard: View {
         .cornerRadius(34)
         .sheet(isPresented: $showingInfo) {
             StorageUsageInfoView()
-                .presentationDetents([.large])
-                .presentationBackground(Color.clear)
+                .presentationDetents([.fraction(0.80)])
+                .presentationDragIndicator(.hidden)
+                .presentationBackground(.clear)
+                .presentationCornerRadius(40)
         }
     }
 }

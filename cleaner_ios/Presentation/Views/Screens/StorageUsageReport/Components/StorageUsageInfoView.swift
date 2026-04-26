@@ -5,7 +5,7 @@ struct StorageUsageInfoView: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        ZStack(alignment: .bottom) {
+        ZStack(alignment: .topTrailing) {
             // ── Full-screen gradient background ──────────────────────────
             LinearGradient(
                 stops: [
@@ -16,30 +16,7 @@ struct StorageUsageInfoView: View {
                 startPoint: UnitPoint(x: 0.14, y: 0),
                 endPoint: UnitPoint(x: 0.86, y: 1)
             )
-            .clipShape(RoundedCorner(radius: 40, corners: [.topLeft, .topRight]))
             .ignoresSafeArea()
-
-            // ── Close button — top-right ─────────────────────────────────
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: { dismiss() }) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.3))
-                                .frame(width: 44, height: 44)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                            Image(systemName: "xmark")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(.white)
-                        }
-                    }
-                    .padding(.trailing, 16)
-                    .padding(.top, 16)
-                }
-                Spacer()
-            }
 
             // ── Content ──────────────────────────────────────────────────
             VStack(spacing: 0) {
@@ -49,8 +26,8 @@ struct StorageUsageInfoView: View {
                     .tracking(-0.28)
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
-                    .frame(width: 340)
-                    .padding(.top, 56)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 80)
 
                 // Body text 1
                 Text("We group your files by type to show what takes up space. Some files may appear in multiple categories. For example, a screenshot can also be counted as a duplicate")
@@ -58,7 +35,7 @@ struct StorageUsageInfoView: View {
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
-                    .frame(width: 341)
+                    .padding(.horizontal, 32)
                     .padding(.top, 12)
 
                 // Body text 2
@@ -67,7 +44,7 @@ struct StorageUsageInfoView: View {
                     .foregroundColor(.white)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
-                    .frame(width: 291)
+                    .padding(.horizontal, 52)
                     .padding(.top, 18)
 
                 // Question-mark image with circle
@@ -86,35 +63,40 @@ struct StorageUsageInfoView: View {
 
                 // ── Bottom button ────────────────────────────────────────
                 Button(action: { dismiss() }) {
-                    Text("Got it")
-                        .font(.custom("Geologica", size: 17).weight(.semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 58)
-                        .background(Color(hex: "#4524FF"))
-                        .clipShape(Capsule())
+                    HStack {
+                        Text("Got it")
+                            .font(.custom("Geologica", size: 17).weight(.semibold))
+                            .foregroundColor(.white)
+                        Image(systemName: "arrow.right")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 58)
+                    .background(Color(hex: "#4524FF"))
+                    .clipShape(Capsule())
                 }
                 .padding(.horizontal, 16)
                 .padding(.bottom, 34)
             }
+            .frame(maxWidth: .infinity)
+
+            // ── Close button — top-right ─────────────────────────────────
+            Button(action: { dismiss() }) {
+                ZStack {
+                    Circle()
+                        .fill(Color.white.opacity(0.3))
+                        .frame(width: 44, height: 44)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(.trailing, 16)
+            .padding(.top, 16)
         }
-        .background(Color.clear)
-    }
-}
-
-// MARK: - RoundedCorner helper
-
-private struct RoundedCorner: Shape {
-    var radius: CGFloat
-    var corners: UIRectCorner
-
-    func path(in rect: CGRect) -> Path {
-        let path = UIBezierPath(
-            roundedRect: rect,
-            byRoundingCorners: corners,
-            cornerRadii: CGSize(width: radius, height: radius)
-        )
-        return Path(path.cgPath)
     }
 }
 
