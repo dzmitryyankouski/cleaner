@@ -12,8 +12,9 @@ private struct AlbumCategory {
 struct MainScreen: View {
     @State var selectedTab = 0
     @State var isPro: Bool = true    // Toggle for demo; set to true for PRO, false for TRIAL
-    @State var isGalleryEmpty: Bool = false // Toggle for demo; set true when gallery has nothing to clean
+    @State var isGalleryEmpty: Bool = true // Toggle for demo; set true when gallery has nothing to clean
     @State var isScanning: Bool = false     // Toggle for demo; set true while scan is in progress
+    @State private var showStorageReport: Bool = false
 
     // Mock data — swap out for real data when ready
     private let albumCategories: [AlbumCategory] = [
@@ -43,16 +44,16 @@ struct MainScreen: View {
                     // Block 1: Statistics card
                     if isScanning {
                         StorageStatisticsCardScanning(usedGB: 46, totalGB: 256)
-                            .padding(.top, 61)
+                            .padding(.top, 16)
                     } else if isPro {
                         StorageStatisticsCard(
                             usedGB: 20,
                             totalGB: 256,
                             isEmpty: isGalleryEmpty,
                             onRecover: {},
-                            onSeeReport: {}
+                            onSeeReport: { showStorageReport = true }
                         )
-                        .padding(.top, 61)
+                        .padding(.top, 16)
                     } else {
                         StorageStatisticsTrialCard(
                             usedGB: 68,
@@ -68,7 +69,7 @@ struct MainScreen: View {
                                 TrialFeature(text: "Get PRO for unlimited cleanup", isActive: false)
                             ]
                         )
-                        .padding(.top, 61)
+                        .padding(.top, 16)
                     }
 
                     // Block 2: Manual cleanup
@@ -81,7 +82,9 @@ struct MainScreen: View {
                         if isScanning {
                             // Scanning state — search/eye icon + message
                             VStack(spacing: 16) {
-                                ScanningIcon()
+                                Image("mainScreen.scanning")
+                                    .resizable()
+                                    .scaledToFit()
                                     .frame(width: 46, height: 46)
 
                                 Text("We're getting things ready. Files for manual\ncleanup will show up here shortly")
@@ -94,7 +97,9 @@ struct MainScreen: View {
                         } else if isGalleryEmpty {
                             // Clean gallery state — sparkle icon + message
                             VStack(spacing: 16) {
-                                SparkleIcon()
+                                Image("mainScreen.clean-gallery")
+                                    .resizable()
+                                    .scaledToFit()
                                     .frame(width: 46, height: 46)
 
                                 Text("Your gallery looks clean. We really\ncouldn't find anything to clean")
@@ -126,6 +131,45 @@ struct MainScreen: View {
                     .padding(.bottom, 32)
                 }
             }
+        }
+        .fullScreenCover(isPresented: $showStorageReport) {
+            StorageUsageReportView(
+                usedGB: 20,
+                totalGB: 256,
+                optimizeMB: 246,
+                categories: [
+                    StorageCategoryItem(
+                        name: "Photos and Live Photos",
+                        iconAsset: "storage-report.photos",
+                        sizeGB: 23.5,
+                        badgeColor: StorageReportPalette.photosBadge,
+                        subItems: [
+                            StorageSubItem(name: "Blurry photos",  color: StorageReportPalette.blurryPhotos,  sizeGB: 5.0),
+                            StorageSubItem(name: "Similar photos", color: StorageReportPalette.similarPhotos, sizeGB: 4.5),
+                            StorageSubItem(name: "Duplicates",     color: StorageReportPalette.duplicates,    sizeGB: 6.0),
+                            StorageSubItem(name: "Screenshots",    color: StorageReportPalette.screenshots,   sizeGB: 4.0),
+                            StorageSubItem(name: "Live Photos",    color: StorageReportPalette.livePhotos,    sizeGB: 4.0),
+                        ]
+                    ),
+                    StorageCategoryItem(
+                        name: "Videos",
+                        iconAsset: "storage-report.videos",
+                        sizeGB: 44.5,
+                        badgeColor: StorageReportPalette.videosBadge,
+                        subItems: [
+                            StorageSubItem(name: "Similar videos", color: StorageReportPalette.similarVideos, sizeGB: 34.5),
+                            StorageSubItem(name: "Screen records", color: StorageReportPalette.screenRecords, sizeGB: 10.0),
+                        ]
+                    ),
+                    StorageCategoryItem(
+                        name: "Other",
+                        iconAsset: "storage-report.other",
+                        sizeGB: 88.6,
+                        badgeColor: StorageReportPalette.otherBadge,
+                        subItems: []
+                    ),
+                ]
+            )
         }
     }
 }

@@ -18,40 +18,15 @@ private enum StorageTheme {
     }
 
     /// Card background gradient (angle ~11.23°, mapped to start/end points)
-    var gradient: LinearGradient {
+    /// Card background image asset name
+    var backgroundImageName: String {
         switch self {
         case .blue:
-            return LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.506, green: 0.596, blue: 0.969), // #8098F7
-                    Color(red: 0.714, green: 0.718, blue: 0.847), // #B6B7D8
-                    Color(red: 0.463, green: 0.451, blue: 0.835)  // #7673D5
-                ]),
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
+            return "background.blue"
         case .orange:
-            // linear-gradient(11.23deg, #F7B780 3.65%, #D8C7B6 47.24%, #D59073 90.83%)
-            return LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.969, green: 0.718, blue: 0.502), // #F7B780
-                    Color(red: 0.847, green: 0.780, blue: 0.714), // #D8C7B6
-                    Color(red: 0.835, green: 0.565, blue: 0.451)  // #D59073
-                ]),
-                startPoint: .bottomLeading,
-                endPoint: .topTrailing
-            )
+            return "background.orange"
         case .red:
-            // linear-gradient(11.23deg, #F09CA6 3.65%, #D8BFB6 47.24%, #D57380 90.83%)
-            return LinearGradient(
-                gradient: Gradient(colors: [
-                    Color(red: 0.941, green: 0.612, blue: 0.651), // #F09CA6
-                    Color(red: 0.847, green: 0.749, blue: 0.714), // #D8BFB6
-                    Color(red: 0.835, green: 0.451, blue: 0.502)  // #D57380
-                ]),
-                startPoint: .bottomLeading,
-                endPoint: .topTrailing
-            )
+            return "background.red"
         }
     }
 
@@ -97,8 +72,13 @@ struct StorageStatisticsCard: View {
 
     var body: some View {
         ZStack {
-            // Card gradient background — colour depends on usage level
-            theme.gradient
+            // Card background image — depends on usage level
+            Image(theme.backgroundImageName)
+                .resizable()
+                .blur(radius: 30)
+                .aspectRatio(contentMode: .fill)
+                .frame(width: 358, height: cardHeight)
+                .clipped()
                 .cornerRadius(50)
                 .shadow(color: Color.black.opacity(0.08), radius: 24, y: 8)
 
