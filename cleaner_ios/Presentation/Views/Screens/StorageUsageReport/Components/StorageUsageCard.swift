@@ -86,16 +86,20 @@ private struct CategoryRow: View {
 
 /// "Storage usage" white-glass card: donut chart + category legend.
 struct StorageUsageCard: View {
-    let usedGB: Double
     let totalGB: Double
     let categories: [StorageCategoryItem]
+
+    /// Change this one value to resize the donut chart.
+    private let donutSize: CGFloat = 270
+
+    @State private var showingInfo = false
 
     // Build donut segments from sub-items of categories that have sub-items
     // (photos + videos). Categories without sub-items are treated as "others".
     private var donutSegments: [DonutSegment] {
         categories.flatMap { cat in
             cat.subItems.map { sub in
-                DonutSegment(color: sub.color, fraction: sub.sizeGB / totalGB)
+                DonutSegment(color: sub.color, sizeGB: sub.sizeGB)
             }
         }
     }
@@ -118,8 +122,8 @@ struct StorageUsageCard: View {
 
                 Spacer()
 
-                // ? button
-                Button(action: {}) {
+                // info button
+                Button(action: { showingInfo = true }) {
                     ZStack {
                         Circle()
                             .fill(Color.white.opacity(0.5))
@@ -136,11 +140,10 @@ struct StorageUsageCard: View {
             // ── Donut chart ─────────────────────────────────────────────
             StorageUsageDonutChart(
                 segments: donutSegments,
-                usedGB: usedGB,
                 othersGB: othersGB,
                 totalGB: totalGB
             )
-            .frame(width: 272, height: 272)
+            .frame(width: donutSize, height: donutSize)
             .padding(.top, 8)
             .frame(maxWidth: .infinity)
 
@@ -156,6 +159,11 @@ struct StorageUsageCard: View {
         }
         .background(Color.white.opacity(0.3))
         .cornerRadius(34)
+        .sheet(isPresented: $showingInfo) {
+            StorageUsageInfoView()
+                .presentationDetents([.large])
+                .presentationBackground(Color.clear)
+        }
     }
 }
 
@@ -174,37 +182,36 @@ struct StorageUsageCard: View {
 
         ScrollView {
             StorageUsageCard(
-                usedGB: 68,
                 totalGB: 256,
                 categories: [
                     StorageCategoryItem(
                         name: "Photos and Live Photos",
                         iconAsset: "storage-report.photos",
                         sizeGB: 23.5,
-                        badgeColor: Color(hex: "#4524FF"),
+                        badgeColor: StorageReportPalette.photosBadge,
                         subItems: [
-                            StorageSubItem(name: "Blurry photos",   color: Color(hex: "#6600FF"), sizeGB: 5.0),
-                            StorageSubItem(name: "Similar photos",  color: Color(hex: "#CC00FF"), sizeGB: 4.5),
-                            StorageSubItem(name: "Duplicates",      color: Color(hex: "#FF9500"), sizeGB: 6.0),
-                            StorageSubItem(name: "Screenshots",     color: Color(hex: "#0099FF"), sizeGB: 4.0),
-                            StorageSubItem(name: "Live Photos",     color: Color(hex: "#00C07A"), sizeGB: 4.0),
+                            StorageSubItem(name: "Blurry photos",   color: StorageReportPalette.blurryPhotos,  sizeGB: 5.0),
+                            StorageSubItem(name: "Similar photos",  color: StorageReportPalette.similarPhotos, sizeGB: 4.5),
+                            StorageSubItem(name: "Duplicates",      color: StorageReportPalette.duplicates,    sizeGB: 6.0),
+                            StorageSubItem(name: "Screenshots",     color: StorageReportPalette.screenshots,   sizeGB: 4.0),
+                            StorageSubItem(name: "Live Photos",     color: StorageReportPalette.livePhotos,    sizeGB: 4.0),
                         ]
                     ),
                     StorageCategoryItem(
                         name: "Videos",
                         iconAsset: "storage-report.videos",
                         sizeGB: 44.5,
-                        badgeColor: Color(hex: "#4524FF"),
+                        badgeColor: StorageReportPalette.videosBadge,
                         subItems: [
-                            StorageSubItem(name: "Similar videos",  color: Color(hex: "#A6C700"), sizeGB: 34.5),
-                            StorageSubItem(name: "Screen records",  color: Color(hex: "#FF0073"), sizeGB: 10.0),
+                            StorageSubItem(name: "Similar videos",  color: StorageReportPalette.similarVideos, sizeGB: 34.5),
+                            StorageSubItem(name: "Screen records",  color: StorageReportPalette.screenRecords, sizeGB: 10.0),
                         ]
                     ),
                     StorageCategoryItem(
                         name: "Other",
                         iconAsset: "storage-report.other",
                         sizeGB: 88.6,
-                        badgeColor: Color(hex: "#A3A9DB"),
+                        badgeColor: StorageReportPalette.otherBadge,
                         subItems: []
                     ),
                 ]

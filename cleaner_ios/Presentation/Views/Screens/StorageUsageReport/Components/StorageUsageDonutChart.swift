@@ -3,7 +3,7 @@ import SwiftUI
 /// A single coloured segment for the donut chart.
 struct DonutSegment {
     let color: Color
-    let fraction: Double
+    let sizeGB: Double
 }
 
 /// Full 360° donut chart.
@@ -12,15 +12,19 @@ struct DonutSegment {
 /// othersGB = the "other" storage category.
 /// Free space = totalGB - usedGB - othersGB, rendered in white.
 struct StorageUsageDonutChart: View {
-    let segments: [DonutSegment]
-    let usedGB: Double
-    let othersGB: Double
-    let totalGB: Double
+    let segments: [DonutSegment]   // sub-items with their real sizeGB and color
+    let othersGB: Double           // "Other" category size — drawn as a muted segment
+    let totalGB: Double            // total device storage
 
     private let lineWidth: CGFloat = 26
-    private let startAngle: Double = -90   // 12 o'clock
+    private let startAngle: Double = -90
     private let othersColor = Color(red: 0.639, green: 0.663, blue: 0.859) // #A3A9DB
     private let freeColor = Color.white.opacity(0.3)
+
+    /// Total used = all sub-item segments + others
+    private var totalUsedGB: Double {
+        segments.reduce(0) { $0 + $1.sizeGB } + othersGB
+    }
 
     var body: some View {
         ZStack {
@@ -36,8 +40,7 @@ struct StorageUsageDonutChart: View {
                 .stroke(othersColor.opacity(0.8), style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                 .rotationEffect(.degrees(startAngle))
 
-            // ── Coloured segments ───────────────────────────────────────
-            // Draw back-to-front so the first segment sits on top.
+            // ── Coloured segments (sub-items) ───────────────────────────
             ForEach(segmentRanges.indices.reversed(), id: \.self) { i in
                 let (from, to) = segmentRanges[i]
                 Circle()
@@ -51,7 +54,10 @@ struct StorageUsageDonutChart: View {
 
             // ── Centre label ────────────────────────────────────────────
             VStack(spacing: 2) {
-                Text("\(Int(usedGB)) GB\nof \(Int(totalGB)) GB")
+                let usedFormatted = totalUsedGB.truncatingRemainder(dividingBy: 1) == 0
+                    ? String(format: "%.0f", totalUsedGB)
+                    : String(format: "%.1f", totalUsedGB)
+                Text("\(usedFormatted) GB\nof \(Int(totalGB)) GB")
                     .font(.custom("Geologica", size: 28).weight(.medium))
                     .tracking(-0.28)
                     .multilineTextAlignment(.center)
@@ -65,39 +71,42 @@ struct StorageUsageDonutChart: View {
         }
     }
 
-    /// Sum of all coloured segment fractions (trim end of last coloured segment).
-    private var allSegmentsFraction: Double {
-        segments.reduce(0) { $0 + $1.fraction }
+    private func fraction(for segment: DonutSegment) -> Double {
+        segment.sizeGB / totalGB
     }
 
-    /// Convert segment fractions → trim(from:to:) pairs (fraction of full 360°).
+    private var allSegmentsFraction: Double {
+        segments.reduce(0) { $0 + fraction(for: $1) }
+    }
+
     private var segmentRanges: [(Double, Double)] {
         var ranges: [(Double, Double)] = []
         var cursor: Double = 0
         for seg in segments {
-            ranges.append((cursor, cursor + seg.fraction))
-            cursor += seg.fraction
+            let f = fraction(for: seg)
+            ranges.append((cursor, cursor + f))
+            cursor += f
         }
         return ranges
     }
 }
 
 #Preview {
+    // Preview mirrors real data from StorageUsageCard so colors match sub-items exactly
     ZStack {
         Color.green.ignoresSafeArea()
         StorageUsageDonutChart(
             segments: [
-                DonutSegment(color: Color(hex: "#6600FF"), fraction: 0.10),
-                DonutSegment(color: Color(hex: "#CC00FF"), fraction: 0.08),
-                DonutSegment(color: Color(hex: "#FF9500"), fraction: 0.06),
-                DonutSegment(color: Color(hex: "#0099FF"), fraction: 0.04),
-                DonutSegment(color: Color(hex: "#00C07A"), fraction: 0.03),
-                DonutSegment(color: Color(hex: "#A6C700"), fraction: 0.09),
-                DonutSegment(color: Color(hex: "#FF0073"), fraction: 0.07),
+                DonutSegment(color: StorageReportPalette.blurryPhotos,  sizeGB: 5.0),   // Blurry photos
+                DonutSegment(color: StorageReportPalette.similarPhotos, sizeGB: 4.5),   // Similar photos
+                DonutSegment(color: StorageReportPalette.duplicates,    sizeGB: 6.0),   // Duplicates
+                DonutSegment(color: StorageReportPalette.screenshots,   sizeGB: 4.0),   // Screenshots
+                DonutSegment(color: StorageReportPalette.livePhotos,    sizeGB: 4.0),   // Live Photos
+                DonutSegment(color: StorageReportPalette.similarVideos, sizeGB: 34.5),  // Similar videos
+                DonutSegment(color: StorageReportPalette.screenRecords, sizeGB: 10.0),  // Screen records
             ],
-            usedGB: 47,    // sum of segment fractions * 256 ≈ 47 GB (photos + videos)
-            othersGB: 81,  // others category
-            totalGB: 256   // free = 256 - 47 - 21 = 188 GB
+            othersGB: 88.6,
+            totalGB: 256
         )
         .frame(width: 272, height: 272)
         .padding(40)
