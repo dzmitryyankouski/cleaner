@@ -3,6 +3,7 @@ import Observation
 
 enum AppRoute: Hashable {
     case smartCleanup
+    case smartCleanupBrowse
 }
 
 @Observable

@@ -13,10 +13,19 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
     }
 
     func getFileSize(for asset: PHAsset) async -> Result<Int64, AssetError> {
-        return await withCheckedContinuation { continuation in
+        switch await getResourceSizes(for: asset) {
+        case .success(let sizes):
+            return .success(sizes.total)
+        case .failure(let error):
+            return .failure(error)
+        }
+    }
 
+    func getResourceSizes(for asset: PHAsset) async -> Result<PhotoResourceSizes, AssetError> {
+        await withCheckedContinuation { continuation in
             let resources = PHAssetResource.assetResources(for: asset)
             var totalSize: Int64 = 0
+            var liveVideoSize: Int64 = 0
             var hasError = false
 
             let options = PHAssetResourceRequestOptions()
@@ -25,15 +34,20 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
             let dispatch = DispatchGroup()
 
             if resources.isEmpty {
-                continuation.resume(returning: .success(0))
+                continuation.resume(returning: .success(PhotoResourceSizes(total: 0, liveVideo: 0)))
                 return
             }
 
             for resource in resources {
                 dispatch.enter()
+                let isMotion = Self.isLiveMotionResource(resource.type)
 
                 PHAssetResourceManager.default().requestData(for: resource, options: options) { data in
-                    totalSize += Int64(data.count)
+                    let n = Int64(data.count)
+                    totalSize += n
+                    if isMotion {
+                        liveVideoSize += n
+                    }
                 } completionHandler: { error in
                     if error != nil {
                         hasError = true
@@ -46,9 +60,18 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
                 if hasError {
                     continuation.resume(returning: .failure(.fileSizeUnavailable))
                 } else {
-                    continuation.resume(returning: .success(totalSize))
+                    continuation.resume(returning: .success(PhotoResourceSizes(total: totalSize, liveVideo: liveVideoSize)))
                 }
             }
+        }
+    }
+
+    private static func isLiveMotionResource(_ type: PHAssetResourceType) -> Bool {
+        switch type {
+        case .pairedVideo, .fullSizePairedVideo:
+            return true
+        default:
+            return false
         }
     }
 
@@ -130,6 +153,7 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
                     if success {
                         Task {
                             photo.isLivePhoto = false
+                            photo.livePhotoVideoFileSize = nil
                             let fileSizeResult = await self.getFileSize(for: asset)
                             if case .success(let fileSize) = fileSizeResult {
                                 photo.fileSize = fileSize
@@ -235,12 +259,14 @@ final class PhotoAssetRepository: PhotoRepositoryProtocol {
                     
                     let newPhotoModel = PhotoModel(asset: newAsset)
                     newPhotoModel.fileSize = Int64(compressedData.count)
+                    newPhotoModel.livePhotoVideoFileSize = nil
                     newPhotoModel.isCompressed = true
                     newPhotoModel.embedding = photo.embedding
                     newPhotoModel.creationDate = photo.creationDate
                     newPhotoModel.groups = photo.groups
                     newPhotoModel.isLivePhoto = false
                     newPhotoModel.isScreenshot = photo.isScreenshot
+                    newPhotoModel.isBlurry = photo.isBlurry
                     newPhotoModel.isModified = true
                     
                     self.context.insert(newPhotoModel)

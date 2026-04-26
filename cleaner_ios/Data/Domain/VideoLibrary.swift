@@ -19,7 +19,7 @@ class VideoLibrary {
     var similarVideos: [VideoModel] = []
     var similarVideosFileSize: Int64 = 0
 
-    var selectedVideos: [VideoModel] = []
+    var selectedVideos: [String: VideoModel] = [:]
 
     var selectedSort: SortVideo = .date
     var selectedFilter: Set<FilterVideo> = []
@@ -449,10 +449,10 @@ class VideoLibrary {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
 
-        if selectedVideos.contains(video) {
-            selectedVideos.removeAll { $0.id == video.id }
+        if selectedVideos[video.id] != nil {
+            selectedVideos.removeValue(forKey: video.id)
         } else {
-            selectedVideos.append(video)
+            selectedVideos[video.id] = video
         }
     }
 }

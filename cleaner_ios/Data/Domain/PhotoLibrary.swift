@@ -22,7 +22,8 @@ class PhotoLibrary {
     var photos: [PhotoModel] = []
     var photosFileSize: Int64 = 0
 
-    var selectedPhotos: [PhotoModel] = []
+    var selectedPhotos: [String: PhotoModel] = [:]
+    var selectedForLiveOptimization: [String: PhotoModel] = [:]
 
     var selectedSort: SortPhoto = .date {
         didSet {
@@ -49,6 +50,8 @@ class PhotoLibrary {
     private let concurrentTasks = 10
     private let context: ModelContext
     private let settings: Settings
+
+    private static let blurryTextSimilarityThreshold: Float = 0.20
 
     init(
         photoAssetRepository: PhotoRepositoryProtocol,
@@ -244,10 +247,10 @@ class PhotoLibrary {
         let generator = UIImpactFeedbackGenerator(style: .light)
         generator.impactOccurred()
 
-        if selectedPhotos.contains(photo) {
-            selectedPhotos.removeAll { $0.id == photo.id }
+        if selectedPhotos[photo.id] != nil {
+            selectedPhotos.removeValue(forKey: photo.id)
         } else {
-            selectedPhotos.append(photo)
+            selectedPhotos[photo.id] = photo
         }
     }
 
@@ -262,7 +265,14 @@ class PhotoLibrary {
             print("❌ Нет фото для индексации")
             return
         }
-        
+
+        var blurryTextEmbedding: [Float]? = nil
+        let blurryEmbeddingResult = await embeddingService.generateTextEmbedding(from: "blur photo where the subject is out of focus")
+
+        if case .success(let embedding) = blurryEmbeddingResult {
+            blurryTextEmbedding = embedding
+        }
+
         await withTaskGroup(of: Void.self) { group in
             var activeTasks = 0
             
@@ -275,25 +285,36 @@ class PhotoLibrary {
                 group.addTask { [weak self] in
                     guard let self = self else { return }
                     let photoId = photo.id
+                    let blurryRef = blurryTextEmbedding
 
                     let assets = PHAsset.fetchAssets(withLocalIdentifiers: [photoId], options: nil)
                     guard let asset = assets.firstObject else { return }
 
-                    async let fileSizeAsync = self.photoAssetRepository.getFileSize(for: asset)
+                    async let sizesAsync = self.photoAssetRepository.getResourceSizes(for: asset)
                     async let embeddingAsync = self.embeddingService.generateEmbeddingFromAsset(asset)
 
-                    let (fileSize, embedding) = await (fileSizeAsync, embeddingAsync)
+                    let (sizes, embedding) = await (sizesAsync, embeddingAsync)
 
                     let isModified = self.photoAssetRepository.isModified(for: asset)
                     let isFavorite = self.photoAssetRepository.isFavorite(for: asset)
 
-                    if case .success(let fileSize) = fileSize, case .success(let embedding) = embedding {
+                    if case .success(let sizes) = sizes, case .success(let embedding) = embedding {
+                        let isBlurry = blurryRef.map { blurry in
+                            self.embeddingService.calculateSimilarity(blurry, embedding) >= Self.blurryTextSimilarityThreshold
+                        } ?? false
+
                         await MainActor.run {
                             photo.embedding = embedding
                             photo.isScreenshot = asset.mediaSubtypes.contains(.photoScreenshot)
                             photo.isModified = isModified
-                            photo.fileSize = fileSize
+                            photo.fileSize = sizes.total
                             photo.isFavorite = isFavorite
+                            photo.isBlurry = isBlurry
+
+                            if asset.mediaSubtypes.contains(.photoLive) {
+                                photo.livePhotoVideoFileSize = sizes.liveVideo
+                            }
+
                             self.indexed += 1
 
                             do {
