@@ -6,11 +6,15 @@ struct SmartCleanupBrowse: View {
     var namespace: Namespace.ID
 
     @State private var selectedLargeFile: MediaItem?
+    @State private var selectedBlurryPhoto: MediaItem?
 
     var body: some View {
         let duplicateGroups = photoLibrary?.duplicatesGroups ?? []
         let largeFiles = mediaLibrary?.largeFiles ?? []
         let displayedLargeFiles = Array(largeFiles.prefix(4))
+        
+        let blurryPhotos = mediaLibrary?.blurryPhotos ?? []
+        let displayedBlurryPhotos = Array(blurryPhotos.prefix(4))
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -45,12 +49,29 @@ struct SmartCleanupBrowse: View {
                     }
                 }
                 .padding(.top, 20)
+
+                ExpandableGroup(title: "Blurry photos", subTitle: "\(blurryPhotos.count) files", badgeText: "+ 100 GB") { isExpanded in
+                    let currentBlurryPhotos = isExpanded ? blurryPhotos : displayedBlurryPhotos
+
+                    if !currentBlurryPhotos.isEmpty {
+                        MediaGrid(
+                            items: currentBlurryPhotos,
+                            selectedItem: $selectedBlurryPhoto,
+                            columns: 4,
+                            namespace: namespace
+                        )
+                    }
+                }
+                .padding(.top, 20)
             }
             .padding(.horizontal)
             .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .fullScreenCover(item: $selectedLargeFile) { item in
             MediaDetailView(items: largeFiles, currentItem: item, namespace: namespace)
+        }
+        .fullScreenCover(item: $selectedBlurryPhoto) { item in
+            MediaDetailView(items: blurryPhotos, currentItem: item, namespace: namespace)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {

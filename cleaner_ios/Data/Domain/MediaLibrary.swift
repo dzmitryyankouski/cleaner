@@ -21,6 +21,7 @@ final class MediaLibrary {
     var selectedStorageBytes: Int64 = 0
     var recoverableStorageBytes: Int64 = 0
     var largeFiles: [MediaItem] = []
+    var blurryPhotos: [MediaItem] = []
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
@@ -35,7 +36,7 @@ final class MediaLibrary {
             totalGB = Double(total?.uint64Value ?? 0) / 1_000_000_000
         }
 
-        refreshLargeFiles()
+        refreshDerivedMediaGroups()
         refreshSelectedStorage()
     }
 
@@ -71,10 +72,22 @@ final class MediaLibrary {
         selectedStorageBytes = photoBytes + videoBytes + livePhotoBytes
     }
 
-    func refreshLargeFiles() {
-        largeFiles = items
-            .filter { isLargeFile($0) }
-            .sorted { ($0.fileSize ?? 0) > ($1.fileSize ?? 0) }
+    private func refreshDerivedMediaGroups() {
+        var refreshedLargeFiles: [MediaItem] = []
+        var refreshedBlurryPhotos: [MediaItem] = []
+
+        for item in items {
+            if isLargeFile(item) {
+                refreshedLargeFiles.append(item)
+            }
+
+            if isBlurryPhoto(item) {
+                refreshedBlurryPhotos.append(item)
+            }
+        }
+
+        largeFiles = refreshedLargeFiles
+        blurryPhotos = refreshedBlurryPhotos
     }
 
     var hasSelection: Bool {
@@ -116,17 +129,23 @@ final class MediaLibrary {
 
     func reconcile() {
         var _largeFiles: [MediaItem] = []
+        var _blurryPhotos: [MediaItem] = []
 
         for item in items {
             let isLarge = isLargeFile(item)
+            let isBlurry = isBlurryPhoto(item)
+
             if isLarge {
                 _largeFiles.append(item)
+            }
+            if isBlurry {
+                _blurryPhotos.append(item)
             }
 
             let shouldSelect =
                 (largeFilesSelected && isLarge)
                 || (duplicatesSelected && isInDuplicateGroups(item))
-                || (blurryPhotosSelected && isBlurryPhoto(item))
+                || (blurryPhotosSelected && isBlurry)
                 || (shortVideosSelected && isShortVideo(item))
 
             shouldSelect ? select(item) : deselect(item)
@@ -141,7 +160,8 @@ final class MediaLibrary {
         }
 
         largeFiles = _largeFiles
-        
+        blurryPhotos = _blurryPhotos
+
         refreshSelectedStorage()
     }
 
@@ -231,7 +251,7 @@ final class MediaLibrary {
             }
         }
 
-        refreshLargeFiles()
+        refreshDerivedMediaGroups()
 
         return .success(())
     }
