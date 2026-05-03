@@ -20,6 +20,7 @@ final class MediaLibrary {
 
     var selectedStorageBytes: Int64 = 0
     var recoverableStorageBytes: Int64 = 0
+    var largeFiles: [MediaItem] = []
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
@@ -34,6 +35,7 @@ final class MediaLibrary {
             totalGB = Double(total?.uint64Value ?? 0) / 1_000_000_000
         }
 
+        refreshLargeFiles()
         refreshSelectedStorage()
     }
 
@@ -67,6 +69,12 @@ final class MediaLibrary {
         }
 
         selectedStorageBytes = photoBytes + videoBytes + livePhotoBytes
+    }
+
+    func refreshLargeFiles() {
+        largeFiles = items
+            .filter { isLargeFile($0) }
+            .sorted { ($0.fileSize ?? 0) > ($1.fileSize ?? 0) }
     }
 
     var hasSelection: Bool {
@@ -107,9 +115,16 @@ final class MediaLibrary {
     }
 
     func reconcile() {
+        var _largeFiles: [MediaItem] = []
+
         for item in items {
+            let isLarge = isLargeFile(item)
+            if isLarge {
+                _largeFiles.append(item)
+            }
+
             let shouldSelect =
-                (largeFilesSelected && isLargeFile(item))
+                (largeFilesSelected && isLarge)
                 || (duplicatesSelected && isInDuplicateGroups(item))
                 || (blurryPhotosSelected && isBlurryPhoto(item))
                 || (shortVideosSelected && isShortVideo(item))
@@ -125,6 +140,8 @@ final class MediaLibrary {
             }
         }
 
+        largeFiles = _largeFiles
+        
         refreshSelectedStorage()
     }
 
@@ -213,6 +230,8 @@ final class MediaLibrary {
                 return .failure(.loadingFailed)
             }
         }
+
+        refreshLargeFiles()
 
         return .success(())
     }
