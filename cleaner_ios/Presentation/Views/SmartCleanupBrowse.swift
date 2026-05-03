@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SmartCleanupBrowse: View {
+    @Environment(\.appRouter) var appRouter
     @Environment(\.photoLibrary) var photoLibrary
     @Environment(\.mediaLibrary) var mediaLibrary
     var namespace: Namespace.ID
@@ -34,12 +35,13 @@ struct SmartCleanupBrowse: View {
         let shortVideos = mediaLibrary?.shortVideos ?? []
         let displayedShortVideos = Array(shortVideos.prefix(4))
 
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 0) {
-                SectionHeader(
-                    title: "Files you can remove",
-                    subtitle: "Review suggested files before removing them from your device"
-                )
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    SectionHeader(
+                        title: "Files you can remove",
+                        subtitle: "Review suggested files before removing them from your device"
+                    )
 
                 if showsDuplicates {
                     ExpandableGroup(title: "Duplicates", subTitle: "\(duplicateGroups.count) groups", badgeText: duplicateBadgeText) { isExpanded in
@@ -103,9 +105,23 @@ struct SmartCleanupBrowse: View {
                     }
                     .padding(.top, 20)
                 }
+
+                    Spacer(minLength: 0)
+
+                    ProgressBarWithText(
+                        label: "You will recover",
+                        current: mediaLibrary?.selectedStorageGB ?? 0,
+                        total: mediaLibrary?.recoverableStorageGB ?? 0
+                    ) {
+                        AppButton(title: "Continue", style: .primary, icon: "arrow.right") {
+                            appRouter.push(.smartCleanup)
+                        }
+                    }
+                    .padding(.top, 30)
+                }
+                .padding(.horizontal)
+                .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .topLeading)
             }
-            .padding(.horizontal)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
         }
         .fullScreenCover(item: $selectedLargeFile) { item in
             MediaDetailView(items: largeFiles, currentItem: item, namespace: namespace)
