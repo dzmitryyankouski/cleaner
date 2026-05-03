@@ -19,6 +19,12 @@ struct SmartCleanupBrowse: View {
         let largeFilesBadgeText = "+ \(FileSize(bytes: selectedLargeFilesBytes).formatted)"
         let blurryPhotosBadgeText = "+ \(FileSize(bytes: selectedBlurryPhotosBytes).formatted)"
         let shortVideosBadgeText = "+ \(FileSize(bytes: selectedShortVideosBytes).formatted)"
+
+        let showsDuplicates = mediaLibrary?.duplicatesSelected ?? false
+        let showsLargeFiles = mediaLibrary?.largeFilesSelected ?? false
+        let showsBlurryPhotos = mediaLibrary?.blurryPhotosSelected ?? false
+        let showsShortVideos = mediaLibrary?.shortVideosSelected ?? false
+
         let largeFiles = mediaLibrary?.largeFiles ?? []
         let displayedLargeFiles = Array(largeFiles.prefix(4))
         
@@ -35,60 +41,68 @@ struct SmartCleanupBrowse: View {
                     subtitle: "Review suggested files before removing them from your device"
                 )
 
-                ExpandableGroup(title: "Duplicates", subTitle: "\(duplicateGroups.count) groups", badgeText: duplicateBadgeText) { isExpanded in
-                    if let firstGroup = duplicateGroups.first {
-                        PhotoGridPreview(photos: firstGroup.photos, namespace: namespace)
-                    }
+                if showsDuplicates {
+                    ExpandableGroup(title: "Duplicates", subTitle: "\(duplicateGroups.count) groups", badgeText: duplicateBadgeText) { isExpanded in
+                        if let firstGroup = duplicateGroups.first {
+                            PhotoGridPreview(photos: firstGroup.photos, namespace: namespace)
+                        }
 
-                    if isExpanded {
-                        ForEach(Array(duplicateGroups.dropFirst()), id: \.id) { group in
-                            PhotoGridPreview(photos: group.photos, namespace: namespace)
+                        if isExpanded {
+                            ForEach(Array(duplicateGroups.dropFirst()), id: \.id) { group in
+                                PhotoGridPreview(photos: group.photos, namespace: namespace)
+                            }
                         }
                     }
+                    .padding(.top, 30)
                 }
-                .padding(.top, 30)
 
-                ExpandableGroup(title: "Large files", subTitle: "\(largeFiles.count) files", badgeText: largeFilesBadgeText) { isExpanded in
-                    let currentLargeFiles = isExpanded ? largeFiles : displayedLargeFiles
+                if showsLargeFiles {
+                    ExpandableGroup(title: "Large files", subTitle: "\(largeFiles.count) files", badgeText: largeFilesBadgeText) { isExpanded in
+                        let currentLargeFiles = isExpanded ? largeFiles : displayedLargeFiles
 
-                    if !currentLargeFiles.isEmpty {
-                        MediaGrid(
-                            items: currentLargeFiles,
-                            selectedItem: $selectedLargeFile,
-                            columns: 4,
-                            namespace: namespace
-                        )
+                        if !currentLargeFiles.isEmpty {
+                            MediaGrid(
+                                items: currentLargeFiles,
+                                selectedItem: $selectedLargeFile,
+                                columns: 4,
+                                namespace: namespace
+                            )
+                        }
                     }
+                    .padding(.top, 20)
                 }
-                .padding(.top, 20)
 
-                ExpandableGroup(title: "Blurry photos", subTitle: "\(blurryPhotos.count) files", badgeText: blurryPhotosBadgeText) { isExpanded in
-                    let currentBlurryPhotos = isExpanded ? blurryPhotos : displayedBlurryPhotos
+                if showsBlurryPhotos {
+                    ExpandableGroup(title: "Blurry photos", subTitle: "\(blurryPhotos.count) files", badgeText: blurryPhotosBadgeText) { isExpanded in
+                        let currentBlurryPhotos = isExpanded ? blurryPhotos : displayedBlurryPhotos
 
-                    if !currentBlurryPhotos.isEmpty {
-                        MediaGrid(
-                            items: currentBlurryPhotos,
-                            selectedItem: $selectedBlurryPhoto,
-                            columns: 4,
-                            namespace: namespace
-                        )
+                        if !currentBlurryPhotos.isEmpty {
+                            MediaGrid(
+                                items: currentBlurryPhotos,
+                                selectedItem: $selectedBlurryPhoto,
+                                columns: 4,
+                                namespace: namespace
+                            )
+                        }
                     }
+                    .padding(.top, 20)
                 }
-                .padding(.top, 20)
 
-                ExpandableGroup(title: "Short videos", subTitle: "\(shortVideos.count) files", badgeText: shortVideosBadgeText) { isExpanded in
-                    let currentShortVideos = isExpanded ? shortVideos : displayedShortVideos
+                if showsShortVideos {
+                    ExpandableGroup(title: "Short videos", subTitle: "\(shortVideos.count) files", badgeText: shortVideosBadgeText) { isExpanded in
+                        let currentShortVideos = isExpanded ? shortVideos : displayedShortVideos
 
-                    if !currentShortVideos.isEmpty {
-                        MediaGrid(
-                            items: currentShortVideos,
-                            selectedItem: $selectedShortVideo,
-                            columns: 4,
-                            namespace: namespace
-                        )
+                        if !currentShortVideos.isEmpty {
+                            MediaGrid(
+                                items: currentShortVideos,
+                                selectedItem: $selectedShortVideo,
+                                columns: 4,
+                                namespace: namespace
+                            )
+                        }
                     }
+                    .padding(.top, 20)
                 }
-                .padding(.top, 20)
             }
             .padding(.horizontal)
             .frame(maxWidth: .infinity, alignment: .topLeading)
