@@ -7,6 +7,7 @@ struct SmartCleanupBrowse: View {
 
     @State private var selectedLargeFile: MediaItem?
     @State private var selectedBlurryPhoto: MediaItem?
+    @State private var selectedShortVideo: MediaItem?
 
     var body: some View {
         let duplicateGroups = photoLibrary?.duplicatesGroups ?? []
@@ -15,6 +16,9 @@ struct SmartCleanupBrowse: View {
         
         let blurryPhotos = mediaLibrary?.blurryPhotos ?? []
         let displayedBlurryPhotos = Array(blurryPhotos.prefix(4))
+        
+        let shortVideos = mediaLibrary?.shortVideos ?? []
+        let displayedShortVideos = Array(shortVideos.prefix(4))
 
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
@@ -63,6 +67,20 @@ struct SmartCleanupBrowse: View {
                     }
                 }
                 .padding(.top, 20)
+
+                ExpandableGroup(title: "Short videos", subTitle: "\(shortVideos.count) files", badgeText: "+ 100 GB") { isExpanded in
+                    let currentShortVideos = isExpanded ? shortVideos : displayedShortVideos
+
+                    if !currentShortVideos.isEmpty {
+                        MediaGrid(
+                            items: currentShortVideos,
+                            selectedItem: $selectedShortVideo,
+                            columns: 4,
+                            namespace: namespace
+                        )
+                    }
+                }
+                .padding(.top, 20)
             }
             .padding(.horizontal)
             .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -72,6 +90,9 @@ struct SmartCleanupBrowse: View {
         }
         .fullScreenCover(item: $selectedBlurryPhoto) { item in
             MediaDetailView(items: blurryPhotos, currentItem: item, namespace: namespace)
+        }
+        .fullScreenCover(item: $selectedShortVideo) { item in
+            MediaDetailView(items: shortVideos, currentItem: item, namespace: namespace)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {

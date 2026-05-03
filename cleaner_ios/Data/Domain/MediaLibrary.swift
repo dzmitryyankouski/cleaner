@@ -22,6 +22,7 @@ final class MediaLibrary {
     var recoverableStorageBytes: Int64 = 0
     var largeFiles: [MediaItem] = []
     var blurryPhotos: [MediaItem] = []
+    var shortVideos: [MediaItem] = []
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
@@ -75,6 +76,7 @@ final class MediaLibrary {
     private func refreshDerivedMediaGroups() {
         var refreshedLargeFiles: [MediaItem] = []
         var refreshedBlurryPhotos: [MediaItem] = []
+        var refreshedShortVideos: [MediaItem] = []
 
         for item in items {
             if isLargeFile(item) {
@@ -84,10 +86,15 @@ final class MediaLibrary {
             if isBlurryPhoto(item) {
                 refreshedBlurryPhotos.append(item)
             }
+
+            if isShortVideo(item) {
+                refreshedShortVideos.append(item)
+            }
         }
 
         largeFiles = refreshedLargeFiles
         blurryPhotos = refreshedBlurryPhotos
+        shortVideos = refreshedShortVideos
     }
 
     var hasSelection: Bool {
@@ -130,10 +137,12 @@ final class MediaLibrary {
     func reconcile() {
         var _largeFiles: [MediaItem] = []
         var _blurryPhotos: [MediaItem] = []
+        var _shortVideos: [MediaItem] = []
 
         for item in items {
             let isLarge = isLargeFile(item)
             let isBlurry = isBlurryPhoto(item)
+            let isShort = isShortVideo(item)
 
             if isLarge {
                 _largeFiles.append(item)
@@ -141,12 +150,15 @@ final class MediaLibrary {
             if isBlurry {
                 _blurryPhotos.append(item)
             }
+            if isShort {
+                _shortVideos.append(item)
+            }
 
             let shouldSelect =
                 (largeFilesSelected && isLarge)
                 || (duplicatesSelected && isInDuplicateGroups(item))
                 || (blurryPhotosSelected && isBlurry)
-                || (shortVideosSelected && isShortVideo(item))
+                || (shortVideosSelected && isShort)
 
             shouldSelect ? select(item) : deselect(item)
 
@@ -161,6 +173,7 @@ final class MediaLibrary {
 
         largeFiles = _largeFiles
         blurryPhotos = _blurryPhotos
+        shortVideos = _shortVideos
 
         refreshSelectedStorage()
     }
