@@ -5,6 +5,8 @@ struct SmartCleanupBrowse: View {
     var namespace: Namespace.ID
 
     var body: some View {
+        let duplicateGroups = photoLibrary?.duplicatesGroups ?? []
+
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0) {
                 SectionHeader(
@@ -12,15 +14,23 @@ struct SmartCleanupBrowse: View {
                     subtitle: "Review suggested files before removing them from your device"
                 )
 
-                ExpandableGroup(title: "Duplicates", subTitle: "\(photoLibrary?.duplicatesGroups.count ?? 0) groups", badgeText: "+ 100 GB") {
-                    ForEach(photoLibrary?.duplicatesGroups ?? [], id: \.id) { group in
-                        PhotoGridPreview(photos: group.photos, namespace: namespace)
+                ExpandableGroup(title: "Duplicates", subTitle: "\(duplicateGroups.count) groups", badgeText: "+ 100 GB") { isExpanded in
+                    if let firstGroup = duplicateGroups.first {
+                        PhotoGridPreview(photos: firstGroup.photos, namespace: namespace)
+                    }
+
+                    if isExpanded {
+                        ForEach(Array(duplicateGroups.dropFirst()), id: \.id) { group in
+                            PhotoGridPreview(photos: group.photos, namespace: namespace)
+                        }
                     }
                 }
                 .padding(.top, 30)
 
-                ExpandableGroup(title: "Large files", subTitle: "6 groups", badgeText: "+ 100 GB") {
-                    Text("Large files")
+                ExpandableGroup(title: "Large files", subTitle: "6 groups", badgeText: "+ 100 GB") { isExpanded in
+                    if isExpanded {
+                        Text("Large files")
+                    }
                 }
                 .padding(.top, 20)
             }

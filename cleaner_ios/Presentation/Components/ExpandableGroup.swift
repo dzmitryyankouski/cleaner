@@ -11,7 +11,7 @@ public struct ExpandableGroup<Content: View>: View {
     let title: String
     let subTitle: String
     let badgeText: String
-    @ViewBuilder private let content: () -> Content
+    @ViewBuilder private let content: (_ isExpanded: Bool) -> Content
 
     @State private var isExpanded: Bool
 
@@ -19,23 +19,20 @@ public struct ExpandableGroup<Content: View>: View {
         title: String,
         subTitle: String,
         badgeText: String,
-        isInitiallyExpanded: Bool = true,
-        @ViewBuilder content: @escaping () -> Content
+        @ViewBuilder content: @escaping (_ isExpanded: Bool) -> Content
     ) {
         self.title = title
         self.subTitle = subTitle
         self.badgeText = badgeText
-        self._isExpanded = State(initialValue: isInitiallyExpanded)
+        self._isExpanded = State(initialValue: false)
         self.content = content
     }
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            if isExpanded {
-                content()
-                    .padding(.top, 20)
-            }
+            content(isExpanded)
+                .padding(.top, 20)
         }
         .padding(16)
         .background(isExpanded ? Color.white : Color.white.opacity(0.3))
