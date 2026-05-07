@@ -20,9 +20,15 @@ final class MediaLibrary {
 
     var selectedStorageBytes: Int64 = 0
     var recoverableStorageBytes: Int64 = 0
+
     var largeFiles: [MediaItem] = []
     var blurryPhotos: [MediaItem] = []
     var shortVideos: [MediaItem] = []
+
+    var shortVideosStorageBytes: Int64 = 0
+    var blurryPhotosStorageBytes: Int64 = 0
+    var duplicatesStorageBytes: Int64 = 0
+    var largeFilesStorageBytes: Int64 = 0
 
     init(photoLibrary: PhotoLibrary, videoLibrary: VideoLibrary) {
         self.photoLibrary = photoLibrary
@@ -37,8 +43,7 @@ final class MediaLibrary {
             totalGB = Double(total?.uint64Value ?? 0) / 1_000_000_000
         }
 
-        refreshDerivedMediaGroups()
-        refreshSelectedStorage()
+        reconcile()
     }
 
     var items: [MediaItem] {
@@ -73,30 +78,6 @@ final class MediaLibrary {
         selectedStorageBytes = photoBytes + videoBytes + livePhotoBytes
     }
 
-    private func refreshDerivedMediaGroups() {
-        var refreshedLargeFiles: [MediaItem] = []
-        var refreshedBlurryPhotos: [MediaItem] = []
-        var refreshedShortVideos: [MediaItem] = []
-
-        for item in items {
-            if isLargeFile(item) {
-                refreshedLargeFiles.append(item)
-            }
-
-            if isBlurryPhoto(item) {
-                refreshedBlurryPhotos.append(item)
-            }
-
-            if isShortVideo(item) {
-                refreshedShortVideos.append(item)
-            }
-        }
-
-        largeFiles = refreshedLargeFiles
-        blurryPhotos = refreshedBlurryPhotos
-        shortVideos = refreshedShortVideos
-    }
-
     var hasSelection: Bool {
         !selectedItems.isEmpty
     }
@@ -113,18 +94,28 @@ final class MediaLibrary {
     func select(_ item: MediaItem) {
         switch item {
         case .photo(let photo):
+            guard photoLibrary.selectedPhotos[photo.id] == nil else { return }
             photoLibrary.selectedPhotos[photo.id] = photo
+            selectedStorageBytes += photo.fileSize ?? 0
         case .video(let video):
+            guard videoLibrary.selectedVideos[video.id] == nil else { return }
             videoLibrary.selectedVideos[video.id] = video
+            selectedStorageBytes += video.fileSize ?? 0
         }
     }
 
     func deselect(_ item: MediaItem) {
         switch item {
         case .photo(let photo):
-            photoLibrary.selectedPhotos.removeValue(forKey: photo.id)
+            guard photoLibrary.selectedPhotos.removeValue(forKey: photo.id) != nil else { return }
+            selectedStorageBytes -= photo.fileSize ?? 0
         case .video(let video):
-            videoLibrary.selectedVideos.removeValue(forKey: video.id)
+            guard videoLibrary.selectedVideos.removeValue(forKey: video.id) != nil else { return }
+            selectedStorageBytes -= video.fileSize ?? 0
+        }
+
+        if selectedStorageBytes < 0 {
+            selectedStorageBytes = 0
         }
     }
 
@@ -138,25 +129,37 @@ final class MediaLibrary {
         var _largeFiles: [MediaItem] = []
         var _blurryPhotos: [MediaItem] = []
         var _shortVideos: [MediaItem] = []
+        var _largeFilesStorageBytes: Int64 = 0
+        var _blurryPhotosStorageBytes: Int64 = 0
+        var _shortVideosStorageBytes: Int64 = 0
+        var _duplicatesStorageBytes: Int64 = 0
 
         for item in items {
+            let fileSize = item.fileSize ?? 0
             let isLarge = isLargeFile(item)
             let isBlurry = isBlurryPhoto(item)
             let isShort = isShortVideo(item)
+            let isDuplicate = isInDuplicateGroups(item)
 
             if isLarge {
                 _largeFiles.append(item)
+                _largeFilesStorageBytes += fileSize
             }
             if isBlurry {
                 _blurryPhotos.append(item)
+                _blurryPhotosStorageBytes += fileSize
             }
             if isShort {
                 _shortVideos.append(item)
+                _shortVideosStorageBytes += fileSize
+            }
+            if isDuplicate {
+                _duplicatesStorageBytes += fileSize
             }
 
             let shouldSelect =
                 (largeFilesSelected && isLarge)
-                || (duplicatesSelected && isInDuplicateGroups(item))
+                || (duplicatesSelected && isDuplicate)
                 || (blurryPhotosSelected && isBlurry)
                 || (shortVideosSelected && isShort)
 
@@ -174,6 +177,10 @@ final class MediaLibrary {
         largeFiles = _largeFiles
         blurryPhotos = _blurryPhotos
         shortVideos = _shortVideos
+        largeFilesStorageBytes = _largeFilesStorageBytes
+        blurryPhotosStorageBytes = _blurryPhotosStorageBytes
+        shortVideosStorageBytes = _shortVideosStorageBytes
+        duplicatesStorageBytes = _duplicatesStorageBytes
 
         refreshSelectedStorage()
     }
@@ -265,7 +272,7 @@ final class MediaLibrary {
             }
         }
 
-        refreshDerivedMediaGroups()
+        reconcile()
 
         return .success(())
     }

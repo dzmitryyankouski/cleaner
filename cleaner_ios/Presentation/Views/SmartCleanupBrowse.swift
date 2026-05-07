@@ -6,20 +6,16 @@ struct SmartCleanupBrowse: View {
     @Environment(\.mediaLibrary) var mediaLibrary
     var namespace: Namespace.ID
 
-    @State private var selectedDuplicatesBytes: Int64 = 0
-    @State private var selectedLargeFilesBytes: Int64 = 0
-    @State private var selectedBlurryPhotosBytes: Int64 = 0
-    @State private var selectedShortVideosBytes: Int64 = 0
     @State private var selectedLargeFile: MediaItem?
     @State private var selectedBlurryPhoto: MediaItem?
     @State private var selectedShortVideo: MediaItem?
 
     var body: some View {
         let duplicateGroups = photoLibrary?.duplicatesGroups ?? []
-        let duplicateBadgeText = "+ \(FileSize(bytes: selectedDuplicatesBytes).formatted)"
-        let largeFilesBadgeText = "+ \(FileSize(bytes: selectedLargeFilesBytes).formatted)"
-        let blurryPhotosBadgeText = "+ \(FileSize(bytes: selectedBlurryPhotosBytes).formatted)"
-        let shortVideosBadgeText = "+ \(FileSize(bytes: selectedShortVideosBytes).formatted)"
+        let duplicateBadgeText = "+ \(FileSize(bytes: mediaLibrary?.duplicatesStorageBytes ?? 0).formatted)"
+        let largeFilesBadgeText = "+ \(FileSize(bytes: mediaLibrary?.largeFilesStorageBytes ?? 0).formatted)"
+        let blurryPhotosBadgeText = "+ \(FileSize(bytes: mediaLibrary?.blurryPhotosStorageBytes ?? 0).formatted)"
+        let shortVideosBadgeText = "+ \(FileSize(bytes: mediaLibrary?.shortVideosStorageBytes ?? 0).formatted)"
 
         let showsDuplicates = mediaLibrary?.duplicatesSelected ?? false
         let showsLargeFiles = mediaLibrary?.largeFilesSelected ?? false
@@ -132,55 +128,12 @@ struct SmartCleanupBrowse: View {
         .fullScreenCover(item: $selectedShortVideo) { item in
             MediaDetailView(items: shortVideos, currentItem: item, namespace: namespace)
         }
-        .task {
-            recalculateSelectedStorageForGroups()
-        }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .background {
             AppColors.background.ignoresSafeArea()
         }
         .navigationTitle("Smart cleanup")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private func recalculateSelectedStorageForGroups() {
-        let duplicateGroups = photoLibrary?.duplicatesGroups ?? []
-        let largeFiles = mediaLibrary?.largeFiles ?? []
-        let blurryPhotos = mediaLibrary?.blurryPhotos ?? []
-        let shortVideos = mediaLibrary?.shortVideos ?? []
-
-        var duplicatesBytes: Int64 = 0
-        for group in duplicateGroups {
-            for photo in group.photos where mediaLibrary?.isSelected(.photo(photo)) == true {
-                duplicatesBytes += photo.fileSize ?? 0
-            }
-        }
-
-        var largeFilesBytes: Int64 = 0
-        for item in largeFiles {
-            if mediaLibrary?.isSelected(item) == true {
-                largeFilesBytes += item.fileSize ?? 0
-            }
-        }
-
-        var blurryPhotosBytes: Int64 = 0
-        for item in blurryPhotos {
-            if mediaLibrary?.isSelected(item) == true {
-                blurryPhotosBytes += item.fileSize ?? 0
-            }
-        }
-
-        var shortVideosBytes: Int64 = 0
-        for item in shortVideos {
-            if mediaLibrary?.isSelected(item) == true {
-                shortVideosBytes += item.fileSize ?? 0
-            }
-        }
-
-        selectedDuplicatesBytes = duplicatesBytes
-        selectedLargeFilesBytes = largeFilesBytes
-        selectedBlurryPhotosBytes = blurryPhotosBytes
-        selectedShortVideosBytes = shortVideosBytes
     }
 }
 
