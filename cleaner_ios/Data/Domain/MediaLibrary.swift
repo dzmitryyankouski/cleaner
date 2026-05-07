@@ -213,7 +213,8 @@ final class MediaLibrary {
     private func isInDuplicateGroups(_ item: MediaItem) -> Bool {
         switch item {
         case .photo(let photo):
-            return photoLibrary.duplicatesGroups.contains { group in
+            return photo.groups.contains { group in
+                guard group.type == "duplicates" else { return false }
                 guard let index = group.photos.firstIndex(where: { $0.id == photo.id }) else { return false }
                 return index > 0
             }
