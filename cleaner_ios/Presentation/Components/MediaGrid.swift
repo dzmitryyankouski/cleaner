@@ -39,8 +39,12 @@ struct MediaGrid: View {
                 }
             },
             onLongPress: { item in
-                mediaLibrary?.select(item)
-                triggerLightHapticFeedback()
+                if mediaLibrary?.hasSelection ?? false {
+                    selectedItem = item
+                } else {
+                    mediaLibrary?.select(item)
+                    triggerLightHapticFeedback()
+                }
             }
         ) { item in
             switch item {
