@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct MediaGrid: View {
     let items: [MediaItem]
@@ -26,16 +27,23 @@ struct MediaGrid: View {
             selectedItem: $selectedItem,
             onTap: { item in
                 if mediaLibrary?.hasSelection ?? false {
-                    withAnimation {
+                    if mediaLibrary?.isSelected(item) ?? false {
+                        mediaLibrary?.deselect(item)
+                        triggerLightHapticFeedback()
+                    } else {
                         mediaLibrary?.select(item)
+                        triggerLightHapticFeedback()
                     }
                 } else {
                     selectedItem = item
                 }
             },
             onLongPress: { item in
-                withAnimation {
+                if mediaLibrary?.hasSelection ?? false {
+                    selectedItem = item
+                } else {
                     mediaLibrary?.select(item)
+                    triggerLightHapticFeedback()
                 }
             }
         ) { item in
@@ -47,5 +55,9 @@ struct MediaGrid: View {
             }
         }
         .aspectRatio(aspectRatio, contentMode: .fit)
+    }
+
+    private func triggerLightHapticFeedback() {
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 }

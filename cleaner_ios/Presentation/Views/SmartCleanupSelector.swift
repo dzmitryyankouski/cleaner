@@ -70,7 +70,7 @@ struct SmartCleanupSelector: View {
         .navigationTitle("Smart cleanup")
         .navigationBarTitleDisplayMode(.inline)
         .task {
-            mediaLibrary?.calculateRecoverableStorageBytes()
+            await mediaLibrary?.calculateRecoverableStorageBytes()
         }
     }
 
